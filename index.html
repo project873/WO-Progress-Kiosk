@@ -1,97 +1,104 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Progress Kiosk</title>
-    <script src="https://cdn.jsdelivr.net/npm/vue/dist/vue.js"></script>
-    <style>
-        /* Add your styles here */
-    </style>
+    <title>WO Progress Kiosk</title>
+    <link rel="stylesheet" href="styles.css">
+    <script src="script.js" defer></script>
 </head>
 <body>
-    <div id="app">
-        <h1>Progress Kiosk Dashboard</h1>
-        <div>
-            <label for="wo-number">WO #:</label>
-            <input type="text" id="wo-number">
-            <label for="part-number">Part #:</label>
-            <input type="text" id="part-number">
-        </div>
-        <div>
-            <h2>Manager Priority Toggle</h2>
-            <div v-for="priority in [1, 2, 3, 4, 5]" :key="priority">
-                <button @click="setPriority(priority)">{{ priority }}</button>
-            </div>
-            <button @click="resetPriority">Reset</button>
-        </div>
-        <div>
-            <h2>Manager Notes</h2>
-            <textarea v-model="managerNotes" placeholder="Add your notes here..."></textarea>
-        </div>
-        <div>
-            <h2>Completed WOs Alert</h2>
-            <div v-if="yellowAlertActive">Yellow Alert: Completed but not received WOs older than 7 days!</div>
-        </div>
-        <div>
-            <h2>Progress Bars</h2>
-            <div v-for="wo in wos" :key="wo.id" class="dashboard-card">
-                <h3>{{ wo.name }}</h3>
-                <div style="width:{{ wo.progress }}%; height: 20px; background-color: green;"></div>
-                <p>Progress: {{ wo.progress }}%</p>
-            </div>
-        </div>
-        <div>
-            <h2>Close-out List</h2>
+    <header>
+        <h1>Work Order Progress Kiosk</h1>
+        <nav>
             <ul>
-                <li v-for="item in receivedItems" :key="item.id">{{ item.name }}</li>
+                <li><a href="#workflow">Guided Workflow</a></li>
+                <li><a href="#managers-hub">Manager's Hub</a></li>
+                <li><a href="#ui-improvements">UI Improvements</a></li>
+                <li><a href="#office-shipping">Office/Shipping</a></li>
             </ul>
-        </div>
-        <div>
-            <h2>Workflow Management</h2>
+        </nav>
+    </header>
+    <main>
+        <section id="workflow">
+            <h2>Multi-State Guided Workflow</h2>
+            <form id="login-form">
+                <label for="operator-login">Operator Login:</label>
+                <input type="text" id="operator-login" required>
+                <button type="submit">Login</button>
+            </form>
+            <div id="workflow-status">
+                <p id="workflow-message">Can't Start: [Reason]</p>
+                <p>Paused State: Current session qty: <span id="current-qty">0</span></p>
+                <p>History Log: <span id="history-log">No history available.</span></p>
+            </div>
+        </section>
+        <section id="managers-hub">
+            <h2>Manager's Hub</h2>
+            <label for="priority-toggle">Set Priority:</label>
+            <select id="priority-toggle">
+                <option value="1">1</option>
+                <option value="2">2</option>
+                <option value="3">3</option>
+                <option value="4">4</option>
+                <option value="5">5</option>
+            </select>
+            <label for="manager-notes">Manager Notes:</label>
+            <textarea id="manager-notes" placeholder="Enter notes here..."></textarea>
+            <div id="alert-overdue">Alert: Overdue completed WOs (>7 days without receiving)</div>
+        </section>
+        <section id="ui-improvements">
+            <h2>UI Improvements</h2>
             <div>
-                <label for="login">Operator Login:</label>
-                <input type="text" v-model="operatorLogin" required>
-                <button @click="startWorkflow">Start Workflow</button>
-                <div v-if="cantStartReason">Can't Start Reason: {{ cantStartReason }}</div>
+                <label for="wo-number">WO #:</label>
+                <span id="wo-number">[WO Number]</span>
             </div>
             <div>
-                <h3>Workflow History</h3>
-                <ul>
-                    <li v-for="history in workflowHistory" :key="history.id">{{ history.action }} - {{ history.timestamp }}</li>
-                </ul>
+                <label for="part-number">Part #:</label>
+                <span id="part-number">[Part Number]</span>
             </div>
-        </div>
-    </div>
-    <script>
-        new Vue({
-            el: '#app',
-            data: {
-                managerNotes: '',
-                operatorLogin: '',
-                priority: 0,
-                yellowAlertActive: false,
-                cantStartReason: '',
-                workflowHistory: [],
-                wos: [ /* populate with WO data */ ],
-                receivedItems: [ /* populate with received items */ ]
-            },
-            methods: {
-                setPriority(priority) {
-                    this.priority = priority;
-                },
-                resetPriority() {
-                    this.priority = 0;
-                },
-                startWorkflow() {
-                    // Workflow logic here
-                    // Check if operator login is provided and handle logging
-                }
-            },
-            computed: {
-                // Check for completed WOs older than 7 days logic
-            }
-        });
-    </script>
+            <div>
+                <h3>Priority Based Sorting:</h3>
+                <div class="priority-bubbles">
+                    <span class="bubble" style="background-color:red;">1</span>
+                    <span class="bubble" style="background-color:orange;">2</span>
+                    <span class="bubble" style="background-color:yellow;">3</span>
+                    <span class="bubble" style="background-color:lightgreen;">4</span>
+                    <span class="bubble" style="background-color:green;">5</span>
+                </div>
+            </div>
+            <div class="progress-bars">
+                <p>Progress Bar 1</p>
+                <div class="progress">
+                    <div class="progress-fill" style="width:50%;"></div>
+                </div>
+                <p>Progress Bar 2</p>
+                <div class="progress">
+                    <div class="progress-fill" style="width:30%;"></div>
+                </div>
+            </div>
+        </section>
+        <section id="office-shipping">
+            <h2>Office/Shipping Overhaul</h2>
+            <form id="search-form">
+                <label for="search">Search:</label>
+                <input type="text" id="search" placeholder="Search here...">
+                <button type="submit">Search</button>
+            </form>
+            <div id="forced-name-entry">
+                <label for="receiver-name">Receiver Name (Mandatory):</label>
+                <input type="text" id="receiver-name" required>
+            </div>
+            <h3>Close-Out List</h3>
+            <div id="close-out-list">
+                <p>Received but not closed items will be listed here.</p>
+                <!-- Items will be displayed here dynamically -->
+            </div>
+        </section>
+    </main>
+    <footer>
+        <p>&copy; 2026 Project873. All rights reserved.</p>
+        <p>Last updated: 2026-03-03 22:03:19 UTC</p>
+    </footer>
 </body>
 </html>
