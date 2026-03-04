@@ -19,10 +19,8 @@
         }
     </style>
     <script>
-        // Global error handler — catches any uncaught JS errors and shows
-        // a user-friendly error screen instead of a blank blue screen
+        // Global error handler - catches uncaught JS errors
         window.onerror = function(msg, src, line, col, err) {
-            // Hide the loading fallback if it's still showing
             var loadingEl = document.getElementById('app-loading');
             if (loadingEl) loadingEl.style.display = 'none';
             var el = document.getElementById('app');
@@ -42,7 +40,7 @@
 
 <body class="bg-slate-900 text-white select-none overflow-hidden h-screen w-screen font-sans">
 
-    <!-- Static fallback — visible until Vue mounts, then removed by onMounted -->
+    <!-- Loading fallback - visible until Vue mounts -->
     <div id="app-loading" class="h-full w-full flex items-center justify-center absolute inset-0 z-50 bg-slate-900">
         <div class="text-center">
             <h2 class="text-4xl font-bold text-white mb-4">Shop Floor Kiosk</h2>
@@ -1536,9 +1534,9 @@
                 }, 1000);
                 onUnmounted(() => clearInterval(clockInterval));
 
-                // Remove the static loading fallback once Vue has mounted
+                // Remove loading fallback once Vue mounts
                 onMounted(() => {
-                    const loadingEl = document.getElementById('app-loading');
+                    var loadingEl = document.getElementById('app-loading');
                     if (loadingEl) loadingEl.remove();
                 });
 
@@ -2329,8 +2327,7 @@
             }
         });
 
-        // Catch Vue runtime errors after mount (e.g. errors in event handlers)
-        app.config.errorHandler = (err, vm, info) => {
+        app.config.errorHandler = function(err, vm, info) {
             console.error('Vue runtime error:', err, info);
         };
 
