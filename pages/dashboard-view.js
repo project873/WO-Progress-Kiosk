@@ -16,6 +16,7 @@ export function openActionPanel(order) {
     store.actionPanelOpen.value  = true;
     store.selectedOperator.value = order.operator || '';
     store.otherOperator.value    = '';
+    store.selectedOperators.value = [];
     store.actionForm.value       = {
         qtyCompleted: order.qty_completed || 0,
         qtyScrap:     0,
@@ -38,7 +39,10 @@ export function getFinalOperatorName() {
 // Main action: update a WO's status (and optionally a sub-stage).
 // Validates inputs, saves undo snapshot, writes to DB, refreshes list.
 export async function updateOrderStatus(newStatus, stageKey = null) {
-    const opName = getFinalOperatorName();
+    const dept = store.activeOrder.value?.department;
+    const opName = (dept === 'Fab' || dept === 'Weld')
+        ? getFabWeldOperatorName()
+        : getFinalOperatorName();
     if (!opName) {
         store.showToast('Select or enter your operator name first.', 'error');
         return;
@@ -190,4 +194,18 @@ async function _refreshDeptOrders() {
     } catch (err) {
         store.showToast('Failed to refresh orders: ' + err.message);
     }
+}
+
+// ── getFabWeldOperatorName ────────────────────────────────────
+// Resolves the Fab/Weld multi-select (with optional "Other" free-text)
+// into a single " & "-joined string for storage in work_orders.operator.
+export function getFabWeldOperatorName() {
+    const base = store.selectedOperators.value.filter(o => o !== 'Other');
+    if (store.selectedOperators.value.includes('Other')) {
+        const typed = store.otherOperator.value.trim();
+        if (typed) {
+            typed.split(',').map(s => s.trim()).filter(Boolean).forEach(n => base.push(n));
+        }
+    }
+    return base.join(' & ');
 }

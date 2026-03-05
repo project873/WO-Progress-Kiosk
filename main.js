@@ -26,7 +26,7 @@ import { formatDateLocal } from './libs/utils.js';
 // ── Page controllers ──────────────────────────────────────────
 import { selectDept, promptPin, submitPin, goBack } from './pages/splash-view.js';
 import {
-    openActionPanel, getFinalOperatorName,
+    openActionPanel, getFinalOperatorName, getFabWeldOperatorName,
     updateOrderStatus, undoLastAction,
     submitNewWo, submitNote
 } from './pages/dashboard-view.js';
@@ -85,7 +85,9 @@ try {
                 // Action panel
                 actionPanelOpen:  store.actionPanelOpen,
                 activeOrder:      store.activeOrder,
-                selectedOperator: store.selectedOperator,
+                selectedOperator:       store.selectedOperator,
+                selectedOperators:      store.selectedOperators,
+                fabWeldOperatorReady:   store.fabWeldOperatorReady,
                 otherOperator:    store.otherOperator,
                 actionForm:       store.actionForm,
 
