@@ -81,7 +81,15 @@ export async function updateOrderStatus(newStatus, stageKey = null) {
             dept:         store.selectedDept.value
         };
 
-        store.actionPanelOpen.value = false;
+        // START / RESUME (Fab/Weld only): stay in modal so operator can
+        // immediately log qty and Pause or Complete without reopening.
+        if (newStatus === 'started' && !stageKey) {
+            // Update activeOrder from DB response so v-if chain flips to PAUSE+COMPLETE view
+            store.activeOrder.value = (data && data[0]) ? data[0] : { ...store.activeOrder.value, status: 'started' };
+            store.actionForm.value  = { ...store.actionForm.value, qtyCompleted: 0 };
+        } else {
+            store.actionPanelOpen.value = false;
+        }
         await _refreshDeptOrders();
     } catch (err) {
         store.showToast('Failed to update status: ' + err.message);
