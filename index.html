@@ -784,7 +784,8 @@
                                 <label class="font-bold flex items-center gap-2"><input type="radio" v-model="actionForm.weldGrind" value="grind" class="w-6 h-6"> GRIND</label>
                             </div>
                         </div>
-                        <div class="grid grid-cols-3 gap-6">
+                                                <!-- not_started: START + CAN'T START -->
+                        <div v-if="!activeOrder?.status || activeOrder.status === 'not_started'" class="grid grid-cols-2 gap-6">
                             <button @click="updateOrderStatus('started')" :disabled="!fabWeldOperatorReady"
                                 class="bg-blue-600 hover:bg-blue-500 rounded-xl p-6 font-bold text-2xl active:scale-95 transition-transform flex flex-col items-center justify-center border border-blue-400/50 disabled:opacity-40 disabled:cursor-not-allowed">
                                 <svg class="w-12 h-12 mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -793,6 +794,16 @@
                                 </svg>
                                 START JOB
                             </button>
+                            <button @click="updateOrderStatus('on_hold')" :disabled="!fabWeldOperatorReady"
+                                class="bg-slate-600 hover:bg-slate-500 rounded-xl p-6 font-bold text-2xl active:scale-95 transition-transform flex flex-col items-center justify-center border border-slate-400/50 text-slate-200 disabled:opacity-40 disabled:cursor-not-allowed">
+                                <svg class="w-12 h-12 mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728A9 9 0 015.636 5.636m12.728 12.728L5.636 5.636"/>
+                                </svg>
+                                CAN'T START
+                            </button>
+                        </div>
+                        <!-- started / resumed: PAUSE + COMPLETE -->
+                        <div v-else-if="activeOrder.status === 'started' || activeOrder.status === 'resumed'" class="grid grid-cols-2 gap-6">
                             <div class="bg-slate-700 p-4 rounded-xl border border-slate-600 flex flex-col items-center">
                                 <input type="number" v-model="actionForm.qtyCompleted" class="w-full bg-slate-900 p-2 text-center text-xl font-bold rounded mb-2" placeholder="Qty">
                                 <button @click="updateOrderStatus('paused')" :disabled="!fabWeldOperatorReady" class="bg-amber-500 hover:bg-amber-400 text-slate-900 w-full rounded py-3 font-extrabold disabled:opacity-40 disabled:cursor-not-allowed">PAUSE DAY</button>
@@ -802,6 +813,22 @@
                                 <button @click="updateOrderStatus('completed')" :disabled="!fabWeldOperatorReady" class="bg-emerald-600 hover:bg-emerald-500 w-full rounded py-3 font-extrabold text-white disabled:opacity-40 disabled:cursor-not-allowed">COMPLETE WO</button>
                             </div>
                         </div>
+                        <!-- paused / on_hold: RESUME + COMPLETE -->
+                        <div v-else class="grid grid-cols-2 gap-6">
+                            <button @click="updateOrderStatus('started')" :disabled="!fabWeldOperatorReady"
+                                class="bg-emerald-700 hover:bg-emerald-600 rounded-xl p-6 font-bold text-2xl active:scale-95 transition-transform flex flex-col items-center justify-center border border-emerald-500/50 disabled:opacity-40 disabled:cursor-not-allowed">
+                                <svg class="w-12 h-12 mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z"/>
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                                </svg>
+                                RESUME JOB
+                            </button>
+                            <div class="bg-slate-700 p-4 rounded-xl border border-slate-600 flex flex-col items-center">
+                                <input type="number" v-model="actionForm.qtyCompleted" class="w-full bg-slate-900 p-2 text-center text-xl font-bold rounded mb-2" placeholder="Qty">
+                                <button @click="updateOrderStatus('completed')" :disabled="!fabWeldOperatorReady" class="bg-emerald-600 hover:bg-emerald-500 w-full rounded py-3 font-extrabold text-white disabled:opacity-40 disabled:cursor-not-allowed">COMPLETE WO</button>
+                            </div>
+                        </div>
+
                         <div class="mt-8 border-t border-slate-700 pt-6 grid grid-cols-2 gap-6">
                             <div>
                                 <label class="block text-slate-400 font-bold mb-2">Put on Hold / Delay</label>
