@@ -794,7 +794,7 @@
                                 </svg>
                                 START JOB
                             </button>
-                            <button @click="updateOrderStatus('on_hold')" :disabled="!fabWeldOperatorReady"
+                            <button @click="updateOrderStatus('on_hold')" :disabled="!fabWeldOperatorReady || !actionForm.holdReason.trim()"
                                 class="bg-slate-600 hover:bg-slate-500 rounded-xl p-6 font-bold text-2xl active:scale-95 transition-transform flex flex-col items-center justify-center border border-slate-400/50 text-slate-200 disabled:opacity-40 disabled:cursor-not-allowed">
                                 <svg class="w-12 h-12 mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728A9 9 0 015.636 5.636m12.728 12.728L5.636 5.636"/>
@@ -802,6 +802,7 @@
                                 CAN'T START
                             </button>
                         </div>
+                        <p v-if="fabWeldOperatorReady && !actionForm.holdReason.trim()" class="text-amber-400 text-xs mt-2 text-center">&#9888; Select a hold reason below to enable CAN'T START</p>
                         <!-- started / resumed: PAUSE + COMPLETE -->
                         <div v-else-if="activeOrder.status === 'started' || activeOrder.status === 'resumed'" class="grid grid-cols-2 gap-6">
                             <div class="bg-slate-700 p-4 rounded-xl border border-slate-600 flex flex-col items-center">
@@ -838,7 +839,7 @@
                                         <option v-for="r in HOLD_REASONS[activeOrder?.department]" :key="r" :value="r">{{ r }}</option>
                                     </select>
                                     <input v-else v-model="actionForm.holdReason" type="text" class="w-full bg-slate-700 p-3 rounded" placeholder="Reason...">
-                                    <button @click="updateOrderStatus('on_hold')" :disabled="!fabWeldOperatorReady" class="bg-red-600 font-bold px-4 rounded hover:bg-red-500 disabled:opacity-40 disabled:cursor-not-allowed">HOLD</button>
+                                    <button @click="updateOrderStatus('on_hold')" :disabled="!fabWeldOperatorReady || !actionForm.holdReason.trim()" class="bg-red-600 font-bold px-4 rounded hover:bg-red-500 disabled:opacity-40 disabled:cursor-not-allowed">HOLD</button>
                                 </div>
                             </div>
                             <div>

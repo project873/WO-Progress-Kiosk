@@ -51,6 +51,10 @@ export async function updateOrderStatus(newStatus, stageKey = null) {
         store.showToast('Select Weld or Grind for this reel part.', 'error');
         return;
     }
+    if (newStatus === 'on_hold' && !store.actionForm.value.holdReason.trim()) {
+        store.showToast('Select a hold reason first.', 'error');
+        return;
+    }
 
     store.loading.value = true;
 
