@@ -15,7 +15,8 @@
 import {
     createApp,
     onMounted,
-    onUnmounted
+    onUnmounted,
+    watch
 } from 'https://cdn.jsdelivr.net/npm/vue@3.4.21/dist/vue.esm-browser.prod.js';
 
 // ── State & computed ──────────────────────────────────────────
@@ -32,7 +33,7 @@ import {
 } from './pages/dashboard-view.js';
 import {
     searchOfficeReceive, openReceiveModal, submitReceive,
-    openCloseoutModal, submitCloseout
+    openCloseoutModal, submitCloseout, loadReceivingEligible
 } from './pages/wo-status-view.js';
 import {
     openManagerSection, loadKpiData, loadDelayedOrders,
@@ -61,6 +62,11 @@ try {
             // Remove loading fallback once Vue successfully mounts
             onMounted(() => {
                 if (loadingEl) loadingEl.remove();
+            });
+
+            // Load receiving eligible list whenever entering the WO Status view
+            watch(store.currentView, (v) => {
+                if (v === 'wo_status') loadReceivingEligible();
             });
 
             // ── Expose everything the templates need ──────────
@@ -115,6 +121,7 @@ try {
                 officeMode:           store.officeMode,
                 officeSearchTerm:     store.officeSearchTerm,
                 officeSearchResults:  store.officeSearchResults,
+                receiveEligibleList:  store.receiveEligibleList,
                 officeSuccessMsg:     store.officeSuccessMsg,
                 officeCloseoutFilter: store.officeCloseoutFilter,
                 filteredCloseoutOrders: store.filteredCloseoutOrders,
@@ -160,7 +167,7 @@ try {
 
                 // Office
                 searchOfficeReceive, openReceiveModal, submitReceive,
-                openCloseoutModal, submitCloseout,
+                openCloseoutModal, submitCloseout, loadReceivingEligible,
 
                 // Manager
                 openManagerSection, loadKpiData, loadDelayedOrders,

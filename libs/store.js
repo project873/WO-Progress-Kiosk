@@ -67,7 +67,8 @@ export const officeMode           = ref('receive');  // 'receive' | 'closeout'
 export const officeSearchTerm     = ref('');
 export const officeSearchResults  = ref([]);
 export const officeSuccessMsg     = ref('');
-export const officeCloseoutFilter = ref('');
+export const officeCloseoutFilter  = ref('');
+export const receiveEligibleList   = ref([]);   // eligible WOs for receiving (from eligible depts, not yet received/closed)
 
 // Receive modal
 export const receiveModalOpen  = ref(false);

@@ -10,23 +10,31 @@ import * as db     from '../libs/db.js';
 import { isNonEmpty, sanitizeText } from '../libs/utils.js';
 
 // ── searchOfficeReceive ───────────────────────────────────────
-export async function searchOfficeReceive() {
-    const term = store.officeSearchTerm.value.trim();
-    if (!term) return;
-
-    store.loading.value          = true;
-    store.officeSuccessMsg.value = '';
-
+export async function loadReceivingEligible() {
+    store.loading.value = true;
     try {
-        const { data, error } = await db.searchWoForReceive(term);
+        const { data, error } = await db.fetchReceivingEligible();
         if (error) throw error;
-        store.officeSearchResults.value = data || [];
+        store.receiveEligibleList.value = data || [];
     } catch (err) {
-        store.showToast('Search failed: ' + err.message);
-        store.officeSearchResults.value = [];
+        store.showToast('Failed to load receiving list: ' + err.message);
     } finally {
         store.loading.value = false;
     }
+}
+
+export function searchOfficeReceive() {
+    store.officeSuccessMsg.value = '';
+    const term = store.officeSearchTerm.value.trim().toLowerCase();
+    if (!term) {
+        store.officeSearchResults.value = [];
+        return;
+    }
+    store.officeSearchResults.value = store.receiveEligibleList.value.filter(o =>
+        (o.wo_number   || '').toLowerCase().includes(term) ||
+        (o.sales_order || '').toLowerCase().includes(term) ||
+        (o.part_number || '').toLowerCase().includes(term)
+    );
 }
 
 // ── openReceiveModal ──────────────────────────────────────────
@@ -67,6 +75,7 @@ export async function submitReceive() {
         store.officeSearchResults.value  = [];
 
         await _refreshWoStatusData();
+        await loadReceivingEligible();
 
         // Auto-clear success message after 5 seconds
         setTimeout(() => { store.officeSuccessMsg.value = ''; }, 5000);

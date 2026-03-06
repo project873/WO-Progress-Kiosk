@@ -284,6 +284,28 @@ export async function searchWoForReceive(searchTerm) {
     return { data: deduped, error: r1.error || r2.error || r3.error };
 }
 
+export async function fetchReceivingEligible() {
+    // Fetch all WOs from eligible departments (no status filter â include completed)
+    const { data: wos, error: woErr } = await withRetry(() =>
+        supabase.from('work_orders')
+            .select('*')
+            .in('department', ['Fab', 'Weld', 'TV Assy', 'TC Assy'])
+    );
+    if (woErr) return { data: [], error: woErr };
+
+    // Get WO numbers already received or closed in tracking
+    const { data: tracked } = await withRetry(() =>
+        supabase.from('wo_status_tracking')
+            .select('wo_number, erp_status')
+            .in('erp_status', ['received', 'closed'])
+    );
+    const excludedWoNums = new Set((tracked || []).map(t => t.wo_number));
+
+    // Filter to only WOs not yet received or closed
+    const eligible = (wos || []).filter(w => !excludedWoNums.has(w.wo_number));
+    return { data: eligible, error: null };
+}
+
 export async function receiveWorkOrder(order, qty, receivedBy) {
     if (!receivedBy) return { data: null, error: new Error('Receiver name is required') };
     if (!order)      return { data: null, error: new Error('No order selected') };
