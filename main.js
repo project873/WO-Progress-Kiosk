@@ -27,7 +27,8 @@ import { formatDateLocal } from './libs/utils.js';
 // ── Page controllers ──────────────────────────────────────────
 import { selectDept, promptPin, submitPin, goBack } from './pages/splash-view.js';
 import {
-    openActionPanel, getFinalOperatorName, getFabWeldOperatorName, holdSince,
+    openActionPanel, openTvAssyEntry, tvAssyNameContinue,
+    getFinalOperatorName, getFabWeldOperatorName, holdSince,
     updateOrderStatus, undoLastAction,
     submitNewWo, submitNote
 } from './pages/dashboard-view.js';
@@ -138,6 +139,12 @@ try {
                 pinMode:      store.pinMode,
                 pinInput:     store.pinInput,
 
+                // TV Assy entry
+                tvAssyEntryOpen: store.tvAssyEntryOpen,
+                tvAssyEntryStep: store.tvAssyEntryStep,
+                tvAssyEntryName: store.tvAssyEntryName,
+                tvAssyNameError: store.tvAssyNameError,
+
                 // Office / WO Status
                 officeMode:           store.officeMode,
                 officeSearchTerm:     store.officeSearchTerm,
@@ -185,7 +192,8 @@ try {
                 selectDept, promptPin, submitPin, goBack,
 
                 // Dashboard
-                openActionPanel, updateOrderStatus, undoLastAction,
+                openActionPanel, openTvAssyEntry, tvAssyNameContinue,
+                updateOrderStatus, undoLastAction,
                 submitNewWo, submitNote,
 
                 // Office

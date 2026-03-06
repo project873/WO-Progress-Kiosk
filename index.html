@@ -162,7 +162,7 @@
                             </div>
                             <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 p-4">
                                 <div v-for="order in groupedOrders[cat.id]" :key="order.id"
-                                    @click="openActionPanel(order)"
+                                    @click="order.department === 'TV Assy' ? openTvAssyEntry(order) : openActionPanel(order)"
                                     class="bg-slate-700/80 p-5 rounded-lg border-t-[6px] cursor-pointer hover:bg-slate-600 relative"
                                     :class="cat.cardBorderTop">
                                     <div class="flex justify-between items-start">
@@ -956,6 +956,51 @@
                             </div>
                         </div>
                     </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- TV ASSY ENTRY MODAL -->
+        <div v-if="tvAssyEntryOpen" class="fixed z-50 inset-0 bg-black/80 flex items-center justify-center p-4">
+            <div class="bg-slate-800 rounded-2xl w-full max-w-md border border-cyan-500/40 shadow-2xl">
+                <!-- Header -->
+                <div class="bg-cyan-900/30 border-b border-cyan-700/40 p-5 flex justify-between items-center rounded-t-2xl">
+                    <div>
+                        <div class="font-bold text-cyan-300 text-lg">TV Assembly</div>
+                        <div class="text-slate-400 text-sm">WO #{{ activeOrder?.wo_number }} &mdash; {{ activeOrder?.part_number }}</div>
+                    </div>
+                    <button @click="tvAssyEntryOpen = false" class="text-slate-400 hover:text-white bg-slate-700 p-2 rounded text-lg leading-none">&#10005;</button>
+                </div>
+
+                <!-- Step 1: Operator name -->
+                <div v-if="tvAssyEntryStep === 1" class="p-6 space-y-4">
+                    <div class="text-slate-400 text-xs font-bold uppercase tracking-widest">Step 1 of 2 &mdash; Your Name</div>
+                    <input v-model="tvAssyEntryName" type="text" placeholder="Enter your name..."
+                        class="w-full p-4 text-xl bg-slate-900 rounded-xl border focus:outline-none transition-colors"
+                        :class="tvAssyNameError ? 'border-red-500 focus:border-red-400' : 'border-slate-600 focus:border-cyan-500'">
+                    <div v-if="tvAssyNameError" class="text-red-400 text-sm font-semibold">&#9888; Please enter your name to continue.</div>
+                    <button @click="tvAssyNameContinue()"
+                        class="w-full py-4 bg-cyan-600 hover:bg-cyan-500 text-white font-bold text-lg rounded-xl active:scale-95 transition-all">
+                        Continue &#8594;
+                    </button>
+                </div>
+
+                <!-- Step 2: Unit vs Stock choice -->
+                <div v-if="tvAssyEntryStep === 2" class="p-6 space-y-4">
+                    <div class="text-slate-400 text-xs font-bold uppercase tracking-widest">Step 2 of 2 &mdash; Select Job Type</div>
+                    <div class="text-slate-300 text-sm mb-2">Working as: <span class="text-cyan-300 font-bold">{{ tvAssyEntryName }}</span></div>
+                    <button class="w-full py-6 bg-blue-700 hover:bg-blue-600 text-white font-bold text-xl rounded-xl active:scale-95 transition-all border border-blue-500/50 flex flex-col items-center gap-1">
+                        <span>&#128187; This WO is for a Unit</span>
+                        <span class="text-blue-300 text-sm font-normal">(Engine + Cart + Final Assy)</span>
+                    </button>
+                    <button class="w-full py-6 bg-emerald-700 hover:bg-emerald-600 text-white font-bold text-xl rounded-xl active:scale-95 transition-all border border-emerald-500/50 flex flex-col items-center gap-1">
+                        <span>&#128230; This WO is for Stock</span>
+                        <span class="text-emerald-300 text-sm font-normal">(Not a sold unit)</span>
+                    </button>
+                    <button @click="tvAssyEntryStep = 1"
+                        class="w-full py-2 bg-slate-700 hover:bg-slate-600 text-slate-300 font-bold rounded-xl text-sm">
+                        &#8592; Back
+                    </button>
                 </div>
             </div>
         </div>

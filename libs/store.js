@@ -108,6 +108,11 @@ export const csTimeline    = ref([]);
 export const csOpenOrders  = ref([]);
 
 // ── Error toast ───────────────────────────────────────────────
+export const tvAssyEntryOpen  = ref(false);
+export const tvAssyEntryStep  = ref(1);
+export const tvAssyEntryName  = ref('');
+export const tvAssyNameError  = ref(false);
+
 export const toastMessage  = ref('');
 export const toastType     = ref('error');   // 'error' | 'success' | 'info'
 let toastTimer = null;

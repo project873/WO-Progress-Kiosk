@@ -196,6 +196,23 @@ export async function submitNote() {
 
 // ── Internal helpers ──────────────────────────────────────────
 
+export function openTvAssyEntry(order) {
+    store.activeOrder.value      = order;
+    store.tvAssyEntryOpen.value  = true;
+    store.tvAssyEntryStep.value  = 1;
+    store.tvAssyEntryName.value  = '';
+    store.tvAssyNameError.value  = false;
+}
+
+export function tvAssyNameContinue() {
+    if (!store.tvAssyEntryName.value.trim()) {
+        store.tvAssyNameError.value = true;
+        return;
+    }
+    store.tvAssyNameError.value = false;
+    store.tvAssyEntryStep.value = 2;
+}
+
 async function _refreshDeptOrders() {
     const dept = store.selectedDept.value;
     if (!dept) return;
