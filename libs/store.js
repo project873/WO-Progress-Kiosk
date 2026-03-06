@@ -112,6 +112,13 @@ export const tvAssyEntryOpen  = ref(false);
 export const tvAssyEntryStep  = ref(1);
 export const tvAssyEntryName  = ref('');
 export const tvAssyNameError  = ref(false);
+export const tvAssyJobType    = ref('');    // 'stock' | 'unit'
+export const tvAssyStockOpen  = ref(false);
+export const tvStockPending   = ref('');    // ''|'start'|'cant_start'|'pause'|'resume'|'complete'|'hold'
+export const tvStockSessionQty = ref('');
+export const tvStockReason    = ref('');
+export const tvStockQtyError  = ref(false);
+export const tvStockReasonError = ref(false);
 
 export const toastMessage  = ref('');
 export const toastType     = ref('error');   // 'error' | 'success' | 'info'

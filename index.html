@@ -993,7 +993,7 @@
                         <span>&#128187; This WO is for a Unit</span>
                         <span class="text-blue-300 text-sm font-normal">(Engine + Cart + Final Assy)</span>
                     </button>
-                    <button class="w-full py-6 bg-emerald-700 hover:bg-emerald-600 text-white font-bold text-xl rounded-xl active:scale-95 transition-all border border-emerald-500/50 flex flex-col items-center gap-1">
+                    <button @click="openTvAssyStock(activeOrder)" class="w-full py-6 bg-emerald-700 hover:bg-emerald-600 text-white font-bold text-xl rounded-xl active:scale-95 transition-all border border-emerald-500/50 flex flex-col items-center gap-1">
                         <span>&#128230; This WO is for Stock</span>
                         <span class="text-emerald-300 text-sm font-normal">(Not a sold unit)</span>
                     </button>
@@ -1002,6 +1002,142 @@
                         &#8592; Back
                     </button>
                 </div>
+            </div>
+        </div>
+
+        <!-- TV ASSY STOCK MODAL -->
+        <div v-if="tvAssyStockOpen" class="fixed z-50 inset-0 bg-black/80 flex items-center justify-center p-4">
+            <div class="bg-slate-800 rounded-2xl w-full max-w-xl border border-emerald-500/40 shadow-2xl flex flex-col" style="max-height:90vh">
+
+                <!-- Header -->
+                <div class="bg-emerald-900/30 border-b border-emerald-700/40 p-5 flex justify-between items-center rounded-t-2xl shrink-0">
+                    <div>
+                        <div class="font-bold text-emerald-300 text-lg">&#128230; Stock TV Assembly</div>
+                        <div class="text-slate-400 text-sm">WO #{{ activeOrder?.wo_number }} &mdash; {{ activeOrder?.part_number }}</div>
+                        <div class="text-cyan-400 text-xs mt-0.5">Operator: {{ tvAssyEntryName }}</div>
+                    </div>
+                    <button @click="tvAssyStockOpen = false" class="text-slate-400 hover:text-white bg-slate-700 p-2 rounded text-lg leading-none">&#10005;</button>
+                </div>
+
+                <!-- Status / qty bar -->
+                <div class="flex gap-8 p-5 border-b border-slate-700 shrink-0">
+                    <div>
+                        <div class="text-slate-500 text-xs font-bold uppercase">Status</div>
+                        <div class="font-bold text-lg"
+                            :class="activeOrder?.status === 'completed' ? 'text-emerald-400' : activeOrder?.status === 'started' ? 'text-blue-400' : activeOrder?.status === 'on_hold' ? 'text-red-400' : activeOrder?.status === 'paused' ? 'text-amber-400' : 'text-slate-400'">
+                            {{ activeOrder?.status || 'Not Started' }}
+                        </div>
+                    </div>
+                    <div>
+                        <div class="text-slate-500 text-xs font-bold uppercase">Required</div>
+                        <div class="font-bold text-lg text-slate-300">{{ activeOrder?.qty_required }}</div>
+                    </div>
+                    <div>
+                        <div class="text-slate-500 text-xs font-bold uppercase">Completed</div>
+                        <div class="font-bold text-2xl text-emerald-400">{{ activeOrder?.qty_completed || 0 }}</div>
+                    </div>
+                </div>
+
+                <!-- Action area -->
+                <div class="p-5 border-b border-slate-700 shrink-0">
+
+                    <!-- Action buttons (idle state) -->
+                    <div v-if="tvStockPending === ''" class="flex flex-wrap gap-3">
+                        <template v-if="!activeOrder?.status || activeOrder?.status === 'not_started'">
+                            <button @click="tvStockPending = 'start'"
+                                class="px-6 py-3 bg-blue-600 hover:bg-blue-500 text-white font-bold rounded-xl active:scale-95 transition-all">
+                                &#9654; Start
+                            </button>
+                            <button @click="tvStockPending = 'cant_start'"
+                                class="px-6 py-3 bg-slate-600 hover:bg-slate-500 text-white font-bold rounded-xl active:scale-95 transition-all">
+                                &#10007; Can't Start
+                            </button>
+                        </template>
+                        <template v-else-if="activeOrder?.status === 'started'">
+                            <button @click="tvStockPending = 'pause'"
+                                class="px-6 py-3 bg-amber-500 hover:bg-amber-400 text-slate-900 font-bold rounded-xl active:scale-95 transition-all">
+                                &#9646;&#9646; Pause
+                            </button>
+                            <button @click="tvStockPending = 'complete'"
+                                class="px-6 py-3 bg-emerald-600 hover:bg-emerald-500 text-white font-bold rounded-xl active:scale-95 transition-all">
+                                &#10003; Complete
+                            </button>
+                            <button @click="tvStockPending = 'hold'"
+                                class="px-6 py-3 bg-red-600 hover:bg-red-500 text-white font-bold rounded-xl active:scale-95 transition-all">
+                                &#128722; Hold
+                            </button>
+                        </template>
+                        <template v-else-if="activeOrder?.status === 'paused' || activeOrder?.status === 'on_hold'">
+                            <button @click="tvStockPending = 'resume'"
+                                class="px-6 py-3 bg-blue-600 hover:bg-blue-500 text-white font-bold rounded-xl active:scale-95 transition-all">
+                                &#9654; Resume
+                            </button>
+                            <button @click="tvStockPending = 'hold'"
+                                class="px-6 py-3 bg-red-600 hover:bg-red-500 text-white font-bold rounded-xl active:scale-95 transition-all">
+                                &#128722; Hold
+                            </button>
+                        </template>
+                        <div v-else-if="activeOrder?.status === 'completed'"
+                            class="w-full text-center text-emerald-400 font-bold text-xl py-3">
+                            &#10003; WO Complete
+                        </div>
+                    </div>
+
+                    <!-- Pending action form -->
+                    <div v-if="tvStockPending !== ''" class="space-y-4">
+                        <div class="text-slate-200 font-bold text-lg">
+                            {{ tvStockPending === 'start' ? 'Start Job' : tvStockPending === 'resume' ? 'Resume Job' : tvStockPending === 'pause' ? 'Pause &amp; Log Qty' : tvStockPending === 'complete' ? 'Complete WO' : tvStockPending === 'cant_start' ? "Can't Start" : 'Put On Hold' }}
+                        </div>
+
+                        <!-- Session qty input (pause / complete) -->
+                        <div v-if="tvStockPending === 'pause' || tvStockPending === 'complete'">
+                            <label class="block text-slate-400 text-sm font-bold mb-1">Session Qty <span class="text-slate-500 font-normal">(negative = correction)</span></label>
+                            <input type="number" v-model="tvStockSessionQty" placeholder="e.g. 5 or -2"
+                                class="w-full p-3 text-xl bg-slate-900 rounded-xl border focus:outline-none transition-colors"
+                                :class="tvStockQtyError ? 'border-red-500' : 'border-slate-600 focus:border-emerald-500'">
+                            <div v-if="tvStockQtyError" class="text-red-400 text-sm mt-1">&#9888; Enter a qty (can be 0 or negative for corrections).</div>
+                        </div>
+
+                        <!-- Reason input (cant_start / hold) -->
+                        <div v-if="tvStockPending === 'cant_start' || tvStockPending === 'hold'">
+                            <label class="block text-slate-400 text-sm font-bold mb-1">Reason <span class="text-red-400">*</span></label>
+                            <input type="text" v-model="tvStockReason" placeholder="Enter reason..."
+                                class="w-full p-3 bg-slate-900 rounded-xl border focus:outline-none transition-colors"
+                                :class="tvStockReasonError ? 'border-red-500' : 'border-slate-600 focus:border-emerald-500'">
+                            <div v-if="tvStockReasonError" class="text-red-400 text-sm mt-1">&#9888; Please enter a reason.</div>
+                        </div>
+
+                        <!-- Confirm / Cancel -->
+                        <div class="flex gap-3 pt-1">
+                            <button @click="tvStockPending = ''; tvStockSessionQty = ''; tvStockReason = ''; tvStockQtyError = false; tvStockReasonError = false"
+                                class="px-6 py-3 bg-slate-700 hover:bg-slate-600 text-slate-300 font-bold rounded-xl">
+                                Cancel
+                            </button>
+                            <button @click="submitTvStockActionFromUi()"
+                                class="flex-1 py-3 bg-emerald-600 hover:bg-emerald-500 text-white font-bold rounded-xl active:scale-95 transition-all">
+                                Confirm &#10003;
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Action history (scrollable) -->
+                <div class="flex-1 overflow-y-auto p-5">
+                    <div class="text-slate-500 text-xs font-bold uppercase tracking-wide mb-3">Action History</div>
+                    <div v-if="!(activeOrder?.notes || '').includes('TVST|')" class="text-slate-600 text-sm italic">No actions recorded yet.</div>
+                    <div class="space-y-2">
+                        <div v-for="entry in (activeOrder?.notes || '').split('\n').filter(l => l.startsWith('TVST|'))" :key="entry"
+                            class="bg-slate-700/50 rounded-lg px-3 py-2 text-xs flex flex-wrap gap-x-4 gap-y-1">
+                            <span class="text-slate-500">{{ entry.split('|')[1] }}</span>
+                            <span class="text-cyan-300 font-semibold">{{ entry.split('|')[2] }}</span>
+                            <span class="text-white font-bold uppercase tracking-wide">{{ entry.split('|')[3] }}</span>
+                            <span v-if="entry.split('|')[4]" class="text-amber-400">session: {{ entry.split('|')[4] }}</span>
+                            <span class="text-emerald-400">total: {{ entry.split('|')[5] }}</span>
+                            <span v-if="entry.split('|')[6]" class="text-yellow-300 italic">{{ entry.split('|')[6] }}</span>
+                        </div>
+                    </div>
+                </div>
+
             </div>
         </div>
 

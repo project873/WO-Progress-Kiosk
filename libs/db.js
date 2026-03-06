@@ -182,6 +182,42 @@ export async function restoreOrderSnapshot(id, previousData) {
     );
 }
 
+// TV Assy Stock: write one action entry, additive qty, structured history
+export async function submitTvStockAction({ id, currentOrder, newStatus, opName, sessionQty, reason, keepStatus }) {
+    if (!id)     return { data: null, error: new Error('Missing WO ID') };
+    if (!opName) return { data: null, error: new Error('Operator name required') };
+
+    const prevQty  = parseFloat(currentOrder.qty_completed) || 0;
+    const session  = parseFloat(sessionQty) || 0;
+    const newCum   = Math.max(0, prevQty + session);
+    const now      = new Date().toISOString();
+    const ts       = new Date().toLocaleString('en-US', {
+        month: 'numeric', day: 'numeric', year: '2-digit',
+        hour: 'numeric', minute: '2-digit'
+    });
+
+    const updates = {};
+    if (!keepStatus) {
+        updates.status        = newStatus;
+        updates.qty_completed = newCum;
+        updates.operator      = opName;
+        if (newStatus === 'started' && !currentOrder.start_date) updates.start_date = now;
+        if (newStatus === 'completed') updates.comp_date = now;
+    }
+
+    const actionLabel = keepStatus ? "can't start" : newStatus;
+    const sessionStr  = (!keepStatus && session !== 0)
+        ? (session > 0 ? '+' + session : String(session)) : '';
+    const cumStr      = keepStatus ? String(prevQty) : String(newCum);
+    // Pipe-delimited history line: TVST|ts|operator|action|sessionQty|cumQty|reason
+    const histLine = `TVST|${ts}|${opName}|${actionLabel}|${sessionStr}|${cumStr}|${reason || ''}`;
+    updates.notes = currentOrder.notes ? currentOrder.notes + '\n' + histLine : histLine;
+
+    return withRetry(() =>
+        supabase.from('work_orders').update(updates).eq('id', id).select()
+    );
+}
+
 // Create a new manual work order (TV Assy / TC Assy only)
 export async function insertManualWorkOrder({ partNumber, description, qty, dept, woType }) {
     if (!partNumber) return { data: null, error: new Error('Part number is required') };

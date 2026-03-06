@@ -204,6 +204,65 @@ export function openTvAssyEntry(order) {
     store.tvAssyNameError.value  = false;
 }
 
+export function openTvAssyStock(order) {
+    store.activeOrder.value        = order;
+    store.tvAssyJobType.value      = 'stock';
+    store.tvAssyEntryOpen.value    = false;
+    store.tvAssyStockOpen.value    = true;
+    store.tvStockPending.value     = '';
+    store.tvStockSessionQty.value  = '';
+    store.tvStockReason.value      = '';
+    store.tvStockQtyError.value    = false;
+    store.tvStockReasonError.value = false;
+}
+
+export async function submitTvStockActionFromUi() {
+    const order    = store.activeOrder.value;
+    const pending  = store.tvStockPending.value;
+    const operator = store.tvAssyEntryName.value;
+    const sessionQty = store.tvStockSessionQty.value;
+    const reason   = store.tvStockReason.value.trim();
+
+    store.tvStockQtyError.value    = false;
+    store.tvStockReasonError.value = false;
+    let hasError = false;
+    if ((pending === 'pause' || pending === 'complete') && String(sessionQty).trim() === '') {
+        store.tvStockQtyError.value = true; hasError = true;
+    }
+    if ((pending === 'cant_start' || pending === 'hold') && !reason) {
+        store.tvStockReasonError.value = true; hasError = true;
+    }
+    if (hasError) return;
+
+    const STATUS_MAP = { start: 'started', pause: 'paused', resume: 'started', complete: 'completed', hold: 'on_hold', cant_start: null };
+    const keepStatus = pending === 'cant_start';
+
+    store.loading.value = true;
+    try {
+        const result = await db.submitTvStockAction({
+            id:           order.id,
+            currentOrder: order,
+            newStatus:    STATUS_MAP[pending],
+            opName:       operator,
+            sessionQty:   (pending === 'pause' || pending === 'complete') ? parseFloat(sessionQty) : 0,
+            reason,
+            keepStatus
+        });
+        if (result.error) throw result.error;
+        const updated = result.data[0];
+        store.activeOrder.value = updated;
+        store.orders.value = store.orders.value.map(o => o.id === updated.id ? updated : o);
+        store.tvStockPending.value    = '';
+        store.tvStockSessionQty.value = '';
+        store.tvStockReason.value     = '';
+        store.showToast('Action recorded', 'success');
+    } catch (err) {
+        store.showToast('Failed: ' + err.message);
+    } finally {
+        store.loading.value = false;
+    }
+}
+
 export function tvAssyNameContinue() {
     if (!store.tvAssyEntryName.value.trim()) {
         store.tvAssyNameError.value = true;
