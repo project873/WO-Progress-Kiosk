@@ -174,10 +174,27 @@
                                         </div>
                                     </div>
                                     <div class="font-bold text-lg mt-2">Part #{{ order.part_number }}</div>
+                                    <div v-if="order.department === 'TV Assy' && order.sales_order"
+                                        class="text-emerald-400 text-xs font-semibold mt-0.5">SO# {{ order.sales_order }}</div>
                                     <div class="text-slate-400 text-sm line-clamp-2 h-10">{{ order.description }}</div>
                                     <div class="flex justify-between mt-4">
                                         <span class="text-emerald-400 font-bold border rounded px-1">{{ order.qty_completed }} / {{ order.qty_required }}</span>
                                         <span class="text-slate-500 text-sm">{{ order.operator || 'None' }}</span>
+                                    </div>
+                                    <!-- TV Assy stage badges -->
+                                    <div v-if="order.department === 'TV Assy'" class="flex gap-2 mt-2 flex-wrap">
+                                        <span class="text-xs font-bold px-2 py-0.5 rounded"
+                                            :class="order.tv_engine_status === 'completed' ? 'bg-emerald-800 text-emerald-300' : order.tv_engine_status === 'started' ? 'bg-blue-800 text-blue-300' : 'bg-slate-600 text-slate-400'">
+                                            ENG {{ order.tv_engine_status === 'completed' ? '&#10003;' : order.tv_engine_status === 'started' ? '&#9654;' : '&#8212;' }}
+                                        </span>
+                                        <span class="text-xs font-bold px-2 py-0.5 rounded"
+                                            :class="order.tv_cart_status === 'completed' ? 'bg-emerald-800 text-emerald-300' : order.tv_cart_status === 'started' ? 'bg-blue-800 text-blue-300' : 'bg-slate-600 text-slate-400'">
+                                            CRT {{ order.tv_cart_status === 'completed' ? '&#10003;' : order.tv_cart_status === 'started' ? '&#9654;' : '&#8212;' }}
+                                        </span>
+                                        <span class="text-xs font-bold px-2 py-0.5 rounded"
+                                            :class="(order.tv_engine_status === 'completed' && order.tv_cart_status === 'completed') ? (order.tv_final_status === 'completed' ? 'bg-emerald-800 text-emerald-300' : order.tv_final_status === 'started' ? 'bg-blue-800 text-blue-300' : 'bg-violet-800 text-violet-300') : 'bg-red-900/60 text-red-400 border border-red-700/30'">
+                                            FIN {{ (order.tv_engine_status === 'completed' && order.tv_cart_status === 'completed') ? (order.tv_final_status === 'completed' ? '&#10003;' : order.tv_final_status === 'started' ? '&#9654;' : 'Waiting') : 'Locked' }}
+                                        </span>
                                     </div>
                                     <div v-if="order.status === 'on_hold' && holdSince(order)" class="mt-2 flex items-center gap-1 text-xs text-red-400 font-bold">
                                         <span>&#9632;</span> On Hold since {{ holdSince(order) }}
