@@ -121,6 +121,10 @@ export const tvStockReason    = ref('');
 export const tvStockQtyError  = ref(false);
 export const tvStockReasonError = ref(false);
 
+// ── TV Assy Unit: per-stage action state ──────────────────────
+export const tvEngStage = ref({ pending: '', sessionQty: '', reason: '', qtyError: false, reasonError: false });
+export const tvCrtStage = ref({ pending: '', sessionQty: '', reason: '', qtyError: false, reasonError: false });
+
 export const toastMessage  = ref('');
 export const toastType     = ref('error');   // 'error' | 'success' | 'info'
 let toastTimer = null;
@@ -133,6 +137,16 @@ export function showToast(msg, type = 'error', durationMs = 4000) {
 }
 
 // ── Computed ──────────────────────────────────────────────────
+
+// Stage cumulative qty derived from notes history (no schema change needed)
+export const tvEngineCum = computed(() => {
+    const lines = (activeOrder.value?.notes || '').split('\n').filter(l => l.startsWith('TVENG|'));
+    return lines.length ? parseFloat(lines.at(-1).split('|')[5]) || 0 : 0;
+});
+export const tvCartCum = computed(() => {
+    const lines = (activeOrder.value?.notes || '').split('\n').filter(l => l.startsWith('TVCRT|'));
+    return lines.length ? parseFloat(lines.at(-1).split('|')[5]) || 0 : 0;
+});
 
 export const appTitle = computed(() => {
     if (currentView.value === 'splash')    return 'Shop Floor Kiosk';

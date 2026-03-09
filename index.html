@@ -1041,12 +1041,47 @@
                             <div>
                                 <div class="text-slate-500 text-xs font-bold uppercase mb-1">Done So Far</div>
                                 <div class="text-3xl font-bold text-blue-400">
-                                    {{ activeOrder?.tv_engine_qty ?? '&mdash;' }}
+                                    {{ tvEngineCum }}
                                     <span class="text-slate-500 text-base font-normal">/ {{ activeOrder?.qty_required }}</span>
                                 </div>
+                                <div v-if="tvEngineCum > (activeOrder?.qty_required || 0)" class="text-yellow-400 text-xs mt-1">&#9888; Exceeds WO qty</div>
                             </div>
-                            <div class="mt-auto pt-3 border-t border-slate-600/50 opacity-40 pointer-events-none">
-                                <div class="h-9 bg-slate-600 rounded-lg flex items-center justify-center text-slate-400 text-xs font-bold">Actions (Patch 5)</div>
+                            <div class="mt-auto pt-3 border-t border-slate-600/50">
+                                <!-- Engine action buttons -->
+                                <div v-if="tvEngStage.pending === ''" class="flex flex-wrap gap-2">
+                                    <template v-if="!activeOrder?.tv_engine_status || activeOrder?.tv_engine_status === 'not_started'">
+                                        <button @click="tvEngStage.pending = 'start'" class="px-3 py-2 text-xs font-bold bg-blue-600 hover:bg-blue-500 text-white rounded-lg active:scale-95 transition-all">&#9654; Start</button>
+                                        <button @click="tvEngStage.pending = 'cant_start'" class="px-3 py-2 text-xs font-bold bg-slate-600 hover:bg-slate-500 text-slate-200 rounded-lg active:scale-95 transition-all">&#10007; Can't Start</button>
+                                    </template>
+                                    <template v-else-if="activeOrder?.tv_engine_status === 'started'">
+                                        <button @click="tvEngStage.pending = 'pause'" class="px-3 py-2 text-xs font-bold bg-amber-500 hover:bg-amber-400 text-slate-900 rounded-lg active:scale-95 transition-all">&#9646;&#9646; Pause</button>
+                                        <button @click="tvEngStage.pending = 'complete'" class="px-3 py-2 text-xs font-bold bg-emerald-600 hover:bg-emerald-500 text-white rounded-lg active:scale-95 transition-all">&#10003; Done</button>
+                                        <button @click="tvEngStage.pending = 'hold'" class="px-3 py-2 text-xs font-bold bg-red-600 hover:bg-red-500 text-white rounded-lg active:scale-95 transition-all">Hold</button>
+                                    </template>
+                                    <template v-else-if="activeOrder?.tv_engine_status === 'paused' || activeOrder?.tv_engine_status === 'on_hold'">
+                                        <button @click="tvEngStage.pending = 'resume'" class="px-3 py-2 text-xs font-bold bg-blue-600 hover:bg-blue-500 text-white rounded-lg active:scale-95 transition-all">&#9654; Resume</button>
+                                        <button @click="tvEngStage.pending = 'hold'" class="px-3 py-2 text-xs font-bold bg-red-600 hover:bg-red-500 text-white rounded-lg active:scale-95 transition-all">Hold</button>
+                                    </template>
+                                    <div v-else-if="activeOrder?.tv_engine_status === 'completed'" class="text-emerald-400 text-xs font-bold py-1.5">&#10003; Stage Complete</div>
+                                </div>
+                                <!-- Engine pending form -->
+                                <div v-if="tvEngStage.pending !== ''" class="space-y-2">
+                                    <div class="text-slate-300 text-xs font-bold uppercase">{{ tvEngStage.pending === 'start' ? 'Start Engine' : tvEngStage.pending === 'resume' ? 'Resume' : tvEngStage.pending === 'pause' ? 'Pause + Qty' : tvEngStage.pending === 'complete' ? 'Complete Stage' : tvEngStage.pending === 'cant_start' ? "Can't Start" : 'Hold Stage' }}</div>
+                                    <input v-if="tvEngStage.pending === 'pause' || tvEngStage.pending === 'complete'"
+                                        type="number" v-model="tvEngStage.sessionQty" placeholder="Session qty (neg=correction)"
+                                        class="w-full p-2 text-sm bg-slate-900 rounded border" :class="tvEngStage.qtyError ? 'border-red-500' : 'border-slate-600'">
+                                    <div v-if="tvEngStage.qtyError" class="text-red-400 text-xs">Enter a qty.</div>
+                                    <input v-if="tvEngStage.pending === 'cant_start' || tvEngStage.pending === 'hold'"
+                                        type="text" v-model="tvEngStage.reason" placeholder="Reason..."
+                                        class="w-full p-2 text-sm bg-slate-900 rounded border" :class="tvEngStage.reasonError ? 'border-red-500' : 'border-slate-600'">
+                                    <div v-if="tvEngStage.reasonError" class="text-red-400 text-xs">Enter reason.</div>
+                                    <div class="flex gap-2">
+                                        <button @click="tvEngStage.pending = ''; tvEngStage.sessionQty = ''; tvEngStage.reason = ''; tvEngStage.qtyError = false; tvEngStage.reasonError = false"
+                                            class="px-3 py-1.5 text-xs font-bold bg-slate-600 text-slate-300 rounded">Cancel</button>
+                                        <button @click="submitTvUnitStageFromUi('engine')"
+                                            class="flex-1 px-3 py-1.5 text-xs font-bold bg-emerald-600 hover:bg-emerald-500 text-white rounded active:scale-95 transition-all">Confirm &#10003;</button>
+                                    </div>
+                                </div>
                             </div>
                         </div>
 
@@ -1066,12 +1101,47 @@
                             <div>
                                 <div class="text-slate-500 text-xs font-bold uppercase mb-1">Done So Far</div>
                                 <div class="text-3xl font-bold text-amber-400">
-                                    {{ activeOrder?.tv_cart_qty ?? '&mdash;' }}
+                                    {{ tvCartCum }}
                                     <span class="text-slate-500 text-base font-normal">/ {{ activeOrder?.qty_required }}</span>
                                 </div>
+                                <div v-if="tvCartCum > (activeOrder?.qty_required || 0)" class="text-yellow-400 text-xs mt-1">&#9888; Exceeds WO qty</div>
                             </div>
-                            <div class="mt-auto pt-3 border-t border-slate-600/50 opacity-40 pointer-events-none">
-                                <div class="h-9 bg-slate-600 rounded-lg flex items-center justify-center text-slate-400 text-xs font-bold">Actions (Patch 5)</div>
+                            <div class="mt-auto pt-3 border-t border-slate-600/50">
+                                <!-- Cart action buttons -->
+                                <div v-if="tvCrtStage.pending === ''" class="flex flex-wrap gap-2">
+                                    <template v-if="!activeOrder?.tv_cart_status || activeOrder?.tv_cart_status === 'not_started'">
+                                        <button @click="tvCrtStage.pending = 'start'" class="px-3 py-2 text-xs font-bold bg-amber-500 hover:bg-amber-400 text-slate-900 rounded-lg active:scale-95 transition-all">&#9654; Start</button>
+                                        <button @click="tvCrtStage.pending = 'cant_start'" class="px-3 py-2 text-xs font-bold bg-slate-600 hover:bg-slate-500 text-slate-200 rounded-lg active:scale-95 transition-all">&#10007; Can't Start</button>
+                                    </template>
+                                    <template v-else-if="activeOrder?.tv_cart_status === 'started'">
+                                        <button @click="tvCrtStage.pending = 'pause'" class="px-3 py-2 text-xs font-bold bg-amber-500 hover:bg-amber-400 text-slate-900 rounded-lg active:scale-95 transition-all">&#9646;&#9646; Pause</button>
+                                        <button @click="tvCrtStage.pending = 'complete'" class="px-3 py-2 text-xs font-bold bg-emerald-600 hover:bg-emerald-500 text-white rounded-lg active:scale-95 transition-all">&#10003; Done</button>
+                                        <button @click="tvCrtStage.pending = 'hold'" class="px-3 py-2 text-xs font-bold bg-red-600 hover:bg-red-500 text-white rounded-lg active:scale-95 transition-all">Hold</button>
+                                    </template>
+                                    <template v-else-if="activeOrder?.tv_cart_status === 'paused' || activeOrder?.tv_cart_status === 'on_hold'">
+                                        <button @click="tvCrtStage.pending = 'resume'" class="px-3 py-2 text-xs font-bold bg-amber-500 hover:bg-amber-400 text-slate-900 rounded-lg active:scale-95 transition-all">&#9654; Resume</button>
+                                        <button @click="tvCrtStage.pending = 'hold'" class="px-3 py-2 text-xs font-bold bg-red-600 hover:bg-red-500 text-white rounded-lg active:scale-95 transition-all">Hold</button>
+                                    </template>
+                                    <div v-else-if="activeOrder?.tv_cart_status === 'completed'" class="text-emerald-400 text-xs font-bold py-1.5">&#10003; Stage Complete</div>
+                                </div>
+                                <!-- Cart pending form -->
+                                <div v-if="tvCrtStage.pending !== ''" class="space-y-2">
+                                    <div class="text-slate-300 text-xs font-bold uppercase">{{ tvCrtStage.pending === 'start' ? 'Start Cart' : tvCrtStage.pending === 'resume' ? 'Resume' : tvCrtStage.pending === 'pause' ? 'Pause + Qty' : tvCrtStage.pending === 'complete' ? 'Complete Stage' : tvCrtStage.pending === 'cant_start' ? "Can't Start" : 'Hold Stage' }}</div>
+                                    <input v-if="tvCrtStage.pending === 'pause' || tvCrtStage.pending === 'complete'"
+                                        type="number" v-model="tvCrtStage.sessionQty" placeholder="Session qty (neg=correction)"
+                                        class="w-full p-2 text-sm bg-slate-900 rounded border" :class="tvCrtStage.qtyError ? 'border-red-500' : 'border-slate-600'">
+                                    <div v-if="tvCrtStage.qtyError" class="text-red-400 text-xs">Enter a qty.</div>
+                                    <input v-if="tvCrtStage.pending === 'cant_start' || tvCrtStage.pending === 'hold'"
+                                        type="text" v-model="tvCrtStage.reason" placeholder="Reason..."
+                                        class="w-full p-2 text-sm bg-slate-900 rounded border" :class="tvCrtStage.reasonError ? 'border-red-500' : 'border-slate-600'">
+                                    <div v-if="tvCrtStage.reasonError" class="text-red-400 text-xs">Enter reason.</div>
+                                    <div class="flex gap-2">
+                                        <button @click="tvCrtStage.pending = ''; tvCrtStage.sessionQty = ''; tvCrtStage.reason = ''; tvCrtStage.qtyError = false; tvCrtStage.reasonError = false"
+                                            class="px-3 py-1.5 text-xs font-bold bg-slate-600 text-slate-300 rounded">Cancel</button>
+                                        <button @click="submitTvUnitStageFromUi('cart')"
+                                            class="flex-1 px-3 py-1.5 text-xs font-bold bg-emerald-600 hover:bg-emerald-500 text-white rounded active:scale-95 transition-all">Confirm &#10003;</button>
+                                    </div>
+                                </div>
                             </div>
                         </div>
 
@@ -1115,6 +1185,28 @@
                         </div>
 
                     </div><!-- /grid -->
+
+                    <!-- Stage history (Engine + Cart) -->
+                    <div class="mt-5 border-t border-slate-700 pt-4">
+                        <div class="text-slate-500 text-xs font-bold uppercase tracking-wide mb-3">Stage History</div>
+                        <div v-if="!((activeOrder?.notes || '').match(/TVENG\||TVCRT\|/))" class="text-slate-600 text-sm italic">No stage actions recorded yet.</div>
+                        <div class="space-y-1.5">
+                            <div v-for="entry in (activeOrder?.notes || '').split('\n').filter(l => l.startsWith('TVENG|') || l.startsWith('TVCRT|')).reverse()" :key="entry"
+                                class="bg-slate-700/50 rounded px-3 py-2 text-xs flex flex-wrap gap-x-3 gap-y-1 items-center">
+                                <span class="font-bold text-xs px-1.5 py-0.5 rounded"
+                                    :class="entry.startsWith('TVENG|') ? 'bg-blue-800 text-blue-300' : 'bg-amber-800 text-amber-300'">
+                                    {{ entry.startsWith('TVENG|') ? 'ENG' : 'CRT' }}
+                                </span>
+                                <span class="text-slate-500">{{ entry.split('|')[1] }}</span>
+                                <span class="text-cyan-300 font-semibold">{{ entry.split('|')[2] }}</span>
+                                <span class="text-white font-bold uppercase tracking-wide">{{ entry.split('|')[3] }}</span>
+                                <span v-if="entry.split('|')[4]" class="text-amber-400">session: {{ entry.split('|')[4] }}</span>
+                                <span class="text-emerald-400">total: {{ entry.split('|')[5] }}</span>
+                                <span v-if="entry.split('|')[6]" class="text-yellow-300 italic">{{ entry.split('|')[6] }}</span>
+                            </div>
+                        </div>
+                    </div>
+
                 </div><!-- /scroll area -->
 
             </div>

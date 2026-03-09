@@ -204,6 +204,58 @@ export function openTvAssyEntry(order) {
     store.tvAssyNameError.value  = false;
 }
 
+export async function submitTvUnitStageFromUi(stageName) {
+    const stageRef   = stageName === 'engine' ? store.tvEngStage : store.tvCrtStage;
+    const stageKey   = 'tv_' + stageName;
+    const prefix     = stageName === 'engine' ? 'TVENG' : 'TVCRT';
+    const order      = store.activeOrder.value;
+    const pending    = stageRef.value.pending;
+    const operator   = store.tvAssyEntryName.value;
+    const sessionQty = stageRef.value.sessionQty;
+    const reason     = stageRef.value.reason.trim();
+
+    stageRef.value.qtyError    = false;
+    stageRef.value.reasonError = false;
+    let hasError = false;
+    if ((pending === 'pause' || pending === 'complete') && String(sessionQty).trim() === '') {
+        stageRef.value.qtyError = true; hasError = true;
+    }
+    if ((pending === 'cant_start' || pending === 'hold') && !reason) {
+        stageRef.value.reasonError = true; hasError = true;
+    }
+    if (hasError) return;
+
+    const STATUS_MAP = { start: 'started', pause: 'paused', resume: 'started', complete: 'completed', hold: 'on_hold', cant_start: null };
+    const keepStatus = pending === 'cant_start';
+
+    store.loading.value = true;
+    try {
+        const result = await db.submitTvUnitStageAction({
+            id:           order.id,
+            currentOrder: order,
+            stageKey,
+            stagePrefix:  prefix,
+            newStatus:    STATUS_MAP[pending],
+            opName:       operator,
+            sessionQty:   (pending === 'pause' || pending === 'complete') ? parseFloat(sessionQty) : 0,
+            reason,
+            keepStatus
+        });
+        if (result.error) throw result.error;
+        const updated = result.data[0];
+        store.activeOrder.value = updated;
+        store.orders.value = store.orders.value.map(o => o.id === updated.id ? updated : o);
+        stageRef.value.pending    = '';
+        stageRef.value.sessionQty = '';
+        stageRef.value.reason     = '';
+        store.showToast('Stage action recorded', 'success');
+    } catch (err) {
+        store.showToast('Failed: ' + err.message);
+    } finally {
+        store.loading.value = false;
+    }
+}
+
 export function openTvAssyUnit(order) {
     store.activeOrder.value      = order;
     store.tvAssyJobType.value    = 'unit';
