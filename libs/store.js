@@ -124,6 +124,7 @@ export const tvStockReasonError = ref(false);
 // ── TV Assy Unit: per-stage action state ──────────────────────
 export const tvEngStage = ref({ pending: '', sessionQty: '', reason: '', qtyError: false, reasonError: false });
 export const tvCrtStage = ref({ pending: '', sessionQty: '', reason: '', qtyError: false, reasonError: false });
+export const tvFinStage = ref({ pending: '', sessionQty: '', reason: '', qtyError: false, reasonError: false });
 
 export const toastMessage  = ref('');
 export const toastType     = ref('error');   // 'error' | 'success' | 'info'
@@ -145,6 +146,10 @@ export const tvEngineCum = computed(() => {
 });
 export const tvCartCum = computed(() => {
     const lines = (activeOrder.value?.notes || '').split('\n').filter(l => l.startsWith('TVCRT|'));
+    return lines.length ? parseFloat(lines.at(-1).split('|')[5]) || 0 : 0;
+});
+export const tvFinalCum = computed(() => {
+    const lines = (activeOrder.value?.notes || '').split('\n').filter(l => l.startsWith('TVFIN|'));
     return lines.length ? parseFloat(lines.at(-1).split('|')[5]) || 0 : 0;
 });
 

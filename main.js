@@ -144,8 +144,10 @@ try {
                 // TV Assy unit stage state
                 tvEngStage:      store.tvEngStage,
                 tvCrtStage:      store.tvCrtStage,
+                tvFinStage:      store.tvFinStage,
                 tvEngineCum:     store.tvEngineCum,
                 tvCartCum:       store.tvCartCum,
+                tvFinalCum:      store.tvFinalCum,
 
                 tvAssyUnitOpen:   store.tvAssyUnitOpen,
                 tvAssyStockOpen:  store.tvAssyStockOpen,

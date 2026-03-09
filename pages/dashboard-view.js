@@ -205,9 +205,9 @@ export function openTvAssyEntry(order) {
 }
 
 export async function submitTvUnitStageFromUi(stageName) {
-    const stageRef   = stageName === 'engine' ? store.tvEngStage : store.tvCrtStage;
+    const stageRef   = stageName === 'engine' ? store.tvEngStage : stageName === 'cart' ? store.tvCrtStage : store.tvFinStage;
     const stageKey   = 'tv_' + stageName;
-    const prefix     = stageName === 'engine' ? 'TVENG' : 'TVCRT';
+    const prefix     = stageName === 'engine' ? 'TVENG' : stageName === 'cart' ? 'TVCRT' : 'TVFIN';
     const order      = store.activeOrder.value;
     const pending    = stageRef.value.pending;
     const operator   = store.tvAssyEntryName.value;

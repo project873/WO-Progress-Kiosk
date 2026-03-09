@@ -208,7 +208,7 @@ export async function submitTvUnitStageAction({ id, currentOrder, stageKey, stag
         // Recompute overall WO status from all 3 TV stages
         const eng = stageKey === 'tv_engine' ? newStatus : (currentOrder.tv_engine_status || '');
         const crt = stageKey === 'tv_cart'   ? newStatus : (currentOrder.tv_cart_status   || '');
-        const fin = currentOrder.tv_final_status || '';
+        const fin = stageKey === 'tv_final' ? newStatus : (currentOrder.tv_final_status || '');
 
         if      (fin === 'completed')                                        updates.status = 'completed';
         else if (eng === 'started' || crt === 'started' || fin === 'started') updates.status = 'started';
@@ -217,6 +217,7 @@ export async function submitTvUnitStageAction({ id, currentOrder, stageKey, stag
         else                                                                   updates.status = currentOrder.status || newStatus;
 
         if (newStatus === 'started' && !currentOrder.start_date) updates.start_date = now;
+        if (newStatus === 'completed' && stageKey === 'tv_final') updates.comp_date = now;
     }
 
     const actionLabel = keepStatus ? "can't start" : newStatus;
