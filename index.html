@@ -1044,7 +1044,8 @@
                                     {{ tvEngineCum }}
                                     <span class="text-slate-500 text-base font-normal">/ {{ activeOrder?.qty_required }}</span>
                                 </div>
-                                <div v-if="tvEngineCum > (activeOrder?.qty_required || 0)" class="text-yellow-400 text-xs mt-1">&#9888; Exceeds WO qty</div>
+                                <div v-if="tvEngineCum > (activeOrder?.qty_required || 0)" class="mt-1 bg-amber-900/50 border border-amber-600/50 rounded px-2 py-1 text-amber-300 text-xs font-semibold">&#9888; Qty exceeds WO requirement ({{ activeOrder?.qty_required }})</div>
+                                <div v-if="activeOrder?.tv_final_status && activeOrder?.tv_final_status !== 'not_started'" class="mt-1 bg-orange-900/50 border border-orange-600/50 rounded px-2 py-1 text-orange-300 text-xs font-semibold">&#9888; Final Assy in progress &mdash; corrections still logged</div>
                             </div>
                             <div class="mt-auto pt-3 border-t border-slate-600/50">
                                 <!-- Engine action buttons -->
@@ -1104,7 +1105,8 @@
                                     {{ tvCartCum }}
                                     <span class="text-slate-500 text-base font-normal">/ {{ activeOrder?.qty_required }}</span>
                                 </div>
-                                <div v-if="tvCartCum > (activeOrder?.qty_required || 0)" class="text-yellow-400 text-xs mt-1">&#9888; Exceeds WO qty</div>
+                                <div v-if="tvCartCum > (activeOrder?.qty_required || 0)" class="mt-1 bg-amber-900/50 border border-amber-600/50 rounded px-2 py-1 text-amber-300 text-xs font-semibold">&#9888; Qty exceeds WO requirement ({{ activeOrder?.qty_required }})</div>
+                                <div v-if="activeOrder?.tv_final_status && activeOrder?.tv_final_status !== 'not_started'" class="mt-1 bg-orange-900/50 border border-orange-600/50 rounded px-2 py-1 text-orange-300 text-xs font-semibold">&#9888; Final Assy in progress &mdash; corrections still logged</div>
                             </div>
                             <div class="mt-auto pt-3 border-t border-slate-600/50">
                                 <!-- Cart action buttons -->
@@ -1177,7 +1179,8 @@
                                         {{ tvFinalCum }}
                                         <span class="text-slate-500 text-base font-normal">/ {{ activeOrder?.qty_required }}</span>
                                     </div>
-                                    <div v-if="tvFinalCum > (activeOrder?.qty_required || 0)" class="text-yellow-400 text-xs mt-1">&#9888; Exceeds WO qty</div>
+                                    <div v-if="tvFinalCum > (activeOrder?.qty_required || 0)" class="mt-1 bg-amber-900/50 border border-amber-600/50 rounded px-2 py-1 text-amber-300 text-xs font-semibold">&#9888; Qty exceeds WO requirement ({{ activeOrder?.qty_required }})</div>
+                                    <div v-if="activeOrder?.tv_final_status === 'completed' && tvFinalCum !== (activeOrder?.qty_required || 0)" class="mt-1 bg-red-900/50 border border-red-600/50 rounded px-2 py-1 text-red-300 text-xs font-semibold">&#9888; Final qty ({{ tvFinalCum }}) does not match WO required ({{ activeOrder?.qty_required }})</div>
                                 </div>
                                 <div class="mt-auto pt-3 border-t border-slate-600/50">
                                     <!-- Final action buttons -->
@@ -1232,12 +1235,15 @@
                                     :class="entry.startsWith('TVENG|') ? 'bg-blue-800 text-blue-300' : entry.startsWith('TVCRT|') ? 'bg-amber-800 text-amber-300' : 'bg-emerald-800 text-emerald-300'">
                                     {{ entry.startsWith('TVENG|') ? 'ENG' : entry.startsWith('TVCRT|') ? 'CRT' : 'FIN' }}
                                 </span>
-                                <span class="text-slate-500">{{ entry.split('|')[1] }}</span>
+                                <span class="text-slate-400 text-xs">{{ entry.split('|')[1] }}</span>
                                 <span class="text-cyan-300 font-semibold">{{ entry.split('|')[2] }}</span>
-                                <span class="text-white font-bold uppercase tracking-wide">{{ entry.split('|')[3] }}</span>
-                                <span v-if="entry.split('|')[4]" class="text-amber-400">session: {{ entry.split('|')[4] }}</span>
-                                <span class="text-emerald-400">total: {{ entry.split('|')[5] }}</span>
-                                <span v-if="entry.split('|')[6]" class="text-yellow-300 italic">{{ entry.split('|')[6] }}</span>
+                                <span class="font-bold uppercase tracking-wide text-xs px-1.5 py-0.5 rounded"
+                                    :class="entry.split('|')[3] === 'completed' ? 'bg-emerald-800 text-emerald-300' : entry.split('|')[3] === 'started' ? 'bg-blue-800 text-blue-300' : entry.split('|')[3] === 'paused' ? 'bg-amber-800 text-amber-300' : entry.split('|')[3] === 'on_hold' ? 'bg-red-900 text-red-300' : 'bg-slate-600 text-slate-400'">
+                                    {{ entry.split('|')[3] }}
+                                </span>
+                                <span v-if="entry.split('|')[4]" class="text-slate-400 text-xs">Sess: <span class="text-amber-300 font-semibold">{{ entry.split('|')[4] }}</span></span>
+                                <span class="text-slate-400 text-xs">Total: <span class="text-emerald-300 font-semibold">{{ entry.split('|')[5] }}</span></span>
+                                <span v-if="entry.split('|')[6]" class="text-slate-400 text-xs italic">&#8220;{{ entry.split('|')[6] }}&#8221;</span>
                             </div>
                         </div>
                     </div>

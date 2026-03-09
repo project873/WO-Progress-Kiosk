@@ -261,6 +261,11 @@ export function openTvAssyUnit(order) {
     store.tvAssyJobType.value    = 'unit';
     store.tvAssyEntryOpen.value  = false;
     store.tvAssyUnitOpen.value   = true;
+    // Reset all stage pending states so reopening shows a clean slate
+    const blank = { pending: '', sessionQty: '', reason: '', qtyError: false, reasonError: false };
+    store.tvEngStage.value = { ...blank };
+    store.tvCrtStage.value = { ...blank };
+    store.tvFinStage.value = { ...blank };
 }
 
 export function openTvAssyStock(order) {
