@@ -182,6 +182,14 @@ export async function restoreOrderSnapshot(id, previousData) {
     );
 }
 
+// TV Assy: persist the job mode (unit|stock) for a WO so the user never has to re-select
+export async function saveTvJobMode(id, mode) {
+    if (!id || !mode) return { data: null, error: new Error('Missing id or mode') };
+    return withRetry(() =>
+        supabase.from('work_orders').update({ tv_job_mode: mode }).eq('id', id).select()
+    );
+}
+
 // TV Assy Unit: per-stage action with cumulative qty derived from notes history
 export async function submitTvUnitStageAction({ id, currentOrder, stageKey, stagePrefix, newStatus, opName, sessionQty, reason, keepStatus }) {
     if (!id)     return { data: null, error: new Error('Missing WO ID') };

@@ -197,10 +197,22 @@ export async function submitNote() {
 // ── Internal helpers ──────────────────────────────────────────
 
 export function openTvAssyEntry(order) {
+    // If mode already saved for this WO, skip entry modal and go straight to workflow
+    if (order.tv_job_mode === 'unit') {
+        store.tvAssyEntryName.value = order.operator || '';
+        openTvAssyUnit(order);
+        return;
+    }
+    if (order.tv_job_mode === 'stock') {
+        store.tvAssyEntryName.value = order.operator || '';
+        openTvAssyStock(order);
+        return;
+    }
+    // Mode not yet chosen — open entry modal, prefill name from last operator
     store.activeOrder.value      = order;
     store.tvAssyEntryOpen.value  = true;
     store.tvAssyEntryStep.value  = 1;
-    store.tvAssyEntryName.value  = '';
+    store.tvAssyEntryName.value  = order.operator || '';
     store.tvAssyNameError.value  = false;
 }
 
@@ -266,6 +278,16 @@ export function openTvAssyUnit(order) {
     store.tvEngStage.value = { ...blank };
     store.tvCrtStage.value = { ...blank };
     store.tvFinStage.value = { ...blank };
+    // Persist mode on first selection so future openings skip the choice screen
+    if (!order.tv_job_mode) {
+        db.saveTvJobMode(order.id, 'unit').then(res => {
+            if (!res.error && res.data?.[0]) {
+                const updated = res.data[0];
+                store.activeOrder.value = updated;
+                store.orders.value = store.orders.value.map(o => o.id === updated.id ? updated : o);
+            }
+        });
+    }
 }
 
 export function openTvAssyStock(order) {
@@ -278,6 +300,16 @@ export function openTvAssyStock(order) {
     store.tvStockReason.value      = '';
     store.tvStockQtyError.value    = false;
     store.tvStockReasonError.value = false;
+    // Persist mode on first selection so future openings skip the choice screen
+    if (!order.tv_job_mode) {
+        db.saveTvJobMode(order.id, 'stock').then(res => {
+            if (!res.error && res.data?.[0]) {
+                const updated = res.data[0];
+                store.activeOrder.value = updated;
+                store.orders.value = store.orders.value.map(o => o.id === updated.id ? updated : o);
+            }
+        });
+    }
 }
 
 export async function submitTvStockActionFromUi() {
