@@ -364,12 +364,28 @@ export async function submitTcUnitStageAction({ id, currentOrder, stageKey, stag
         if (newStatus === 'completed' && stageKey === 'tc_final')   updates.comp_date  = now;
     }
 
+    // Update TC stage cumulative qty column in work_orders
+    if (!keepStatus && session !== 0) updates[stageKey + '_qty_completed'] = newCum;
+
     const actionLabel = keepStatus ? "can't start" : newStatus;
     const sessionStr  = (!keepStatus && session !== 0)
         ? (session > 0 ? '+' + session : String(session)) : '';
     const cumStr      = keepStatus ? String(prevCum) : String(newCum);
     const histLine    = `${stagePrefix}|${ts}|${opName}|${actionLabel}|${sessionStr}|${cumStr}|${reason || ''}`;
     updates.notes     = currentOrder.notes ? currentOrder.notes + '\n' + histLine : histLine;
+
+    // Log to wo_progress_events (fire-and-forget)
+    insertProgressEvent({
+        workOrderId:         id,
+        woNumber:            currentOrder.wo_number || '',
+        department:          'TC Assy',
+        stage:               stageKey,
+        operatorName:        opName,
+        action:              keepStatus ? "can't start" : newStatus,
+        sessionQty:          session,
+        cumulativeQtyAfter:  keepStatus ? prevCum : newCum,
+        reason:              reason || ''
+    });
 
     return withRetry(() =>
         supabase.from('work_orders').update(updates).eq('id', id).select()
@@ -389,6 +405,19 @@ export async function completeTcWo({ id, currentOrder, opName }) {
     // TCWOC|ts|operator|WO completed (manual)|||
     const histLine = `TCWOC|${ts}|${opName}|WO completed (manual)|||`;
     const notes    = currentOrder.notes ? currentOrder.notes + '\n' + histLine : histLine;
+
+    // Log to wo_progress_events (fire-and-forget)
+    insertProgressEvent({
+        workOrderId:         id,
+        woNumber:            currentOrder.wo_number || '',
+        department:          'TC Assy',
+        stage:               null,
+        operatorName:        opName,
+        action:              'WO completed (manual)',
+        sessionQty:          0,
+        cumulativeQtyAfter:  currentOrder.qty_required || 0,
+        reason:              ''
+    });
 
     return withRetry(() =>
         supabase.from('work_orders').update({
@@ -431,6 +460,19 @@ export async function submitTcStockAction({ id, currentOrder, newStatus, opName,
     // Pipe-delimited history line: TCST|ts|operator|action|sessionQty|cumQty|reason
     const histLine = `TCST|${ts}|${opName}|${actionLabel}|${sessionStr}|${cumStr}|${reason || ''}`;
     updates.notes = currentOrder.notes ? currentOrder.notes + '\n' + histLine : histLine;
+
+    // Log to wo_progress_events (fire-and-forget)
+    insertProgressEvent({
+        workOrderId:         id,
+        woNumber:            currentOrder.wo_number || '',
+        department:          'TC Assy',
+        stage:               'stock',
+        operatorName:        opName,
+        action:              keepStatus ? "can't start" : newStatus,
+        sessionQty:          session,
+        cumulativeQtyAfter:  keepStatus ? prevQty : newCum,
+        reason:              reason || ''
+    });
 
     return withRetry(() =>
         supabase.from('work_orders').update(updates).eq('id', id).select()
