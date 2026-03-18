@@ -283,6 +283,80 @@ export async function submitTvStockAction({ id, currentOrder, newStatus, opName,
     );
 }
 
+// TC Assy Unit: per-stage action with cumulative qty derived from notes history
+export async function submitTcUnitStageAction({ id, currentOrder, stageKey, stagePrefix, newStatus, opName, sessionQty, reason, keepStatus }) {
+    if (!id)     return { data: null, error: new Error('Missing WO ID') };
+    if (!opName) return { data: null, error: new Error('Operator required') };
+
+    const prefix    = stagePrefix + '|';
+    const noteLines = (currentOrder.notes || '').split('\n');
+    const stageLast = noteLines.filter(l => l.startsWith(prefix)).at(-1);
+    const prevCum   = stageLast ? parseFloat(stageLast.split('|')[5]) || 0 : 0;
+    const session   = parseFloat(sessionQty) || 0;
+    const newCum    = Math.max(0, prevCum + session);
+
+    const now = new Date().toISOString();
+    const ts  = new Date().toLocaleString('en-US', {
+        month: 'numeric', day: 'numeric', year: '2-digit',
+        hour: 'numeric', minute: '2-digit'
+    });
+
+    const updates = {};
+    if (!keepStatus) {
+        updates[stageKey + '_status']   = newStatus;
+        updates[stageKey + '_operator'] = opName;
+        updates.operator = opName;
+
+        // Recompute overall WO status from 2 TC stages
+        const pre = stageKey === 'tc_pre_lap' ? newStatus : (currentOrder.tc_pre_lap_status || '');
+        const fin = stageKey === 'tc_final'   ? newStatus : (currentOrder.tc_final_status   || '');
+        if      (fin === 'completed')                    updates.status = 'completed';
+        else if (pre === 'started' || fin === 'started') updates.status = 'started';
+        else if (pre === 'paused'  || fin === 'paused')  updates.status = 'paused';
+        else if (pre === 'on_hold' || fin === 'on_hold') updates.status = 'on_hold';
+        else                                              updates.status = currentOrder.status || newStatus;
+
+        if (newStatus === 'started'   && !currentOrder.start_date) updates.start_date = now;
+        if (newStatus === 'completed' && stageKey === 'tc_final')   updates.comp_date  = now;
+    }
+
+    const actionLabel = keepStatus ? "can't start" : newStatus;
+    const sessionStr  = (!keepStatus && session !== 0)
+        ? (session > 0 ? '+' + session : String(session)) : '';
+    const cumStr      = keepStatus ? String(prevCum) : String(newCum);
+    const histLine    = `${stagePrefix}|${ts}|${opName}|${actionLabel}|${sessionStr}|${cumStr}|${reason || ''}`;
+    updates.notes     = currentOrder.notes ? currentOrder.notes + '\n' + histLine : histLine;
+
+    return withRetry(() =>
+        supabase.from('work_orders').update(updates).eq('id', id).select()
+    );
+}
+
+// TC Assy Unit: mark whole WO complete regardless of stage completion
+export async function completeTcWo({ id, currentOrder, opName }) {
+    if (!id)     return { data: null, error: new Error('Missing WO ID') };
+    if (!opName) return { data: null, error: new Error('Operator required') };
+
+    const now = new Date().toISOString();
+    const ts  = new Date().toLocaleString('en-US', {
+        month: 'numeric', day: 'numeric', year: '2-digit',
+        hour: 'numeric', minute: '2-digit'
+    });
+    // TCWOC|ts|operator|WO completed (manual)|||
+    const histLine = `TCWOC|${ts}|${opName}|WO completed (manual)|||`;
+    const notes    = currentOrder.notes ? currentOrder.notes + '\n' + histLine : histLine;
+
+    return withRetry(() =>
+        supabase.from('work_orders').update({
+            status:        'completed',
+            qty_completed: currentOrder.qty_required || 0,
+            comp_date:     now,
+            operator:      opName,
+            notes
+        }).eq('id', id).select()
+    );
+}
+
 // TC Assy Stock: write one action entry, additive qty, structured history
 export async function submitTcStockAction({ id, currentOrder, newStatus, opName, sessionQty, reason, keepStatus }) {
     if (!id)     return { data: null, error: new Error('Missing WO ID') };

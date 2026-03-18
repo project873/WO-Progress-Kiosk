@@ -30,6 +30,7 @@ import {
     openActionPanel, openTvAssyEntry, tvAssyNameContinue, tvAssyContinue,
     submitTvUnitStageFromUi, openTvAssyUnit, openTvAssyStock, submitTvStockActionFromUi,
     openTcAssyEntry, tcAssyContinue, openTcAssyUnit, openTcAssyStock, submitTcStockActionFromUi,
+    submitTcUnitStageFromUi, completeTcWoFromUi,
     getFinalOperatorName, getFabWeldOperatorName, holdSince,
     updateOrderStatus, undoLastAction,
     submitNewWo, submitNote
@@ -181,6 +182,12 @@ try {
                 tcStockQtyError:  store.tcStockQtyError,
                 tcStockReasonError: store.tcStockReasonError,
 
+                // TC Assy unit stage state
+                tcPreStage:   store.tcPreStage,
+                tcFinStage:   store.tcFinStage,
+                tcPreCum:     store.tcPreCum,
+                tcFinCum:     store.tcFinCum,
+
                 // Office / WO Status
                 officeMode:           store.officeMode,
                 officeSearchTerm:     store.officeSearchTerm,
@@ -233,6 +240,7 @@ try {
                 openActionPanel, openTvAssyEntry, tvAssyNameContinue, tvAssyContinue,
                 submitTvUnitStageFromUi, openTvAssyUnit, openTvAssyStock, submitTvStockActionFromUi,
                 openTcAssyEntry, tcAssyContinue, openTcAssyUnit, openTcAssyStock, submitTcStockActionFromUi,
+                submitTcUnitStageFromUi, completeTcWoFromUi,
                 updateOrderStatus, undoLastAction,
                 submitNewWo, submitNote,
 

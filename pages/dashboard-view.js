@@ -410,6 +410,9 @@ export function openTcAssyUnit(order) {
     store.tcAssyEntryOpen.value = false;
     store.tcAssyUnitOpen.value  = true;
     store.tcAssyOpEditing.value = false;
+    const _blank = { pending: '', sessionQty: '', reason: '', qtyError: false, reasonError: false };
+    store.tcPreStage.value = { ..._blank };
+    store.tcFinStage.value = { ..._blank };
     // Persist mode on first selection
     if (!order.tc_job_mode) {
         db.saveTcJobMode(order.id, 'unit').then(res => {
@@ -485,6 +488,80 @@ export async function submitTcStockActionFromUi() {
         store.tcStockSessionQty.value = '';
         store.tcStockReason.value     = '';
         store.showToast('Action recorded', 'success');
+    } catch (err) {
+        store.showToast('Failed: ' + err.message);
+    } finally {
+        store.loading.value = false;
+    }
+}
+
+export async function submitTcUnitStageFromUi(stageName) {
+    const stageRef   = stageName === 'prelap' ? store.tcPreStage : store.tcFinStage;
+    const stageKey   = stageName === 'prelap' ? 'tc_pre_lap' : 'tc_final';
+    const prefix     = stageName === 'prelap' ? 'TCPRE' : 'TCFIN';
+    const order      = store.activeOrder.value;
+    const pending    = stageRef.value.pending;
+    const operator   = store.tcAssyEntryName.value;
+    const sessionQty = stageRef.value.sessionQty;
+    const reason     = stageRef.value.reason.trim();
+
+    stageRef.value.qtyError    = false;
+    stageRef.value.reasonError = false;
+    let hasError = false;
+    if ((pending === 'pause' || pending === 'complete') && String(sessionQty).trim() === '') {
+        stageRef.value.qtyError = true; hasError = true;
+    }
+    if ((pending === 'cant_start' || pending === 'hold') && !reason) {
+        stageRef.value.reasonError = true; hasError = true;
+    }
+    if (hasError) return;
+
+    const STATUS_MAP = { start: 'started', pause: 'paused', resume: 'started', complete: 'completed', hold: 'on_hold', cant_start: null };
+    const keepStatus = pending === 'cant_start';
+
+    store.loading.value = true;
+    try {
+        const result = await db.submitTcUnitStageAction({
+            id:           order.id,
+            currentOrder: order,
+            stageKey,
+            stagePrefix:  prefix,
+            newStatus:    STATUS_MAP[pending],
+            opName:       operator,
+            sessionQty:   (pending === 'pause' || pending === 'complete') ? parseFloat(sessionQty) : 0,
+            reason,
+            keepStatus
+        });
+        if (result.error) throw result.error;
+        const updated = result.data[0];
+        store.activeOrder.value = updated;
+        store.orders.value = store.orders.value.map(o => o.id === updated.id ? updated : o);
+        stageRef.value.pending    = '';
+        stageRef.value.sessionQty = '';
+        stageRef.value.reason     = '';
+        store.showToast('Stage action recorded', 'success');
+    } catch (err) {
+        store.showToast('Failed: ' + err.message);
+    } finally {
+        store.loading.value = false;
+    }
+}
+
+export async function completeTcWoFromUi() {
+    const order    = store.activeOrder.value;
+    const operator = store.tcAssyEntryName.value.trim();
+    if (!operator) {
+        store.showToast('Enter your name before completing the WO.', 'error');
+        return;
+    }
+    store.loading.value = true;
+    try {
+        const result = await db.completeTcWo({ id: order.id, currentOrder: order, opName: operator });
+        if (result.error) throw result.error;
+        const updated = result.data[0];
+        store.activeOrder.value = updated;
+        store.orders.value = store.orders.value.map(o => o.id === updated.id ? updated : o);
+        store.showToast('WO marked complete', 'success');
     } catch (err) {
         store.showToast('Failed: ' + err.message);
     } finally {

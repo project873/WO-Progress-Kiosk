@@ -139,6 +139,8 @@ export const tcStockSessionQty = ref('');
 export const tcStockReason    = ref('');
 export const tcStockQtyError  = ref(false);
 export const tcStockReasonError = ref(false);
+export const tcPreStage = ref({ pending: '', sessionQty: '', reason: '', qtyError: false, reasonError: false });
+export const tcFinStage = ref({ pending: '', sessionQty: '', reason: '', qtyError: false, reasonError: false });
 export const tvCrtStage = ref({ pending: '', sessionQty: '', reason: '', qtyError: false, reasonError: false });
 export const tvFinStage = ref({ pending: '', sessionQty: '', reason: '', qtyError: false, reasonError: false });
 
@@ -166,6 +168,14 @@ export const tvCartCum = computed(() => {
 });
 export const tvFinalCum = computed(() => {
     const lines = (activeOrder.value?.notes || '').split('\n').filter(l => l.startsWith('TVFIN|'));
+    return lines.length ? parseFloat(lines.at(-1).split('|')[5]) || 0 : 0;
+});
+export const tcPreCum = computed(() => {
+    const lines = (activeOrder.value?.notes || '').split('\n').filter(l => l.startsWith('TCPRE|'));
+    return lines.length ? parseFloat(lines.at(-1).split('|')[5]) || 0 : 0;
+});
+export const tcFinCum = computed(() => {
+    const lines = (activeOrder.value?.notes || '').split('\n').filter(l => l.startsWith('TCFIN|'));
     return lines.length ? parseFloat(lines.at(-1).split('|')[5]) || 0 : 0;
 });
 
