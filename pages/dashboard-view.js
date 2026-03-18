@@ -409,6 +409,7 @@ export function openTcAssyUnit(order) {
     store.tcAssyJobType.value   = 'unit';
     store.tcAssyEntryOpen.value = false;
     store.tcAssyUnitOpen.value  = true;
+    store.tcAssyOpEditing.value = false;
     // Persist mode on first selection
     if (!order.tc_job_mode) {
         db.saveTcJobMode(order.id, 'unit').then(res => {

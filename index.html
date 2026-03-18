@@ -1134,13 +1134,133 @@
             </div>
         </div>
 
-        <!-- TC ASSY UNIT MODAL (built in Patch 3) -->
+        <!-- TC ASSY UNIT MODAL -->
         <div v-if="tcAssyUnitOpen" class="fixed z-50 inset-0 bg-black/80 flex items-center justify-center p-4">
-            <div class="bg-slate-800 rounded-2xl w-full max-w-2xl border border-teal-500/40 shadow-2xl p-8 text-center">
-                <div class="text-teal-300 text-2xl font-bold mb-2">TC Assembly — Unit WO</div>
-                <div class="text-slate-400 mb-6">WO #{{ activeOrder?.wo_number }} &mdash; {{ activeOrder?.part_number }}</div>
-                <div class="text-slate-500 italic mb-6">Unit workflow coming in Patch 3</div>
-                <button @click="tcAssyUnitOpen = false" class="bg-slate-700 hover:bg-slate-600 px-6 py-3 rounded-xl font-bold text-white">Close</button>
+            <div class="bg-slate-800 rounded-2xl w-full max-w-4xl border border-teal-500/40 shadow-2xl flex flex-col" style="max-height:92vh">
+
+                <!-- Header -->
+                <div class="bg-teal-900/30 border-b border-teal-700/40 p-5 flex justify-between items-center rounded-t-2xl shrink-0">
+                    <div>
+                        <div class="font-bold text-teal-300 text-lg">&#128187; Unit TC Assembly</div>
+                        <div class="text-slate-400 text-sm">
+                            WO #{{ activeOrder?.wo_number }} &mdash; {{ activeOrder?.part_number }}
+                            <span v-if="activeOrder?.sales_order" class="text-emerald-400 ml-2">SO# {{ activeOrder.sales_order }}</span>
+                        </div>
+                        <div class="text-xs mt-0.5 flex items-center gap-2 flex-wrap">
+                            <template v-if="!tcAssyOpEditing">
+                                <span class="text-teal-400">Operator: <span class="font-semibold">{{ tcAssyEntryName || '—' }}</span></span>
+                                <button @click="tcAssyOpEditing = true" class="text-slate-500 hover:text-teal-400 underline text-xs transition-colors">Change</button>
+                                <span class="text-slate-500">&bull; Qty Required: {{ activeOrder?.qty_required }}</span>
+                            </template>
+                            <template v-else>
+                                <input v-model="tcAssyEntryName" type="text" placeholder="Operator name"
+                                    class="px-2 py-0.5 text-xs bg-slate-900 border border-teal-500 rounded text-white w-36 focus:outline-none">
+                                <button @click="tcAssyOpEditing = false"
+                                    class="text-teal-400 hover:text-teal-300 text-xs font-bold px-2 py-0.5 bg-slate-700 rounded transition-colors">&#10003; Done</button>
+                                <span class="text-slate-500">&bull; Qty Required: {{ activeOrder?.qty_required }}</span>
+                            </template>
+                        </div>
+                    </div>
+                    <button @click="tcAssyUnitOpen = false" class="text-slate-400 hover:text-white bg-slate-700 p-2 rounded text-lg leading-none">&#10005;</button>
+                </div>
+
+                <!-- Scrollable body -->
+                <div class="flex-1 overflow-y-auto p-5 space-y-5">
+
+                    <!-- Top info grid -->
+                    <div class="grid grid-cols-2 sm:grid-cols-3 gap-3">
+                        <div class="bg-slate-700/60 rounded-lg p-3">
+                            <div class="text-slate-500 text-xs font-bold uppercase tracking-wide mb-1">Sales Order</div>
+                            <div class="text-emerald-400 font-semibold text-sm">{{ activeOrder?.sales_order || '—' }}</div>
+                        </div>
+                        <div class="bg-slate-700/60 rounded-lg p-3">
+                            <div class="text-slate-500 text-xs font-bold uppercase tracking-wide mb-1">Qty Required</div>
+                            <div class="text-slate-200 font-bold text-lg">{{ activeOrder?.qty_required }}</div>
+                        </div>
+                        <div class="bg-slate-700/60 rounded-lg p-3">
+                            <div class="text-slate-500 text-xs font-bold uppercase tracking-wide mb-1">Unit Serial #</div>
+                            <div class="text-teal-300 font-semibold text-sm font-mono">{{ activeOrder?.unit_serial || '—' }}</div>
+                        </div>
+                        <div class="bg-slate-700/60 rounded-lg p-3">
+                            <div class="text-slate-500 text-xs font-bold uppercase tracking-wide mb-1">Engine Serial #</div>
+                            <div class="text-teal-300 font-semibold text-sm font-mono">{{ activeOrder?.engine_serial || '—' }}</div>
+                        </div>
+                        <div class="bg-slate-700/60 rounded-lg p-3">
+                            <div class="text-slate-500 text-xs font-bold uppercase tracking-wide mb-1"># of Blades</div>
+                            <div class="text-slate-200 font-semibold text-sm">{{ activeOrder?.num_blades || '—' }}</div>
+                        </div>
+                    </div>
+
+                    <!-- Notes / Differences / Modifications -->
+                    <div v-if="activeOrder?.description" class="bg-slate-700/40 border border-slate-600/50 rounded-lg p-4">
+                        <div class="text-slate-500 text-xs font-bold uppercase tracking-wide mb-2">Notes / Differences / Modifications</div>
+                        <div class="text-slate-300 text-sm whitespace-pre-wrap leading-relaxed">{{ activeOrder.description }}</div>
+                    </div>
+                    <div v-else class="bg-slate-700/40 border border-slate-600/50 rounded-lg p-4">
+                        <div class="text-slate-500 text-xs font-bold uppercase tracking-wide mb-1">Notes / Differences / Modifications</div>
+                        <div class="text-slate-600 text-sm italic">No notes recorded.</div>
+                    </div>
+
+                    <!-- Stage panels: Prelap + Final (independent) -->
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+
+                        <!-- PRELAP ASSY -->
+                        <div class="bg-slate-700/80 rounded-xl border border-blue-500/30 p-5 flex flex-col gap-3">
+                            <div class="flex items-center gap-2 mb-1">
+                                <span class="text-xl">&#9881;</span>
+                                <span class="font-bold text-blue-300 text-base uppercase tracking-wide">Prelap Assy</span>
+                            </div>
+                            <div>
+                                <div class="text-slate-500 text-xs font-bold uppercase mb-1">Status</div>
+                                <div class="text-sm font-semibold px-2 py-1 rounded inline-block"
+                                    :class="activeOrder?.tc_pre_lap_status === 'completed' ? 'bg-emerald-800 text-emerald-300' : activeOrder?.tc_pre_lap_status === 'started' ? 'bg-blue-800 text-blue-300' : activeOrder?.tc_pre_lap_status === 'paused' ? 'bg-amber-800 text-amber-300' : activeOrder?.tc_pre_lap_status === 'on_hold' ? 'bg-red-900 text-red-300' : 'bg-slate-600 text-slate-400'">
+                                    {{ activeOrder?.tc_pre_lap_status || 'Not Started' }}
+                                </div>
+                            </div>
+                            <div v-if="activeOrder?.tc_pre_lap_operator">
+                                <div class="text-slate-500 text-xs font-bold uppercase mb-1">Last Operator</div>
+                                <div class="text-blue-300 text-sm font-semibold">{{ activeOrder.tc_pre_lap_operator }}</div>
+                            </div>
+                            <!-- Stage actions in Patch 4 -->
+                            <div class="mt-auto pt-3 border-t border-slate-600/50 text-slate-500 text-xs italic">
+                                Stage actions active in Patch 4
+                            </div>
+                        </div>
+
+                        <!-- FINAL ASSY -->
+                        <div class="bg-slate-700/80 rounded-xl border border-emerald-500/30 p-5 flex flex-col gap-3">
+                            <div class="flex items-center gap-2 mb-1">
+                                <span class="text-xl">&#9989;</span>
+                                <span class="font-bold text-emerald-300 text-base uppercase tracking-wide">Final Assy</span>
+                                <span class="ml-auto text-slate-500 text-xs italic">Independent</span>
+                            </div>
+                            <div>
+                                <div class="text-slate-500 text-xs font-bold uppercase mb-1">Status</div>
+                                <div class="text-sm font-semibold px-2 py-1 rounded inline-block"
+                                    :class="activeOrder?.tc_final_status === 'completed' ? 'bg-emerald-800 text-emerald-300' : activeOrder?.tc_final_status === 'started' ? 'bg-blue-800 text-blue-300' : activeOrder?.tc_final_status === 'paused' ? 'bg-amber-800 text-amber-300' : activeOrder?.tc_final_status === 'on_hold' ? 'bg-red-900 text-red-300' : 'bg-slate-600 text-slate-400'">
+                                    {{ activeOrder?.tc_final_status || 'Not Started' }}
+                                </div>
+                            </div>
+                            <div v-if="activeOrder?.tc_final_operator">
+                                <div class="text-slate-500 text-xs font-bold uppercase mb-1">Last Operator</div>
+                                <div class="text-emerald-300 text-sm font-semibold">{{ activeOrder.tc_final_operator }}</div>
+                            </div>
+                            <!-- Stage actions in Patch 4 -->
+                            <div class="mt-auto pt-3 border-t border-slate-600/50 text-slate-500 text-xs italic">
+                                Stage actions active in Patch 4
+                            </div>
+                        </div>
+
+                    </div><!-- /stage grid -->
+
+                    <!-- History placeholder -->
+                    <div class="border-t border-slate-700 pt-4">
+                        <div class="text-slate-500 text-xs font-bold uppercase tracking-wide mb-3">Action History</div>
+                        <div class="text-slate-600 text-sm italic">History log active in Patch 4.</div>
+                    </div>
+
+                </div><!-- /scrollable body -->
+
             </div>
         </div>
 
