@@ -116,3 +116,23 @@ export function getStageCum(order, prefix) {
 export function clamp(n, min, max) {
     return Math.min(Math.max(n, min), max);
 }
+
+// ── detectTcMode ──────────────────────────────────────────────
+// Detects TC Assy job mode from a part number.
+// Normalises input (trim + uppercase) before checking.
+//
+// Returns 'unit'  if part starts with TCTC, TCC, or TCP.
+// Returns 'stock' if part starts with TC (but not the above).
+// Returns null    if part does not start with TC at all.
+//
+// Check order is intentional: TCTC first, then TCC, TCP, TC.
+export function detectTcMode(partNumber) {
+    if (typeof partNumber !== 'string') return null;
+    const p = partNumber.trim().toUpperCase();
+    if (!p) return null;
+    if (p.startsWith('TCTC')) return 'unit';
+    if (p.startsWith('TCC'))  return 'unit';
+    if (p.startsWith('TCP'))  return 'unit';
+    if (p.startsWith('TC'))   return 'stock';
+    return null;
+}
