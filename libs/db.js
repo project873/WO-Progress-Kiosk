@@ -480,25 +480,35 @@ export async function submitTcStockAction({ id, currentOrder, newStatus, opName,
 }
 
 // Create a new manual work order (TV Assy / TC Assy only)
-export async function insertManualWorkOrder({ partNumber, description, qty, dept, woType }) {
+export async function insertManualWorkOrder({ partNumber, description, qty, dept, woType, tcJobMode, salesOrder, unitSerial, engine, engineSerial, numBlades }) {
     if (!partNumber) return { data: null, error: new Error('Part number is required') };
     if (!dept)       return { data: null, error: new Error('Department is required') };
 
     // Use timestamp-based suffix for collision avoidance
     const woNumber = 'MANUAL-' + Date.now().toString(36).toUpperCase().slice(-5);
 
+    const row = {
+        wo_number:     woNumber,
+        part_number:   partNumber.trim().toUpperCase(),
+        description:   description || '',
+        qty_required:  parseInt(qty, 10) || 1,
+        department:    dept,
+        wo_type:       woType || 'Unit',
+        status:        'not_started',
+        qty_completed: 0,
+        priority:      0
+    };
+
+    // TC Assy specific fields — only written when provided
+    if (tcJobMode)    row.tc_job_mode            = tcJobMode;
+    if (salesOrder)   row.sales_order            = salesOrder.trim();
+    if (unitSerial)   row.unit_serial_number     = unitSerial.trim();
+    if (engine)       row.engine                 = engine.trim();
+    if (engineSerial) row.engine_serial_number   = engineSerial.trim();
+    if (numBlades)    row.num_blades             = numBlades.trim();
+
     return withRetry(() =>
-        supabase.from('work_orders').insert([{
-            wo_number:   woNumber,
-            part_number: partNumber.trim().toUpperCase(),
-            description: description || '',
-            qty_required: parseInt(qty, 10) || 1,
-            department:  dept,
-            wo_type:     woType || 'Unit',
-            status:      'not_started',
-            qty_completed: 0,
-            priority:    0
-        }]).select()
+        supabase.from('work_orders').insert([row]).select()
     );
 }
 

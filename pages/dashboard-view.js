@@ -128,6 +128,49 @@ export async function undoLastAction() {
 // Creates a new manual work order for TV/TC Assy
 export async function submitNewWo() {
     const form = store.newWoForm.value;
+    const dept = store.selectedDept.value;
+
+    // ── TC Assy: specific validation + save ───────────────────
+    if (dept === 'TC Assy') {
+        const errors = store.newWoFormErrors.value;
+        errors.part    = !isNonEmpty(form.part);
+        errors.desc    = !isNonEmpty(form.desc);
+        errors.qty     = !isValidQty(form.qty) || parseInt(form.qty, 10) < 1;
+        errors.jobType = !form.jobType;
+        if (errors.part || errors.desc || errors.qty || errors.jobType) return;
+
+        store.loading.value = true;
+        try {
+            const { error } = await db.insertManualWorkOrder({
+                partNumber:   sanitizeText(form.part),
+                description:  sanitizeText(form.desc),
+                qty:          parseInt(form.qty, 10),
+                dept,
+                woType:       form.jobType,   // 'Unit' or 'Subassy'
+                // TC-specific: map Unit→'unit', Subassy→'stock'
+                tcJobMode:    form.jobType === 'Unit' ? 'unit' : 'stock',
+                salesOrder:   sanitizeText(form.salesOrder),
+                unitSerial:   sanitizeText(form.unitSerial),
+                engine:       sanitizeText(form.engine),
+                engineSerial: sanitizeText(form.engineSerial),
+                numBlades:    sanitizeText(form.numBlades)
+            });
+            if (error) throw error;
+
+            store.newWoModalOpen.value  = false;
+            store.newWoFormErrors.value = { part: false, desc: false, qty: false, jobType: false };
+            store.newWoForm.value = { part: '', desc: '', qty: 1, type: 'Unit', jobType: '', salesOrder: '', unitSerial: '', engine: '', engineSerial: '', numBlades: '' };
+            await _refreshDeptOrders();
+            store.showToast('Work order added to board.', 'success');
+        } catch (err) {
+            store.showToast('Failed to add work order: ' + err.message);
+        } finally {
+            store.loading.value = false;
+        }
+        return;
+    }
+
+    // ── Generic / TV Assy: original flow unchanged ─────────────
     if (!isNonEmpty(form.part)) {
         store.showToast('Part number is required.', 'error');
         return;
@@ -143,13 +186,13 @@ export async function submitNewWo() {
             partNumber:  sanitizeText(form.part),
             description: sanitizeText(form.desc),
             qty:         parseInt(form.qty, 10),
-            dept:        store.selectedDept.value,
+            dept,
             woType:      form.type
         });
         if (error) throw error;
 
         store.newWoModalOpen.value = false;
-        store.newWoForm.value = { part: '', desc: '', qty: 1, type: 'Unit' };
+        store.newWoForm.value = { part: '', desc: '', qty: 1, type: 'Unit', jobType: '', salesOrder: '', unitSerial: '', engine: '', engineSerial: '', numBlades: '' };
         await _refreshDeptOrders();
         store.showToast('Work order added to board.', 'success');
     } catch (err) {
