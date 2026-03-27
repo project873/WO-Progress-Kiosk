@@ -9,6 +9,7 @@
 
 import { ref, computed } from 'https://cdn.jsdelivr.net/npm/vue@3.4.21/dist/vue.esm-browser.prod.js';
 import { REEL_PART_NUMBERS } from './config.js';
+import { detectTcMode } from './utils.js';
 
 // ── Navigation ────────────────────────────────────────────────
 export const currentView   = ref('splash');   // 'splash'|'dashboard'|'wo_status'|'cs'|'manager'
@@ -44,12 +45,13 @@ export const actionForm        = ref({
 
 // ── New manual WO modal ───────────────────────────────────────
 export const newWoModalOpen = ref(false);
-// Base fields (all depts) + TC-specific fields (jobType, salesOrder, unitSerial, engine, engineSerial, numBlades)
+// Base fields (all depts) + TC-specific fields (salesOrder, unitSerial, engine, engineSerial, numBlades)
 export const newWoForm      = ref({
     // Shared
     part: '', desc: '', qty: 1, type: 'Unit',
     // TC Assy specific
-    jobType:      '',   // 'Unit' | 'Subassy'
+    woNumber:     '',   // optional custom WO #
+    salesOrder:   '',| 'Subassy'
     salesOrder:   '',
     unitSerial:   '',
     engine:       '',
@@ -57,7 +59,12 @@ export const newWoForm      = ref({
     numBlades:    ''
 });
 // Inline field-level validation errors for the TC Assy form
-export const newWoFormErrors = ref({ part: false, desc: false, qty: false, jobType: false });
+export const newWoFormErrors = ref({ part: false, desc: false, qty: false });
+
+// TC manual-WO mode: null = auto-detect from part#, 'unit'/'stock' = user override
+export const tcNewWoModeOverride = ref(null);
+// The effective mode shown in the form (override takes priority over auto-detect)
+export const tcNewWoMode = computed(() => tcNewWoModeOverride.value ?? detectTcMode(newWoForm.value.part));
 
 // ── Notes modal ───────────────────────────────────────────────
 export const notesPanelOpen  = ref(false);
