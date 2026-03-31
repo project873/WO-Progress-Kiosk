@@ -51,7 +51,6 @@ export const newWoForm      = ref({
     part: '', desc: '', qty: 1, type: 'Unit',
     // TC Assy specific
     woNumber:     '',   // optional custom WO #
-    salesOrder:   '',| 'Subassy'
     salesOrder:   '',
     unitSerial:   '',
     engine:       '',
@@ -163,6 +162,13 @@ export const tcPreStage = ref({ pending: '', sessionQty: '', reason: '', qtyErro
 export const tcFinStage = ref({ pending: '', sessionQty: '', reason: '', qtyError: false, reasonError: false });
 export const tvCrtStage = ref({ pending: '', sessionQty: '', reason: '', qtyError: false, reasonError: false });
 export const tvFinStage = ref({ pending: '', sessionQty: '', reason: '', qtyError: false, reasonError: false });
+
+// Entry modal mode: null = auto-detect from part#, 'unit'/'stock' = user override
+export const tcEntryModeOverride = ref(null);
+// Effective mode shown in the entry modal (override wins; falls back to part# detection)
+export const tcEntryMode = computed(() =>
+    tcEntryModeOverride.value ?? detectTcMode(activeOrder.value?.part_number)
+);
 
 export const tcAssyCompleteModalOpen = ref(false);
 export const tcAssyCompleteForm = ref({ salesOrder: '', unitSerial: '', engine: '', engineSerial: '', numBlades: '', notes: '' });
