@@ -1086,14 +1086,16 @@
 
                 <!-- Single-screen entry -->
                 <div class="p-6 space-y-5">
-                    <!-- Saved job type badge (returning WO) -->
-                    <div v-if="activeOrder?.tc_job_mode" class="flex items-center gap-3">
-                        <span class="text-slate-500 text-xs font-bold uppercase tracking-wide">Job Type</span>
-                        <span class="px-3 py-1.5 rounded-lg font-bold text-sm border"
-                            :class="activeOrder.tc_job_mode === 'unit' ? 'bg-blue-800 text-blue-200 border-blue-600/40' : 'bg-emerald-800 text-emerald-200 border-emerald-600/40'">
-                            {{ activeOrder.tc_job_mode === 'unit' ? '&#128187; Unit WO' : '&#128230; Stock WO' }}
-                        </span>
-                        <span class="text-slate-600 text-xs italic">saved</span>
+                    <!-- Job type badge (saved or auto-detected) -->
+                    <div v-if="tcEntryMode" class="flex items-center gap-3 px-3 py-2 bg-slate-700/50 rounded-lg border border-slate-600/50">
+                        <span class="text-slate-400 text-sm font-semibold">Mode:</span>
+                        <span v-if="tcEntryMode === 'unit'" class="text-blue-300 font-bold text-sm">&#128187; UNIT</span>
+                        <span v-else class="text-emerald-300 font-bold text-sm">&#128230; SUBASSY</span>
+                        <span v-if="activeOrder?.tc_job_mode" class="text-slate-600 text-xs italic">saved</span>
+                        <button @click="toggleTcEntryMode()"
+                            class="ml-auto text-xs text-slate-400 hover:text-slate-200 bg-slate-600 hover:bg-slate-500 px-2 py-1 rounded transition-all">
+                            Change
+                        </button>
                     </div>
 
                     <!-- Operator name -->
@@ -1108,15 +1110,13 @@
                         <div v-if="tcAssyNameError" class="text-red-400 text-sm font-semibold mt-1">&#9888; Please enter your name to continue.</div>
                     </div>
 
-                    <!-- Returning WO: mode is saved, just confirm name and continue -->
-                    <template v-if="activeOrder?.tc_job_mode">
-                        <button @click="tcAssyContinue(activeOrder.tc_job_mode)"
+                    <!-- Continue (mode known) or manual pick (no detection, new WO only) -->
+                    <template v-if="tcEntryMode">
+                        <button @click="tcAssyContinue(tcEntryMode)"
                             class="w-full py-4 bg-teal-600 hover:bg-teal-500 text-white font-bold text-lg rounded-xl active:scale-95 transition-all">
                             Continue &#8594;
                         </button>
                     </template>
-
-                    <!-- New WO: choose Unit or Stock -->
                     <template v-else>
                         <div class="text-slate-400 text-xs font-bold uppercase tracking-wide">Select Job Type</div>
                         <button @click="tcAssyContinue('unit')"

@@ -438,10 +438,19 @@ export function openTcAssyEntry(order) {
         return;
     }
     // New WO (no mode) or mode set but no operator yet: open single-screen modal
-    store.activeOrder.value     = order;
-    store.tcAssyEntryOpen.value = true;
-    store.tcAssyEntryName.value = order.operator || '';
-    store.tcAssyNameError.value = false;
+    store.activeOrder.value          = order;
+    store.tcAssyEntryOpen.value      = true;
+    store.tcAssyEntryName.value      = order.operator || '';
+    store.tcAssyNameError.value      = false;
+    // Seed override from saved mode so Change button works on returning WOs too
+    store.tcEntryModeOverride.value  = order.tc_job_mode || null;
+}
+
+// ── toggleTcEntryMode ────────────────────────────────────────
+// Flips the user override in the entry modal between unit and stock.
+export function toggleTcEntryMode() {
+    const current = store.tcEntryMode.value;
+    store.tcEntryModeOverride.value = current === 'unit' ? 'stock' : 'unit';
 }
 
 export function tcAssyContinue(mode) {

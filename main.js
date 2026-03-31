@@ -31,6 +31,7 @@ import {
     submitTvUnitStageFromUi, openTvAssyUnit, openTvAssyStock, submitTvStockActionFromUi,
     openTcAssyEntry, tcAssyContinue, openTcAssyUnit, openTcAssyStock, submitTcStockActionFromUi,
     submitTcUnitStageFromUi, openTcAssyCompleteModal, confirmTcWoComplete, toggleTcNewWoMode,
+    toggleTcEntryMode,
     getFinalOperatorName, getFabWeldOperatorName, holdSince,
     updateOrderStatus, undoLastAction,
     submitNewWo, submitNote
@@ -131,6 +132,8 @@ try {
                 newWoFormErrors:     store.newWoFormErrors,
                 tcNewWoModeOverride: store.tcNewWoModeOverride,
                 tcNewWoMode:         store.tcNewWoMode,
+                tcEntryModeOverride: store.tcEntryModeOverride,
+                tcEntryMode:         store.tcEntryMode,
 
                 // Notes modal
                 notesPanelOpen:  store.notesPanelOpen,
@@ -254,7 +257,7 @@ try {
                 openTcAssyEntry, tcAssyContinue, openTcAssyUnit, openTcAssyStock, submitTcStockActionFromUi,
                 submitTcUnitStageFromUi, openTcAssyCompleteModal, confirmTcWoComplete,
                 updateOrderStatus, undoLastAction,
-                submitNewWo, submitNote, toggleTcNewWoMode,
+                submitNewWo, submitNote, toggleTcNewWoMode, toggleTcEntryMode,
 
                 // Office
                 searchOfficeReceive, openReceiveModal, submitReceive,
