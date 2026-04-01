@@ -629,14 +629,16 @@ export async function confirmTcWoComplete() {
     const form = store.tcAssyCompleteForm.value;
     const errors = store.tcAssyCompleteErrors.value;
 
-    errors.salesOrder   = !isNonEmpty(form.salesOrder);
-    errors.unitSerial   = !isNonEmpty(form.unitSerial);
-    errors.engine       = !isNonEmpty(form.engine);
-    errors.engineSerial = !isNonEmpty(form.engineSerial);
-    errors.numBlades    = !isNonEmpty(form.numBlades);
-
-    if (errors.salesOrder || errors.unitSerial || errors.engine || errors.engineSerial || errors.numBlades) {
-        return; // wait for user to fix
+    // Unit fields are only required for unit mode
+    if (order.tc_job_mode === 'unit') {
+        errors.salesOrder   = !isNonEmpty(form.salesOrder);
+        errors.unitSerial   = !isNonEmpty(form.unitSerial);
+        errors.engine       = !isNonEmpty(form.engine);
+        errors.engineSerial = !isNonEmpty(form.engineSerial);
+        errors.numBlades    = !isNonEmpty(form.numBlades);
+        if (errors.salesOrder || errors.unitSerial || errors.engine || errors.engineSerial || errors.numBlades) {
+            return;
+        }
     }
 
     store.loading.value = true;

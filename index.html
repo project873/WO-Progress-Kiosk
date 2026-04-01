@@ -1319,8 +1319,12 @@
         <div v-if="tcAssyCompleteModalOpen" class="fixed z-50 inset-0 bg-black/80 flex items-center justify-center p-4">
             <div class="bg-slate-800 rounded-xl w-full max-w-lg border border-violet-500/50 shadow-2xl flex flex-col">
                 <div class="bg-violet-900/30 border-b border-violet-700/40 px-6 py-5 rounded-t-xl shrink-0">
-                    <h2 class="text-2xl font-bold text-violet-300">&#9989; Complete Unit WO</h2>
-                    <p class="text-slate-400 text-sm mt-0.5">Please check all unit details and add any notes.</p>
+                    <h2 class="text-2xl font-bold text-violet-300">
+                        &#9989; {{ activeOrder?.tc_job_mode === 'unit' ? 'Complete Unit WO' : 'Complete Subassy WO' }}
+                    </h2>
+                    <p class="text-slate-400 text-sm mt-0.5">
+                        {{ activeOrder?.tc_job_mode === 'unit' ? 'Please check all unit details and add any notes.' : 'Add any notes before completing.' }}
+                    </p>
                 </div>
                 <div class="p-6 space-y-4">
                     <!-- Notes / Differences field -->
@@ -1331,49 +1335,52 @@
                             placeholder="Any differences from standard build?"></textarea>
                     </div>
 
-                    <div class="text-violet-300 text-xs font-bold uppercase tracking-widest mt-4 mb-2">Required Unit Details</div>
-                    <div class="grid grid-cols-2 gap-3">
-                        <!-- Sales Order -->
-                        <div>
-                            <label class="block font-bold text-slate-400 text-sm mb-1">Sales Order #</label>
-                            <input v-model="tcAssyCompleteForm.salesOrder" type="text"
-                                class="w-full bg-slate-900 p-2.5 rounded-lg border focus:outline-none focus:border-violet-500 transition-colors"
-                                :class="tcAssyCompleteErrors.salesOrder ? 'border-red-500' : 'border-slate-700'">
-                            <div v-if="tcAssyCompleteErrors.salesOrder" class="text-red-400 text-xs mt-1">Required</div>
+                    <!-- Unit fields: only shown for unit mode -->
+                    <template v-if="activeOrder?.tc_job_mode === 'unit'">
+                        <div class="text-violet-300 text-xs font-bold uppercase tracking-widest mt-4 mb-2">Required Unit Details</div>
+                        <div class="grid grid-cols-2 gap-3">
+                            <!-- Sales Order -->
+                            <div>
+                                <label class="block font-bold text-slate-400 text-sm mb-1">Sales Order #</label>
+                                <input v-model="tcAssyCompleteForm.salesOrder" type="text"
+                                    class="w-full bg-slate-900 p-2.5 rounded-lg border focus:outline-none focus:border-violet-500 transition-colors"
+                                    :class="tcAssyCompleteErrors.salesOrder ? 'border-red-500' : 'border-slate-700'">
+                                <div v-if="tcAssyCompleteErrors.salesOrder" class="text-red-400 text-xs mt-1">Required</div>
+                            </div>
+                            <!-- Unit Serial # -->
+                            <div>
+                                <label class="block font-bold text-slate-400 text-sm mb-1">Unit Serial #</label>
+                                <input v-model="tcAssyCompleteForm.unitSerial" type="text"
+                                    class="w-full bg-slate-900 p-2.5 rounded-lg border focus:outline-none focus:border-violet-500 transition-colors font-mono"
+                                    :class="tcAssyCompleteErrors.unitSerial ? 'border-red-500' : 'border-slate-700'">
+                                <div v-if="tcAssyCompleteErrors.unitSerial" class="text-red-400 text-xs mt-1">Required</div>
+                            </div>
+                            <!-- Engine -->
+                            <div>
+                                <label class="block font-bold text-slate-400 text-sm mb-1">Engine</label>
+                                <input v-model="tcAssyCompleteForm.engine" type="text"
+                                    class="w-full bg-slate-900 p-2.5 rounded-lg border focus:outline-none focus:border-violet-500 transition-colors"
+                                    :class="tcAssyCompleteErrors.engine ? 'border-red-500' : 'border-slate-700'">
+                                <div v-if="tcAssyCompleteErrors.engine" class="text-red-400 text-xs mt-1">Required</div>
+                            </div>
+                            <!-- Engine Serial # -->
+                            <div>
+                                <label class="block font-bold text-slate-400 text-sm mb-1">Engine Serial #</label>
+                                <input v-model="tcAssyCompleteForm.engineSerial" type="text"
+                                    class="w-full bg-slate-900 p-2.5 rounded-lg border focus:outline-none focus:border-violet-500 transition-colors font-mono"
+                                    :class="tcAssyCompleteErrors.engineSerial ? 'border-red-500' : 'border-slate-700'">
+                                <div v-if="tcAssyCompleteErrors.engineSerial" class="text-red-400 text-xs mt-1">Required</div>
+                            </div>
+                            <!-- # of Blades -->
+                            <div class="col-span-2">
+                                <label class="block font-bold text-slate-400 text-sm mb-1"># of Blades</label>
+                                <input v-model="tcAssyCompleteForm.numBlades" type="text"
+                                    class="w-full bg-slate-900 p-2.5 rounded-lg border focus:outline-none focus:border-violet-500 transition-colors"
+                                    :class="tcAssyCompleteErrors.numBlades ? 'border-red-500' : 'border-slate-700'">
+                                <div v-if="tcAssyCompleteErrors.numBlades" class="text-red-400 text-xs mt-1">Required</div>
+                            </div>
                         </div>
-                        <!-- Unit Serial # -->
-                        <div>
-                            <label class="block font-bold text-slate-400 text-sm mb-1">Unit Serial #</label>
-                            <input v-model="tcAssyCompleteForm.unitSerial" type="text"
-                                class="w-full bg-slate-900 p-2.5 rounded-lg border focus:outline-none focus:border-violet-500 transition-colors font-mono"
-                                :class="tcAssyCompleteErrors.unitSerial ? 'border-red-500' : 'border-slate-700'">
-                            <div v-if="tcAssyCompleteErrors.unitSerial" class="text-red-400 text-xs mt-1">Required</div>
-                        </div>
-                        <!-- Engine -->
-                        <div>
-                            <label class="block font-bold text-slate-400 text-sm mb-1">Engine</label>
-                            <input v-model="tcAssyCompleteForm.engine" type="text"
-                                class="w-full bg-slate-900 p-2.5 rounded-lg border focus:outline-none focus:border-violet-500 transition-colors"
-                                :class="tcAssyCompleteErrors.engine ? 'border-red-500' : 'border-slate-700'">
-                            <div v-if="tcAssyCompleteErrors.engine" class="text-red-400 text-xs mt-1">Required</div>
-                        </div>
-                        <!-- Engine Serial # -->
-                        <div>
-                            <label class="block font-bold text-slate-400 text-sm mb-1">Engine Serial #</label>
-                            <input v-model="tcAssyCompleteForm.engineSerial" type="text"
-                                class="w-full bg-slate-900 p-2.5 rounded-lg border focus:outline-none focus:border-violet-500 transition-colors font-mono"
-                                :class="tcAssyCompleteErrors.engineSerial ? 'border-red-500' : 'border-slate-700'">
-                            <div v-if="tcAssyCompleteErrors.engineSerial" class="text-red-400 text-xs mt-1">Required</div>
-                        </div>
-                        <!-- # of Blades -->
-                        <div class="col-span-2">
-                            <label class="block font-bold text-slate-400 text-sm mb-1"># of Blades</label>
-                            <input v-model="tcAssyCompleteForm.numBlades" type="text"
-                                class="w-full bg-slate-900 p-2.5 rounded-lg border focus:outline-none focus:border-violet-500 transition-colors"
-                                :class="tcAssyCompleteErrors.numBlades ? 'border-red-500' : 'border-slate-700'">
-                            <div v-if="tcAssyCompleteErrors.numBlades" class="text-red-400 text-xs mt-1">Required</div>
-                        </div>
-                    </div>
+                    </template>
                 </div>
                 <div class="px-6 py-5 border-t border-slate-700 flex gap-4 shrink-0">
                     <button @click="tcAssyCompleteModalOpen = false" class="px-6 py-3 bg-slate-700 hover:bg-slate-600 rounded-lg font-bold transition-all">CANCEL</button>
@@ -1392,7 +1399,7 @@
                 <!-- Header -->
                 <div class="bg-teal-900/30 border-b border-teal-700/40 p-5 flex justify-between items-center rounded-t-2xl shrink-0">
                     <div>
-                        <div class="font-bold text-teal-300 text-lg">&#128230; Stock TC Assembly</div>
+                        <div class="font-bold text-teal-300 text-lg">&#128230; Subassy TC Assembly</div>
                         <div class="text-slate-400 text-sm">WO #{{ activeOrder?.wo_number }} &mdash; {{ activeOrder?.part_number }}</div>
                         <div class="text-xs mt-0.5 flex items-center gap-2 flex-wrap">
                             <template v-if="!tcAssyOpEditing">
