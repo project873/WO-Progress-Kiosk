@@ -35,8 +35,10 @@ import {
     toggleTcEntryMode,
     getFinalOperatorName, getFabWeldOperatorName, holdSince,
     updateOrderStatus, undoLastAction,
-    submitNewWo, submitNote
+    submitNewWo, submitNote,
+    loadWoFiles, handleWoFileUpload, handleWoFileDelete
 } from './pages/dashboard-view.js';
+import { getWoFilePublicUrl } from './libs/db.js';
 import {
     searchOfficeReceive, openReceiveModal, submitReceive,
     openCloseoutModal, submitCloseout, loadReceivingEligible
@@ -244,6 +246,11 @@ try {
                 csTimeline:    store.csTimeline,
                 csOpenOrders:  store.csOpenOrders,
 
+                // WO file attachments
+                woFiles:        store.woFiles,
+                woFilesLoading: store.woFilesLoading,
+                woActionTab:    store.woActionTab,
+
                 // Toast
                 toastMessage: store.toastMessage,
                 toastType:    store.toastType,
@@ -262,6 +269,7 @@ try {
                 submitTcUnitStageFromUi, openTcAssyCompleteModal, confirmTcWoComplete,
                 updateOrderStatus, undoLastAction,
                 submitNewWo, submitNote, toggleTcNewWoMode, toggleTcEntryMode,
+                loadWoFiles, handleWoFileUpload, handleWoFileDelete, getWoFilePublicUrl,
 
                 // Office
                 searchOfficeReceive, openReceiveModal, submitReceive,

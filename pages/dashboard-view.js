@@ -25,6 +25,43 @@ export function openActionPanel(order) {
         holdReason:   '',
         weldGrind:    ''
     };
+    loadWoFiles(order.wo_number);
+}
+
+// ── WO file attachment handlers ───────────────────────────────
+
+// Load the file list for a WO number into store.woFiles
+export async function loadWoFiles(woNumber) {
+    if (!woNumber) { store.woFiles.value = []; return; }
+    store.woFilesLoading.value = true;
+    const { data, error } = await db.listWoFiles(woNumber);
+    store.woFilesLoading.value = false;
+    if (error) { store.showToast('Could not load files: ' + error.message); return; }
+    store.woFiles.value = data || [];
+}
+
+// Handle file picker change event — upload selected file then refresh list
+export async function handleWoFileUpload(event) {
+    const file = event.target.files[0];
+    if (!file || !store.activeOrder.value?.wo_number) return;
+    event.target.value = '';   // reset so the same file can be re-uploaded
+    store.woFilesLoading.value = true;
+    const { error } = await db.uploadWoFile(store.activeOrder.value.wo_number, file);
+    store.woFilesLoading.value = false;
+    if (error) { store.showToast('Upload failed: ' + error.message); return; }
+    store.showToast('File uploaded.', 'success');
+    await loadWoFiles(store.activeOrder.value.wo_number);
+}
+
+// Delete a file from storage then refresh the list
+export async function handleWoFileDelete(filename) {
+    if (!store.activeOrder.value?.wo_number) return;
+    const path = `${store.activeOrder.value.wo_number}/${filename}`;
+    store.woFilesLoading.value = true;
+    const { error } = await db.deleteWoFile(path);
+    store.woFilesLoading.value = false;
+    if (error) { store.showToast('Delete failed: ' + error.message); return; }
+    await loadWoFiles(store.activeOrder.value.wo_number);
 }
 
 // ── getFinalOperatorName ──────────────────────────────────────
@@ -247,19 +284,16 @@ export async function submitNote() {
 
 // ── Internal helpers ──────────────────────────────────────────
 
+// Always skips the entry modal and goes directly to the workflow screen.
+// Mode resolution: saved tv_job_mode → 'unit' default.
+// If no operator is saved, opens the inline name editor automatically.
 export function openTvAssyEntry(order) {
-    // Returning WO with saved mode and known operator: skip modal entirely
-    if (order.tv_job_mode && order.operator) {
-        store.tvAssyEntryName.value = order.operator;
-        if (order.tv_job_mode === 'unit')  openTvAssyUnit(order);
-        else                               openTvAssyStock(order);
-        return;
-    }
-    // New WO (no mode) or mode set but no operator yet: open single-screen modal
-    store.activeOrder.value     = order;
-    store.tvAssyEntryOpen.value = true;
+    const mode = order.tv_job_mode || 'unit';
     store.tvAssyEntryName.value = order.operator || '';
-    store.tvAssyNameError.value = false;
+    if (mode === 'unit') openTvAssyUnit(order);
+    else                 openTvAssyStock(order);
+    // Set AFTER open functions — they both reset opEditing to false
+    store.tvAssyOpEditing.value = !order.operator;
 }
 
 export async function submitTvUnitStageFromUi(stageName) {

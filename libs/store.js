@@ -127,6 +127,13 @@ export const csResultInfo  = ref(null);
 export const csTimeline    = ref([]);
 export const csOpenOrders  = ref([]);
 
+// ── WO file attachments ───────────────────────────────────────
+export const woFiles        = ref([]);   // file list for the currently open WO
+export const woFilesLoading = ref(false);
+
+// ── Right-panel active tab ('attach' | 'notes' | 'complete') ──
+export const woActionTab = ref('notes');
+
 // ── Error toast ───────────────────────────────────────────────
 export const tvAssyEntryOpen  = ref(false);
 export const tvAssyEntryStep  = ref(1);

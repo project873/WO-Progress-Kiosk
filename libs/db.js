@@ -917,6 +917,32 @@ export async function fetchCsSupplementalData(woNumber, partNumber) {
     };
 }
 
+// ── WO File Storage (Supabase Storage: bucket "wo-files") ────
+// Files stored at path: {wo_number}/{filename}
+
+// List all files attached to a WO. Returns [] if folder doesn't exist yet.
+export async function listWoFiles(woNumber) {
+    const { data, error } = await supabase.storage.from('wo-files').list(String(woNumber));
+    return { data: (data || []).filter(f => f.name !== '.emptyFolderPlaceholder'), error };
+}
+
+// Upload a file to wo-files/{woNumber}/{filename}. upsert:true replaces same name.
+export async function uploadWoFile(woNumber, file) {
+    const path = `${woNumber}/${file.name}`;
+    return supabase.storage.from('wo-files').upload(path, file, { upsert: true });
+}
+
+// Delete a file by full storage path (e.g. "WO-12345/drawing.pdf")
+export async function deleteWoFile(path) {
+    return supabase.storage.from('wo-files').remove([path]);
+}
+
+// Return the public URL for a file (synchronous — no network call)
+export function getWoFilePublicUrl(woNumber, filename) {
+    const { data } = supabase.storage.from('wo-files').getPublicUrl(`${woNumber}/${filename}`);
+    return data.publicUrl;
+}
+
 // ── Progress event logging ────────────────────────────────────
 // Fire-and-forget: inserts one row into wo_progress_events.
 // Failures are logged to console only — never blocks the main action.
