@@ -5,8 +5,9 @@
 //          manual WO creation, notes, undo
 // ============================================================
 
-import * as store  from '../libs/store.js';
-import * as db     from '../libs/db.js';
+import * as store   from '../libs/store.js';
+import * as db      from '../libs/db.js';
+import * as dbAssy  from '../libs/db-assy.js';
 import { deepClone, sanitizeText, isNonEmpty, isValidQty, detectTcMode } from '../libs/utils.js';
 import { fetchDeptOrders } from '../libs/db.js';
 
@@ -322,7 +323,7 @@ export async function submitTvUnitStageFromUi(stageName) {
 
     store.loading.value = true;
     try {
-        const result = await db.submitTvUnitStageAction({
+        const result = await dbAssy.submitTvUnitStageAction({
             id:           order.id,
             currentOrder: order,
             stageKey,
@@ -361,7 +362,7 @@ export function openTvAssyUnit(order) {
     store.tvFinStage.value = { ...blank };
     // Persist mode on first selection so future openings skip the choice screen
     if (!order.tv_job_mode) {
-        db.saveTvJobMode(order.id, 'unit').then(res => {
+        dbAssy.saveTvJobMode(order.id, 'unit').then(res => {
             if (!res.error && res.data?.[0]) {
                 const updated = res.data[0];
                 store.activeOrder.value = updated;
@@ -384,7 +385,7 @@ export function openTvAssyStock(order) {
     store.tvStockReasonError.value = false;
     // Persist mode on first selection so future openings skip the choice screen
     if (!order.tv_job_mode) {
-        db.saveTvJobMode(order.id, 'stock').then(res => {
+        dbAssy.saveTvJobMode(order.id, 'stock').then(res => {
             if (!res.error && res.data?.[0]) {
                 const updated = res.data[0];
                 store.activeOrder.value = updated;
@@ -417,7 +418,7 @@ export async function submitTvStockActionFromUi() {
 
     store.loading.value = true;
     try {
-        const result = await db.submitTvStockAction({
+        const result = await dbAssy.submitTvStockAction({
             id:           order.id,
             currentOrder: order,
             newStatus:    STATUS_MAP[pending],
@@ -512,7 +513,7 @@ export function openTcAssyUnit(order) {
     };
     // Persist mode on first selection
     if (!order.tc_job_mode) {
-        db.saveTcJobMode(order.id, 'unit').then(res => {
+        dbAssy.saveTcJobMode(order.id, 'unit').then(res => {
             if (!res.error && res.data?.[0]) {
                 const updated = res.data[0];
                 store.activeOrder.value = updated;
@@ -529,7 +530,7 @@ export async function saveTcUnitDetails() {
     if (!order) return;
     store.loading.value = true;
     try {
-        const result = await db.saveTcUnitInfo(order.id, store.tcUnitInfoForm.value);
+        const result = await dbAssy.saveTcUnitInfo(order.id, store.tcUnitInfoForm.value);
         if (result.error) throw result.error;
         const updated = result.data[0];
         store.activeOrder.value = updated;
@@ -556,7 +557,7 @@ export function openTcAssyStock(order) {
     store.tcStockNotes.value       = order.tc_assy_notes_differences_mods || '';
     // Persist mode on first selection
     if (!order.tc_job_mode) {
-        db.saveTcJobMode(order.id, 'stock').then(res => {
+        dbAssy.saveTcJobMode(order.id, 'stock').then(res => {
             if (!res.error && res.data?.[0]) {
                 const updated = res.data[0];
                 store.activeOrder.value = updated;
@@ -590,7 +591,7 @@ export async function submitTcStockActionFromUi() {
 
     store.loading.value = true;
     try {
-        const result = await db.submitTcStockAction({
+        const result = await dbAssy.submitTcStockAction({
             id:           order.id,
             currentOrder: order,
             newStatus:    STATUS_MAP[pending],
@@ -624,7 +625,7 @@ export async function saveTcStockNotes() {
     if (!order) return;
     store.loading.value = true;
     try {
-        const result = await db.saveTcAssyNotes(order.id, store.tcStockNotes.value);
+        const result = await dbAssy.saveTcAssyNotes(order.id, store.tcStockNotes.value);
         if (result.error) throw result.error;
         const updated = result.data[0];
         store.activeOrder.value = updated;
@@ -663,7 +664,7 @@ export async function submitTcUnitStageFromUi(stageName) {
 
     store.loading.value = true;
     try {
-        const result = await db.submitTcUnitStageAction({
+        const result = await dbAssy.submitTcUnitStageAction({
             id:           order.id,
             currentOrder: order,
             stageKey,
@@ -730,7 +731,7 @@ export async function confirmTcWoComplete() {
 
     store.loading.value = true;
     try {
-        const result = await db.completeTcWo({ 
+        const result = await dbAssy.completeTcWo({ 
             id: order.id, 
             currentOrder: order, 
             opName: operator,
