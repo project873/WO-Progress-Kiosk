@@ -355,6 +355,7 @@ export function openTvAssyUnit(order) {
     store.tvAssyEntryOpen.value  = false;
     store.tvAssyUnitOpen.value   = true;
     store.tvAssyOpEditing.value  = false;
+    loadWoFiles(order.part_number);
     // Reset all stage pending states so reopening shows a clean slate
     const blank = { pending: '', sessionQty: '', reason: '', qtyError: false, reasonError: false };
     store.tvEngStage.value = { ...blank };
@@ -377,7 +378,8 @@ export function openTvAssyStock(order) {
     store.tvAssyJobType.value      = 'stock';
     store.tvAssyEntryOpen.value    = false;
     store.tvAssyStockOpen.value    = true;
-    store.tvAssyOpEditing.value  = false;
+    store.tvAssyOpEditing.value    = false;
+    loadWoFiles(order.part_number);
     store.tvStockPending.value     = '';
     store.tvStockSessionQty.value  = '';
     store.tvStockReason.value      = '';
@@ -500,6 +502,7 @@ export function openTcAssyUnit(order) {
     store.tcAssyEntryOpen.value = false;
     store.tcAssyUnitOpen.value  = true;
     store.tcAssyOpEditing.value = false;
+    loadWoFiles(order.part_number);
     const _blank = { pending: '', sessionQty: '', reason: '', qtyError: false, reasonError: false };
     store.tcPreStage.value = { ..._blank };
     store.tcFinStage.value = { ..._blank };
@@ -549,6 +552,7 @@ export function openTcAssyStock(order) {
     store.tcAssyEntryOpen.value    = false;
     store.tcAssyStockOpen.value    = true;
     store.tcAssyOpEditing.value    = false;
+    loadWoFiles(order.part_number);
     store.tcStockPending.value     = '';
     store.tcStockSessionQty.value  = '';
     store.tcStockReason.value      = '';
