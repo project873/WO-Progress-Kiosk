@@ -22,7 +22,7 @@ import {
 // ── State & computed ──────────────────────────────────────────
 import * as store from './libs/store.js';
 import { OPERATORS_BY_DEPT, HOLD_REASONS, SCRAP_REASONS } from './libs/config.js';
-import { formatDateLocal, getStageCum, detectTcMode } from './libs/utils.js';
+import { formatDateLocal, getStageCum, detectTcMode, sanitizePartKey } from './libs/utils.js';
 
 // ── Page controllers ──────────────────────────────────────────
 import { selectDept, promptPin, submitPin, goBack } from './pages/splash-view.js';
@@ -311,6 +311,7 @@ try {
                 woFiles:        store.woFiles,
                 woFilesLoading: store.woFilesLoading,
                 woActionTab:    store.woActionTab,
+                partsWithFiles: store.partsWithFiles,
 
                 // Toast
                 toastMessage: store.toastMessage,
@@ -352,7 +353,7 @@ try {
                 searchCS,
 
                 // Utilities available in templates
-                formatDateLocal, detectTcMode
+                formatDateLocal, detectTcMode, sanitizePartKey
             };
         }
     });

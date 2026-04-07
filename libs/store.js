@@ -190,8 +190,9 @@ export const csTimeline    = ref([]);
 export const csOpenOrders  = ref([]);
 
 // ── WO file attachments ───────────────────────────────────────
-export const woFiles        = ref([]);   // file list for the currently open WO
+export const woFiles        = ref([]);         // file list for the currently open WO
 export const woFilesLoading = ref(false);
+export const partsWithFiles = ref(new Set());  // sanitized folder names of parts that have files
 
 // ── Right-panel active tab ('attach' | 'notes' | 'complete') ──
 export const woActionTab = ref('notes');

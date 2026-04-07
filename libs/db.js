@@ -714,6 +714,18 @@ export async function signInAnonymously() {
     }
 }
 
+// List all part-number folders that have files in storage.
+// Returns a Set of sanitized folder names (e.g. "TC11490", "TC_31255").
+export async function fetchPartsWithFiles() {
+    const { data, error } = await supabase.storage.from('wo-files').list('');
+    if (error || !data) return new Set();
+    return new Set(
+        data
+            .filter(f => f.name !== '.emptyFolderPlaceholder')
+            .map(f => f.name)
+    );
+}
+
 // List all files for a part number and return each with a 1-hour signed URL.
 // Returns [] if the folder doesn't exist yet.
 export async function listWoFiles(partNumber) {

@@ -120,9 +120,13 @@ export function goBack() {
 async function _loadDeptOrders(dept) {
     store.loading.value = true;
     try {
-        const { data, error } = await db.fetchDeptOrders(dept);
+        const [{ data, error }, partsSet] = await Promise.all([
+            db.fetchDeptOrders(dept),
+            db.fetchPartsWithFiles()
+        ]);
         if (error) throw error;
-        store.orders.value = data || [];
+        store.orders.value        = data || [];
+        store.partsWithFiles.value = partsSet;
     } catch (err) {
         store.showToast('Failed to load orders: ' + err.message);
         store.orders.value = [];
