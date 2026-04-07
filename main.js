@@ -49,7 +49,8 @@ import {
     fetchPriorityOrders, updatePriority, updateAssignedOperator,
     openNotesPanel, loadManagerAlerts,
     sendAiMessage,
-    loadWoProblems, openWoProblemModal, closeWoProblemModal, confirmResolveWoProblem
+    loadWoProblems, openWoProblemModal, closeWoProblemModal, confirmResolveWoProblem,
+    openDelayedWoDetail, closeDelayedWoDetail
 } from './pages/manager-view.js';
 import { searchCS } from './pages/cs-view.js';
 
@@ -93,8 +94,10 @@ try {
             onUnmounted(() => clearInterval(clockInterval));
 
             // Remove loading fallback once Vue successfully mounts
+            // Also pre-load manager alerts so the splash badge is populated immediately
             onMounted(() => {
                 if (loadingEl) loadingEl.remove();
+                loadManagerAlerts();
             });
 
             // Load data on view entry; reset Close-Out auth when leaving wo_status
@@ -269,13 +272,17 @@ try {
                 managerSubView: store.managerSubView,
                 priorityDept:   store.priorityDept,
                 priorityOrders: store.priorityOrders,
-                delayedOrders:  store.delayedOrders,
+                delayedOrders:        store.delayedOrders,
+                delayedOrdersByDept:  store.delayedOrdersByDept,
                 kpiStats:       store.kpiStats,
                 kpiByOperator:  store.kpiByOperator,
                 kpiCycleTime:   store.kpiCycleTime,
                 kpiHoldReasons: store.kpiHoldReasons,
                 kpiOldestWos:   store.kpiOldestWos,
-                managerAlerts:  store.managerAlerts,
+                managerAlerts:      store.managerAlerts,
+                delayedWoCount:     store.delayedWoCount,
+                managerAlertCount:  store.managerAlertCount,
+                managerTotalBadge:  store.managerTotalBadge,
 
                 // WO Problem draft (action panel)
                 woProblemDraftText:      store.woProblemDraftText,
@@ -336,6 +343,9 @@ try {
                 fetchPriorityOrders, updatePriority, updateAssignedOperator,
                 openNotesPanel, loadManagerAlerts,
                 sendAiMessage,
+                delayedWoDetailOpen: store.delayedWoDetailOpen,
+                delayedWoDetail:     store.delayedWoDetail,
+                openDelayedWoDetail, closeDelayedWoDetail,
                 loadWoProblems, openWoProblemModal, closeWoProblemModal, confirmResolveWoProblem,
 
                 // CS

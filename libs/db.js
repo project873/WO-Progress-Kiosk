@@ -443,17 +443,17 @@ export async function fetchManagerAlerts() {
     const fiveDaysAgo  = new Date(now); fiveDaysAgo.setDate(now.getDate() - 5);
     const twoDaysAgo   = new Date(now); twoDaysAgo.setDate(now.getDate() - 2);
 
-    // 3 parallel queries
+    // 3 parallel queries — select * so alert click-through shows full WO detail
     const [completedRes, activeRes, trackingRes] = await Promise.all([
         withRetry(() =>
             supabase.from('work_orders')
-                .select('id,wo_number,part_number,description,department,comp_date')
+                .select('*')
                 .eq('status', 'completed')
                 .lt('comp_date', sevenDaysAgo.toISOString())
         ),
         withRetry(() =>
             supabase.from('work_orders')
-                .select('id,wo_number,part_number,description,department,status,start_date,qty_completed,created_at')
+                .select('*')
                 .in('status', ['paused', 'on_hold', 'started', 'resumed'])
         ),
         withRetry(() =>
@@ -497,9 +497,7 @@ export async function fetchManagerAlerts() {
     if (receivedOnly.length > 0) {
         const woNums = receivedOnly.map(t => t.wo_number);
         const { data: wos } = await withRetry(() =>
-            supabase.from('work_orders')
-                .select('wo_number,part_number,description,qty_completed')
-                .in('wo_number', woNums)
+            supabase.from('work_orders').select('*').in('wo_number', woNums)
         );
         const woMap = {};
         (wos || []).forEach(w => { woMap[w.wo_number] = w; });
@@ -509,14 +507,7 @@ export async function fetchManagerAlerts() {
                 if (!wo) return false;
                 return parseFloat(t.qty_received) !== parseFloat(wo.qty_completed);
             })
-            .map(t => ({
-                id:            t.id,
-                wo_number:     t.wo_number,
-                qty_received:  t.qty_received,
-                qty_completed: woMap[t.wo_number]?.qty_completed,
-                part_number:   woMap[t.wo_number]?.part_number,
-                description:   woMap[t.wo_number]?.description
-            }))
+            .map(t => ({ ...woMap[t.wo_number], qty_received: t.qty_received }))
             .slice(0, 5);
     }
 
@@ -555,9 +546,11 @@ export async function fetchKpiData() {
 }
 
 export async function fetchDelayedOrders() {
-    return withRetry(() =>
+    const result = await withRetry(() =>
         supabase.from('work_orders').select('*').neq('status', 'completed')
     );
+    if (result.data) result.data = result.data.map(normalizeDept);
+    return result;
 }
 
 export async function fetchPriorityOrdersForDept(dept) {

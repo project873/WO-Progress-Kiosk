@@ -14,9 +14,10 @@ import { daysAgo, daysBetween, extractHoldReasons, getHistoricalAvgDays } from '
 // Navigate to a sub-section and auto-load its data
 export async function openManagerSection(section) {
     store.managerSubView.value = section;
-    if (section === 'kpi')      await loadKpiData();
-    if (section === 'delayed')  await loadDelayedOrders();
-    if (section === 'problems') await loadWoProblems();
+    if (section === 'priorities') store.priorityDept.value = '';  // reset so dept picker shows
+    if (section === 'kpi')        await loadKpiData();
+    if (section === 'delayed')    await loadDelayedOrders();
+    if (section === 'problems')   await loadWoProblems();
 }
 
 // ── loadKpiData ───────────────────────────────────────────────
@@ -30,6 +31,18 @@ export async function loadManagerAlerts() {
             startedNoProgress:    result.startedNoProgress,
             qtyMismatch:          result.qtyMismatch
         };
+        // Populate delayedOrders using the same source as the Delayed WOs tab
+        // so the badge count always matches what the tab shows
+        const { data: delayedData } = await db.fetchDelayedOrders();
+        const now = new Date();
+        store.delayedOrders.value = (delayedData || [])
+            .map(o => {
+                const ref    = o.start_date || o.created_at;
+                const daysIn = ref ? Math.floor(daysBetween(new Date(ref), now)) : 0;
+                return { ...o, daysIn };
+            })
+            .filter(o => o.daysIn > (DELAY_THRESHOLDS[o.department] || 7))
+            .sort((a, b) => b.daysIn - a.daysIn);
     } catch (err) {
         store.showToast('Failed to load manager alerts: ' + err.message);
     }
@@ -216,6 +229,17 @@ export function openNotesPanel(order) {
     store.noteAuthorError.value = false;
     store.noteTextError.value = false;
     store.notesPanelOpen.value = true;
+}
+
+// ── openDelayedWoDetail / closeDelayedWoDetail ───────────────
+// Open the full history modal for a delayed WO.
+export function openDelayedWoDetail(order) {
+    store.delayedWoDetail.value     = order;
+    store.delayedWoDetailOpen.value = true;
+}
+export function closeDelayedWoDetail() {
+    store.delayedWoDetailOpen.value = false;
+    store.delayedWoDetail.value     = null;
 }
 
 // ── loadWoProblems ────────────────────────────────────────────

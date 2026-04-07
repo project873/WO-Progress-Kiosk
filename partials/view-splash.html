@@ -37,7 +37,11 @@
                         <span class="text-3xl font-bold uppercase">Customer Service</span>
                     </button>
                     <button @click="promptPin('manager')"
-                        class="bg-white hover:bg-gray-50 text-gray-800 rounded-2xl shadow-md p-8 flex flex-col items-center justify-center border-2 border-gray-300 active:scale-95 transition-transform">
+                        class="relative bg-white hover:bg-gray-50 text-gray-800 rounded-2xl shadow-md p-8 flex flex-col items-center justify-center border-2 border-gray-300 active:scale-95 transition-transform">
+                        <span v-if="managerTotalBadge > 0"
+                            class="absolute top-3 right-3 bg-red-500 text-white text-xs font-bold rounded-full min-w-[1.5rem] h-6 flex items-center justify-center px-1">
+                            {{ managerTotalBadge }}
+                        </span>
                         <span class="text-3xl font-bold uppercase">Management</span>
                     </button>
                 </div>

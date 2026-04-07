@@ -21,7 +21,11 @@
                             <span class="text-gray-500 text-sm text-center">Pin &amp; rank work orders by dept</span>
                         </button>
                         <button @click="openManagerSection('delayed')"
-                            class="bg-white hover:bg-gray-50 rounded-2xl p-8 flex flex-col items-center gap-4 border-2 border-gray-300 active:scale-95 transition-transform">
+                            class="relative bg-white hover:bg-gray-50 rounded-2xl p-8 flex flex-col items-center gap-4 border-2 border-gray-300 active:scale-95 transition-transform">
+                            <span v-if="delayedWoCount > 0"
+                                class="absolute top-3 right-3 bg-red-500 text-white text-xs font-bold rounded-full min-w-[1.5rem] h-6 flex items-center justify-center px-1">
+                                {{ delayedWoCount }}
+                            </span>
                             <svg class="w-14 h-14 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
                             <span class="text-2xl font-bold uppercase text-gray-900">Delayed WOs</span>
                             <span class="text-gray-500 text-sm text-center">Overdue by department thresholds</span>
@@ -42,72 +46,149 @@
 
                     <!-- Alert Buckets: 2x2 grid below nav buttons -->
                     <div class="w-full max-w-5xl mt-10">
-                        <div class="text-slate-500 font-bold text-xs uppercase tracking-widest mb-4">&#9888; Live Alerts</div>
+                        <div class="flex items-center gap-3 mb-4">
+                            <div class="text-slate-500 font-bold text-xs uppercase tracking-widest">&#9888; Live Alerts</div>
+                            <span v-if="managerAlertCount > 0"
+                                class="bg-red-500 text-white text-xs font-bold rounded-full min-w-[1.5rem] h-5 flex items-center justify-center px-1">
+                                {{ managerAlertCount }}
+                            </span>
+                        </div>
                         <div class="grid grid-cols-2 gap-5">
 
                             <!-- 1. Completed Not Received -->
                             <div class="rounded-xl border border-gray-300 overflow-hidden">
-                                <div class="bg-white px-4 py-3 border-b border-gray-200">
-                                    <div class="font-bold text-gray-800 text-sm">Completed Not Received</div>
-                                    <div class="text-gray-500 text-xs mt-0.5">Completed &gt; 7 days &amp; not yet received</div>
+                                <div class="bg-white px-4 py-3 border-b border-gray-200 flex items-center justify-between">
+                                    <div>
+                                        <div class="font-bold text-gray-800 text-sm">Completed Not Received</div>
+                                        <div class="text-gray-500 text-xs mt-0.5">Completed &gt; 7 days &amp; not yet received</div>
+                                    </div>
+                                    <span v-if="managerAlerts.completedNotReceived.length > 0"
+                                        class="bg-red-500 text-white text-xs font-bold rounded-full min-w-[1.5rem] h-6 flex items-center justify-center px-1 ml-2">
+                                        {{ managerAlerts.completedNotReceived.length }}
+                                    </span>
                                 </div>
                                 <div class="p-3 space-y-2 bg-gray-50 min-h-[4rem]">
                                     <div v-if="managerAlerts.completedNotReceived.length === 0" class="text-gray-400 text-sm py-3 text-center">None</div>
                                     <div v-for="o in managerAlerts.completedNotReceived" :key="o.id"
-                                        class="flex items-center justify-between bg-white border border-gray-200 rounded-lg px-3 py-2">
-                                        <span class="font-bold text-gray-900 text-sm">WO #{{ o.wo_number }}</span>
-                                        <span class="text-gray-500 text-xs">{{ o.part_number }}</span>
+                                        @click="openDelayedWoDetail(o)"
+                                        class="bg-white border border-gray-200 rounded-lg px-3 py-2 cursor-pointer hover:border-blue-400 hover:shadow-sm transition-all">
+                                        <div class="flex items-center justify-between mb-1">
+                                            <span class="font-bold text-gray-900 text-sm">WO #{{ o.wo_number }}</span>
+                                            <span class="text-xs font-semibold px-2 py-0.5 rounded-full"
+                                                :class="o.status === 'completed' ? 'bg-green-100 text-green-700' : 'bg-yellow-100 text-yellow-700'">
+                                                {{ o.status }}
+                                            </span>
+                                        </div>
+                                        <div class="text-gray-700 text-xs font-medium truncate">{{ o.part_number }}</div>
+                                        <div class="flex items-center gap-3 mt-1 text-gray-500 text-xs">
+                                            <span>{{ o.department }}</span>
+                                            <span>Ordered: {{ o.qty_ordered }}</span>
+                                            <span>Done: {{ o.qty_completed ?? 0 }}</span>
+                                        </div>
+                                        <div v-if="o.comp_date" class="text-gray-400 text-xs mt-0.5">Completed {{ formatDateLocal(o.comp_date) }}</div>
                                     </div>
                                 </div>
                             </div>
 
                             <!-- 2. Paused / On Hold > 5 Days -->
                             <div class="rounded-xl border border-gray-300 overflow-hidden">
-                                <div class="bg-white px-4 py-3 border-b border-gray-200">
-                                    <div class="font-bold text-gray-800 text-sm">Paused / On Hold &gt; 5 Days</div>
-                                    <div class="text-gray-500 text-xs mt-0.5">Paused or on hold, started &gt; 5 days ago</div>
+                                <div class="bg-white px-4 py-3 border-b border-gray-200 flex items-center justify-between">
+                                    <div>
+                                        <div class="font-bold text-gray-800 text-sm">Paused / On Hold &gt; 5 Days</div>
+                                        <div class="text-gray-500 text-xs mt-0.5">Paused or on hold, started &gt; 5 days ago</div>
+                                    </div>
+                                    <span v-if="managerAlerts.pausedOnHold.length > 0"
+                                        class="bg-red-500 text-white text-xs font-bold rounded-full min-w-[1.5rem] h-6 flex items-center justify-center px-1 ml-2">
+                                        {{ managerAlerts.pausedOnHold.length }}
+                                    </span>
                                 </div>
                                 <div class="p-3 space-y-2 bg-gray-50 min-h-[4rem]">
                                     <div v-if="managerAlerts.pausedOnHold.length === 0" class="text-gray-400 text-sm py-3 text-center">None</div>
                                     <div v-for="o in managerAlerts.pausedOnHold" :key="o.id"
-                                        class="flex items-center justify-between bg-white border border-gray-200 rounded-lg px-3 py-2">
-                                        <span class="font-bold text-gray-900 text-sm">WO #{{ o.wo_number }}</span>
-                                        <span class="text-gray-500 text-xs">{{ o.part_number }}</span>
+                                        @click="openDelayedWoDetail(o)"
+                                        class="bg-white border border-gray-200 rounded-lg px-3 py-2 cursor-pointer hover:border-blue-400 hover:shadow-sm transition-all">
+                                        <div class="flex items-center justify-between mb-1">
+                                            <span class="font-bold text-gray-900 text-sm">WO #{{ o.wo_number }}</span>
+                                            <span class="text-xs font-semibold px-2 py-0.5 rounded-full bg-orange-100 text-orange-700">
+                                                {{ o.status }}
+                                            </span>
+                                        </div>
+                                        <div class="text-gray-700 text-xs font-medium truncate">{{ o.part_number }}</div>
+                                        <div class="flex items-center gap-3 mt-1 text-gray-500 text-xs">
+                                            <span>{{ o.department }}</span>
+                                            <span>Ordered: {{ o.qty_ordered }}</span>
+                                            <span>Done: {{ o.qty_completed ?? 0 }}</span>
+                                        </div>
+                                        <div v-if="o.start_date" class="text-gray-400 text-xs mt-0.5">Started {{ formatDateLocal(o.start_date) }}</div>
                                     </div>
                                 </div>
                             </div>
 
                             <!-- 3. Started No Progress > 2 Days -->
                             <div class="rounded-xl border border-gray-300 overflow-hidden">
-                                <div class="bg-white px-4 py-3 border-b border-gray-200">
-                                    <div class="font-bold text-gray-800 text-sm">Started No Progress &gt; 2 Days</div>
-                                    <div class="text-gray-500 text-xs mt-0.5">Started &gt; 2 days ago with 0 qty completed</div>
+                                <div class="bg-white px-4 py-3 border-b border-gray-200 flex items-center justify-between">
+                                    <div>
+                                        <div class="font-bold text-gray-800 text-sm">Started No Progress &gt; 2 Days</div>
+                                        <div class="text-gray-500 text-xs mt-0.5">Started &gt; 2 days ago with 0 qty completed</div>
+                                    </div>
+                                    <span v-if="managerAlerts.startedNoProgress.length > 0"
+                                        class="bg-red-500 text-white text-xs font-bold rounded-full min-w-[1.5rem] h-6 flex items-center justify-center px-1 ml-2">
+                                        {{ managerAlerts.startedNoProgress.length }}
+                                    </span>
                                 </div>
                                 <div class="p-3 space-y-2 bg-gray-50 min-h-[4rem]">
                                     <div v-if="managerAlerts.startedNoProgress.length === 0" class="text-gray-400 text-sm py-3 text-center">None</div>
                                     <div v-for="o in managerAlerts.startedNoProgress" :key="o.id"
-                                        class="flex items-center justify-between bg-white border border-gray-200 rounded-lg px-3 py-2">
-                                        <span class="font-bold text-gray-900 text-sm">WO #{{ o.wo_number }}</span>
-                                        <span class="text-gray-500 text-xs">{{ o.part_number }}</span>
+                                        @click="openDelayedWoDetail(o)"
+                                        class="bg-white border border-gray-200 rounded-lg px-3 py-2 cursor-pointer hover:border-blue-400 hover:shadow-sm transition-all">
+                                        <div class="flex items-center justify-between mb-1">
+                                            <span class="font-bold text-gray-900 text-sm">WO #{{ o.wo_number }}</span>
+                                            <span class="text-xs font-semibold px-2 py-0.5 rounded-full bg-blue-100 text-blue-700">
+                                                {{ o.status }}
+                                            </span>
+                                        </div>
+                                        <div class="text-gray-700 text-xs font-medium truncate">{{ o.part_number }}</div>
+                                        <div class="flex items-center gap-3 mt-1 text-gray-500 text-xs">
+                                            <span>{{ o.department }}</span>
+                                            <span>Ordered: {{ o.qty_ordered }}</span>
+                                            <span>Done: {{ o.qty_completed ?? 0 }}</span>
+                                        </div>
+                                        <div v-if="o.start_date" class="text-gray-400 text-xs mt-0.5">Started {{ formatDateLocal(o.start_date) }}</div>
                                     </div>
                                 </div>
                             </div>
 
                             <!-- 4. Qty Mismatch -->
                             <div class="rounded-xl border border-gray-300 overflow-hidden">
-                                <div class="bg-white px-4 py-3 border-b border-gray-200">
-                                    <div class="font-bold text-gray-800 text-sm">Qty Mismatch</div>
-                                    <div class="text-gray-500 text-xs mt-0.5">Received qty &#8800; completed qty</div>
+                                <div class="bg-white px-4 py-3 border-b border-gray-200 flex items-center justify-between">
+                                    <div>
+                                        <div class="font-bold text-gray-800 text-sm">Qty Mismatch</div>
+                                        <div class="text-gray-500 text-xs mt-0.5">Received qty &#8800; completed qty</div>
+                                    </div>
+                                    <span v-if="managerAlerts.qtyMismatch.length > 0"
+                                        class="bg-red-500 text-white text-xs font-bold rounded-full min-w-[1.5rem] h-6 flex items-center justify-center px-1 ml-2">
+                                        {{ managerAlerts.qtyMismatch.length }}
+                                    </span>
                                 </div>
                                 <div class="p-3 space-y-2 bg-gray-50 min-h-[4rem]">
                                     <div v-if="managerAlerts.qtyMismatch.length === 0" class="text-gray-400 text-sm py-3 text-center">None</div>
                                     <div v-for="o in managerAlerts.qtyMismatch" :key="o.id"
-                                        class="flex items-center justify-between bg-white border border-gray-200 rounded-lg px-3 py-2">
-                                        <div>
+                                        @click="openDelayedWoDetail(o)"
+                                        class="bg-white border border-gray-200 rounded-lg px-3 py-2 cursor-pointer hover:border-blue-400 hover:shadow-sm transition-all">
+                                        <div class="flex items-center justify-between mb-1">
                                             <span class="font-bold text-gray-900 text-sm">WO #{{ o.wo_number }}</span>
-                                            <span class="text-gray-500 text-xs ml-2">{{ o.part_number }}</span>
+                                            <span class="text-xs font-semibold px-2 py-0.5 rounded-full bg-red-100 text-red-700">
+                                                qty mismatch
+                                            </span>
                                         </div>
-                                        <span class="text-gray-600 text-xs font-bold">rcvd {{ o.qty_received }} / done {{ o.qty_completed }}</span>
+                                        <div class="text-gray-700 text-xs font-medium truncate">{{ o.part_number }}</div>
+                                        <div class="flex items-center gap-3 mt-1 text-gray-500 text-xs">
+                                            <span>{{ o.department }}</span>
+                                            <span>Ordered: {{ o.qty_ordered }}</span>
+                                            <span>Done: {{ o.qty_completed ?? 0 }}</span>
+                                            <span class="font-bold text-red-600">Rcvd: {{ o.qty_received }}</span>
+                                        </div>
+                                        <div v-if="o.status" class="text-gray-400 text-xs mt-0.5">Status: {{ o.status }}</div>
                                     </div>
                                 </div>
                             </div>
@@ -197,18 +278,35 @@
                 </div>
 
                 <!-- Priorities -->
-                <div v-if="managerSubView === 'priorities'" class="p-6 max-w-7xl mx-auto">
-                    <div class="flex items-center gap-4 mb-6">
-                        <button @click="managerSubView = 'home'" class="bg-slate-700 hover:bg-slate-600 px-4 py-2 rounded-lg font-bold">&#8592; Back</button>
-                        <h2 class="text-3xl font-bold text-yellow-400">Manager Priorities</h2>
+                <div v-if="managerSubView === 'priorities'">
+
+                    <!-- Dept picker — shown when no dept selected yet -->
+                    <div v-if="!priorityDept" class="flex flex-col items-center justify-center min-h-[70vh] px-8">
+                        <button @click="managerSubView = 'home'" class="self-start mb-8 bg-slate-700 hover:bg-slate-600 px-4 py-2 rounded-lg font-bold text-white">&#8592; Back</button>
+                        <h2 class="text-3xl font-bold text-yellow-400 mb-2">Manager Priorities</h2>
+                        <p class="text-slate-400 mb-10 text-lg">Select a department</p>
+                        <div class="grid grid-cols-2 gap-6 w-full max-w-2xl">
+                            <button v-for="d in ['Fab','Weld','Trac Vac Assy','Tru Cut Assy']" :key="d"
+                                @click="priorityDept = d; fetchPriorityOrders(d)"
+                                class="bg-white hover:bg-gray-50 text-gray-900 rounded-2xl shadow-md p-10 flex items-center justify-center border-2 border-gray-300 active:scale-95 transition-transform">
+                                <span class="text-3xl font-bold uppercase">{{ d }}</span>
+                            </button>
+                        </div>
                     </div>
-                    <div class="flex gap-3 mb-6">
-                        <button v-for="d in ['Fab','Weld','Trac Vac Assy','Tru Cut Assy']" :key="d"
-                            @click="priorityDept = d; fetchPriorityOrders(d)"
-                            class="px-5 py-2 rounded-lg font-bold text-sm transition-colors"
-                            :class="priorityDept === d ? 'bg-yellow-600 text-white' : 'bg-slate-700 hover:bg-slate-600 text-slate-300'">{{ d }}</button>
-                    </div>
-                    <div v-if="priorityOrders.length === 0" class="text-slate-500 text-center py-16">Select a department above</div>
+
+                    <!-- WO list — shown after dept is selected -->
+                    <div v-else class="p-6 max-w-7xl mx-auto">
+                        <div class="flex items-center gap-4 mb-6 flex-wrap">
+                            <button @click="managerSubView = 'home'" class="bg-slate-700 hover:bg-slate-600 px-4 py-2 rounded-lg font-bold">&#8592; Back</button>
+                            <h2 class="text-3xl font-bold text-yellow-400">{{ priorityDept }} Priorities</h2>
+                            <div class="flex gap-2 ml-auto flex-wrap">
+                                <button v-for="d in ['Fab','Weld','Trac Vac Assy','Tru Cut Assy']" :key="d"
+                                    @click="priorityDept = d; fetchPriorityOrders(d)"
+                                    class="px-4 py-1.5 rounded-lg font-bold text-sm transition-colors"
+                                    :class="priorityDept === d ? 'bg-yellow-600 text-white' : 'bg-slate-700 hover:bg-slate-600 text-slate-300'">{{ d }}</button>
+                            </div>
+                        </div>
+                    <div v-if="priorityOrders.length === 0" class="text-slate-500 text-center py-16">No orders found for this department</div>
                     <div class="space-y-2">
                         <div v-for="o in priorityOrders" :key="o.id"
                             class="bg-slate-800 rounded-xl p-4 flex items-center gap-4 border transition-colors"
@@ -258,7 +356,8 @@
                             </div>
                         </div>
                     </div>
-                </div>
+                    </div><!-- end v-else WO list -->
+                </div><!-- end priorities -->
 
                 <!-- ── AI Chat Launcher + Panel (Manager Hub only) ───── -->
 
@@ -445,8 +544,27 @@
                         <div class="text-2xl font-bold text-emerald-400">No Delayed Work Orders</div>
                         <div class="text-slate-500 mt-2">Everything is within threshold</div>
                     </div>
-                    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                        <div v-for="o in delayedOrders" :key="o.id" class="bg-slate-800 rounded-xl border border-red-500/40 p-5">
+                    <div class="flex gap-5 items-start">
+                    <div v-for="group in delayedOrdersByDept" :key="group.dept" class="flex-1 min-w-0">
+                        <!-- Dept column header -->
+                        <div class="flex items-center gap-3 mb-4">
+                            <template v-if="group.dept === 'Trac Vac Assy'">
+                                <img src="./assets/trac-vac-logo.png" class="h-8 w-auto object-contain" alt="Trac Vac">
+                                <span class="text-xl font-bold text-slate-200">Assembly</span>
+                            </template>
+                            <template v-else-if="group.dept === 'Tru Cut Assy'">
+                                <img src="./assets/tru-cut-logo.png" class="h-8 w-auto object-contain" alt="Tru Cut">
+                                <span class="text-xl font-bold text-slate-200">Assembly</span>
+                            </template>
+                            <h3 v-else class="text-xl font-bold text-slate-200">{{ group.dept }}</h3>
+                            <span v-if="group.orders.length > 0" class="bg-red-600 text-white text-xs font-bold px-2.5 py-1 rounded-full">{{ group.orders.length }}</span>
+                            <span v-else class="text-slate-600 text-xs font-bold px-2.5 py-1 rounded-full border border-slate-700">0</span>
+                        </div>
+                    <div class="flex flex-col gap-4">
+                        <div v-if="group.orders.length === 0" class="text-slate-600 text-sm italic text-center py-8 border border-slate-700 rounded-xl">No delays &#10003;</div>
+                        <div v-for="o in group.orders" :key="o.id"
+                            @click="openDelayedWoDetail(o)"
+                            class="bg-slate-800 rounded-xl border border-red-500/40 p-5 cursor-pointer hover:bg-slate-700 transition-colors">
                             <div class="flex justify-between items-start mb-3">
                                 <div>
                                     <span class="font-bold text-xl text-white">WO #{{ o.wo_number }}</span>
@@ -464,8 +582,97 @@
                                 <div class="text-yellow-300 text-xs font-bold mb-0.5">&#128221; NOTE</div>
                                 <div class="text-yellow-200 text-xs line-clamp-2">{{ o.manager_notes }}</div>
                             </div>
-                            <button @click="openNotesPanel(o)" class="mt-3 w-full bg-yellow-700 hover:bg-yellow-600 px-3 py-1 rounded text-xs font-bold text-white">📝 Add Note</button>
+                            <div class="mt-3 text-xs text-slate-500 text-center">Tap to view full history</div>
                         </div>
+                    </div><!-- end card grid -->
+                    </div><!-- end dept group -->
+                    </div><!-- end space-y-8 -->
+                </div><!-- end delayed sub-view -->
+            </div><!-- end manager view -->
+
+            <!-- WO Detail Modal — available from any Manager Hub sub-view -->
+            <div v-if="delayedWoDetailOpen"
+                class="fixed inset-0 z-50 flex items-center justify-center bg-black/60"
+                @click.self="closeDelayedWoDetail()">
+                <div class="bg-slate-900 rounded-2xl shadow-2xl w-full max-w-2xl mx-4 flex flex-col overflow-hidden" style="max-height:85vh">
+                    <!-- Header -->
+                    <div class="px-6 py-4 border-b border-slate-700 flex items-center gap-3 shrink-0">
+                        <div class="flex-1 min-w-0">
+                            <div class="flex items-center gap-3 flex-wrap">
+                                <span class="font-bold text-white text-xl">WO #{{ delayedWoDetail?.wo_number }}</span>
+                                <span class="text-slate-400 text-sm">Part #{{ delayedWoDetail?.part_number }}</span>
+                                <span class="text-xs px-2 py-0.5 rounded font-bold bg-slate-700 text-slate-300">{{ delayedWoDetail?.department }}</span>
+                                <span class="text-xs px-2 py-0.5 rounded font-bold"
+                                    :class="delayedWoDetail?.status==='on_hold'?'bg-red-700 text-red-200':delayedWoDetail?.status==='started'?'bg-blue-700 text-blue-200':'bg-slate-700 text-slate-300'">
+                                    {{ delayedWoDetail?.status?.replace(/_/g,' ') }}
+                                </span>
+                                <span v-if="delayedWoDetail?.daysIn" class="bg-red-600 text-white text-xs font-bold px-2 py-0.5 rounded">{{ delayedWoDetail.daysIn }} days delayed</span>
+                            </div>
+                            <div class="text-slate-400 text-sm mt-1 truncate">{{ delayedWoDetail?.description }}</div>
+                        </div>
+                        <button @click="closeDelayedWoDetail()" class="text-slate-400 hover:text-white shrink-0 ml-2">
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M6 18L18 6M6 6l12 12"/></svg>
+                        </button>
+                    </div>
+
+                    <!-- Body -->
+                    <div class="overflow-y-auto flex-1 p-6 space-y-5">
+
+                        <!-- Quick stats -->
+                        <div class="grid grid-cols-3 gap-3 text-center">
+                            <div class="bg-slate-800 rounded-xl p-3">
+                                <div class="text-2xl font-extrabold text-white">{{ delayedWoDetail?.qty_completed || 0 }}</div>
+                                <div class="text-slate-500 text-xs mt-0.5">of {{ delayedWoDetail?.qty_ordered ?? delayedWoDetail?.qty_required ?? '?' }} ordered</div>
+                            </div>
+                            <div class="bg-slate-800 rounded-xl p-3">
+                                <div class="text-2xl font-extrabold text-slate-300">{{ delayedWoDetail?.operator || '—' }}</div>
+                                <div class="text-slate-500 text-xs mt-0.5">operator</div>
+                            </div>
+                            <div class="bg-slate-800 rounded-xl p-3">
+                                <div class="text-2xl font-extrabold" :class="delayedWoDetail?.daysIn ? 'text-red-400' : 'text-slate-400'">
+                                    {{ delayedWoDetail?.daysIn ?? '—' }}
+                                </div>
+                                <div class="text-slate-500 text-xs mt-0.5">days in dept</div>
+                            </div>
+                        </div>
+
+                        <!-- WO Problem -->
+                        <div v-if="delayedWoDetail?.wo_problem_text" class="bg-red-950/50 border border-red-500/40 rounded-xl px-4 py-3">
+                            <div class="text-xs font-bold text-red-400 uppercase tracking-wide mb-1">&#9888; Open Problem</div>
+                            <div class="text-red-100 text-sm">{{ delayedWoDetail.wo_problem_text }}</div>
+                            <div v-if="delayedWoDetail.wo_problem_updated_by" class="text-red-400 text-xs mt-1">Reported by {{ delayedWoDetail.wo_problem_updated_by }}</div>
+                        </div>
+
+                        <!-- Manager notes -->
+                        <div v-if="delayedWoDetail?.manager_notes">
+                            <div class="text-xs font-bold text-yellow-400 uppercase tracking-widest mb-2">Manager Notes</div>
+                            <div class="bg-yellow-900/30 border border-yellow-600/30 rounded-xl px-4 py-3 text-yellow-200 text-sm whitespace-pre-wrap">{{ delayedWoDetail.manager_notes }}</div>
+                        </div>
+
+                        <!-- Action history -->
+                        <div>
+                            <div class="text-xs font-bold text-slate-400 uppercase tracking-widest mb-2">Action History</div>
+                            <div v-if="!delayedWoDetail?.notes" class="text-slate-600 text-sm italic text-center py-4">No history recorded yet</div>
+                            <div v-else class="space-y-1.5">
+                                <div v-for="(line, i) in delayedWoDetail.notes.split('\n').filter(l => l.trim()).reverse()" :key="i"
+                                    class="bg-slate-800 rounded-lg px-3 py-2 text-slate-300 text-xs font-mono leading-relaxed border border-slate-700">
+                                    {{ line }}
+                                </div>
+                            </div>
+                        </div>
+
+                    </div>
+
+                    <!-- Footer -->
+                    <div class="px-6 py-4 border-t border-slate-700 flex gap-3 shrink-0">
+                        <button @click="closeDelayedWoDetail(); openNotesPanel(delayedWoDetail)"
+                            class="flex-1 bg-yellow-700 hover:bg-yellow-600 text-white font-bold py-2.5 rounded-xl text-sm transition-colors">
+                            &#128221; Add Manager Note
+                        </button>
+                        <button @click="closeDelayedWoDetail()"
+                            class="px-6 py-2.5 bg-slate-700 hover:bg-slate-600 text-slate-300 font-bold rounded-xl text-sm transition-colors">
+                            Close
+                        </button>
                     </div>
                 </div>
             </div>

@@ -121,6 +121,17 @@ export const managerSubView = ref('home');   // 'home'|'kpi'|'priorities'|'delay
 export const priorityDept   = ref('');
 export const priorityOrders = ref([]);
 export const delayedOrders  = ref([]);
+// Always shows all 4 production dept columns, even when empty.
+// Dept names normalized by fetchDelayedOrders so grouping is reliable.
+const DELAYED_DEPT_ORDER = ['Fab', 'Weld', 'Trac Vac Assy', 'Tru Cut Assy'];
+export const delayedOrdersByDept = computed(() => {
+    const grouped = {};
+    delayedOrders.value.forEach(o => {
+        if (!grouped[o.department]) grouped[o.department] = [];
+        grouped[o.department].push(o);
+    });
+    return DELAYED_DEPT_ORDER.map(dept => ({ dept, orders: grouped[dept] || [] }));
+});
 export const kpiStats       = ref({ completedThisWeek: 0, activeJobs: 0, onHoldCount: 0, delayedCount: 0 });
 export const kpiByOperator  = ref([]);
 export const kpiCycleTime   = ref([]);
@@ -133,6 +144,10 @@ export const managerAlerts  = ref({
     qtyMismatch:          []
 });
 
+// ── Delayed WO detail modal ───────────────────────────────────
+export const delayedWoDetailOpen = ref(false);
+export const delayedWoDetail     = ref(null);
+
 // ── WO Problem draft (action panel inline form) ───────────────
 export const woProblemDraftText      = ref('');
 export const woProblemDraftError     = ref(false);
@@ -142,6 +157,23 @@ export const woProblemDraftNameError = ref(false);
 // ── WO Problems ───────────────────────────────────────────────
 export const woProblems            = ref([]);   // open WO problems list
 export const woProblemCount        = computed(() => woProblems.value.length);
+
+// ── Manager badge counts ──────────────────────────────────────
+// delayedWoCount: sum of all WOs across all dept groups (computed from live delayedOrdersByDept)
+export const delayedWoCount = computed(() =>
+    delayedOrdersByDept.value.reduce((sum, g) => sum + g.orders.length, 0)
+);
+// managerAlertCount: total of all 4 live alert arrays
+export const managerAlertCount = computed(() => {
+    const a = managerAlerts.value;
+    return (a.completedNotReceived?.length || 0)
+         + (a.pausedOnHold?.length        || 0)
+         + (a.startedNoProgress?.length   || 0)
+         + (a.qtyMismatch?.length         || 0);
+});
+export const managerTotalBadge = computed(() =>
+    delayedWoCount.value + woProblemCount.value + managerAlertCount.value
+);
 
 // Resolve modal state
 export const woProblemModalOpen        = ref(false);
