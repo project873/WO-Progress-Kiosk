@@ -232,7 +232,7 @@
                                 <div v-else-if="!woFiles.length" class="text-gray-400 text-sm italic text-center py-4">No files attached yet.</div>
                                 <div v-else class="space-y-2">
                                     <div v-for="f in woFiles" :key="'tcua-'+f.name" class="flex items-center justify-between bg-gray-50 border border-gray-200 rounded-lg px-3 py-2">
-                                        <a :href="getWoFilePublicUrl(activeOrder?.part_number, f.name)" target="_blank" class="text-blue-600 text-xs font-medium truncate hover:underline">{{ f.name }}</a>
+                                        <a :href="f.signedUrl" target="_blank" class="text-blue-600 text-xs font-medium truncate hover:underline">{{ f.name }}</a>
                                         <button @click="handleWoFileDelete(f.name)" class="ml-2 text-red-400 hover:text-red-600 text-xs font-bold shrink-0">✕</button>
                                     </div>
                                 </div>

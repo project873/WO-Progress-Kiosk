@@ -624,11 +624,33 @@ export async function fetchCsSupplementalData(woNumber, partNumber) {
 // Storage path: {sanitized_part_number}/{filename}
 // e.g. part "TC11490" → folder "TC11490"; part "TC 11490/A" → folder "TC_11490_A"
 
-// List all files for a part number. Returns [] if the folder doesn't exist yet.
+// Sign in anonymously so storage RLS (authenticated role) grants access.
+// Called once on app load. Safe to call repeatedly — Supabase reuses the session.
+export async function signInAnonymously() {
+    const { error } = await supabase.auth.signInAnonymously();
+    if (error && error.message !== 'User already registered') {
+        console.warn('Anonymous sign-in failed:', error.message);
+    }
+}
+
+// List all files for a part number and return each with a 1-hour signed URL.
+// Returns [] if the folder doesn't exist yet.
 export async function listWoFiles(partNumber) {
     const folder = sanitizePartKey(partNumber);
-    const { data, error } = await supabase.storage.from('wo-files').list(folder);
-    return { data: (data || []).filter(f => f.name !== '.emptyFolderPlaceholder'), error };
+    const { data: files, error } = await supabase.storage.from('wo-files').list(folder);
+    if (error) return { data: [], error };
+
+    const filtered = (files || []).filter(f => f.name !== '.emptyFolderPlaceholder');
+    if (filtered.length === 0) return { data: [], error: null };
+
+    const paths = filtered.map(f => `${folder}/${f.name}`);
+    const { data: signed } = await supabase.storage.from('wo-files').createSignedUrls(paths, 3600);
+
+    const result = filtered.map((f, i) => ({
+        ...f,
+        signedUrl: signed?.[i]?.signedUrl || null
+    }));
+    return { data: result, error: null };
 }
 
 // Upload a file to wo-files/{part_number}/{filename}. upsert:true replaces same name.
@@ -641,12 +663,6 @@ export async function uploadWoFile(partNumber, file) {
 export async function deleteWoFile(partNumber, filename) {
     const path = `${sanitizePartKey(partNumber)}/${filename}`;
     return supabase.storage.from('wo-files').remove([path]);
-}
-
-// Return the public URL for a part's file (synchronous — no network call).
-export function getWoFilePublicUrl(partNumber, filename) {
-    const { data } = supabase.storage.from('wo-files').getPublicUrl(`${sanitizePartKey(partNumber)}/${filename}`);
-    return data.publicUrl;
 }
 
 // ── Progress event logging ────────────────────────────────────

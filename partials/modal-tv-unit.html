@@ -257,7 +257,7 @@
                             <div v-else class="space-y-2">
                                 <div v-for="f in woFiles" :key="'tvu-'+f.name" class="flex items-center gap-2 bg-gray-50 border border-gray-200 rounded-lg px-3 py-2">
                                     <span class="text-xs font-bold text-gray-500 uppercase shrink-0">{{ f.name.split('.').pop() }}</span>
-                                    <a :href="getWoFilePublicUrl(activeOrder.part_number, f.name)" target="_blank" class="flex-1 text-blue-600 hover:text-blue-500 text-xs font-medium truncate">{{ f.name }}</a>
+                                    <a :href="f.signedUrl" target="_blank" class="flex-1 text-blue-600 hover:text-blue-500 text-xs font-medium truncate">{{ f.name }}</a>
                                     <button @click="handleWoFileDelete(f.name)" class="text-gray-300 hover:text-red-500 text-xs transition-colors shrink-0" title="Remove">&#10005;</button>
                                 </div>
                             </div>

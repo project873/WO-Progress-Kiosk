@@ -38,7 +38,7 @@ import {
     submitNewWo, submitNote,
     loadWoFiles, handleWoFileUpload, handleWoFileDelete
 } from './pages/dashboard-view.js';
-import { getWoFilePublicUrl, markAlereUpdated } from './libs/db.js';
+import { markAlereUpdated, signInAnonymously } from './libs/db.js';
 import {
     searchOfficeReceive, openReceiveModal, submitReceive,
     openCloseoutModal, submitCloseout, loadReceivingEligible,
@@ -68,6 +68,7 @@ async function loadPartials() {
     );
     document.getElementById('app').innerHTML = chunks.join('\n');
 }
+await signInAnonymously();
 await loadPartials();
 
 // ── Show loading fallback until Vue mounts ────────────────────
@@ -295,7 +296,7 @@ try {
                 submitTcUnitStageFromUi, openTcAssyCompleteModal, confirmTcWoComplete,
                 updateOrderStatus, undoLastAction,
                 submitNewWo, submitNote, toggleTcNewWoMode, toggleTcEntryMode,
-                loadWoFiles, handleWoFileUpload, handleWoFileDelete, getWoFilePublicUrl,
+                loadWoFiles, handleWoFileUpload, handleWoFileDelete,
 
                 // Office
                 searchOfficeReceive, openReceiveModal, submitReceive,

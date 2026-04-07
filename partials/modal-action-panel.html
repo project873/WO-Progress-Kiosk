@@ -189,7 +189,7 @@
                                     <div v-for="f in woFiles" :key="f.name"
                                         class="flex items-center gap-1.5 bg-gray-100 border border-gray-200 rounded px-2 py-1 shrink-0">
                                         <span class="text-xs font-bold text-gray-500 uppercase">{{ f.name.split('.').pop() }}</span>
-                                        <a :href="getWoFilePublicUrl(activeOrder.part_number, f.name)" target="_blank"
+                                        <a :href="f.signedUrl" target="_blank"
                                             class="text-blue-600 hover:text-blue-500 text-xs font-medium max-w-[140px] truncate">{{ f.name }}</a>
                                         <button @click="handleWoFileDelete(f.name)"
                                             class="text-gray-300 hover:text-red-500 text-xs leading-none transition-colors" title="Remove">&#10005;</button>
@@ -218,7 +218,7 @@
                             <!-- PDF iframes -->
                             <template v-if="!woFilesLoading">
                                 <iframe v-for="f in woFiles.filter(f => f.name.toLowerCase().endsWith('.pdf'))" :key="'pdf-'+f.name"
-                                    :src="getWoFilePublicUrl(activeOrder.part_number, f.name)"
+                                    :src="f.signedUrl"
                                     class="w-full h-full border-0" title="PDF Preview"></iframe>
                             </template>
                         </div>
@@ -260,7 +260,7 @@
                                 <div v-for="f in woFiles" :key="'rt-'+f.name"
                                     class="flex items-center gap-2 bg-gray-50 border border-gray-200 rounded-lg px-3 py-2">
                                     <span class="text-xs font-bold text-gray-500 uppercase shrink-0">{{ f.name.split('.').pop() }}</span>
-                                    <a :href="getWoFilePublicUrl(activeOrder.part_number, f.name)" target="_blank"
+                                    <a :href="f.signedUrl" target="_blank"
                                         class="flex-1 text-blue-600 hover:text-blue-500 text-xs font-medium truncate">{{ f.name }}</a>
                                     <button @click="handleWoFileDelete(f.name)"
                                         class="text-gray-300 hover:text-red-500 text-xs transition-colors shrink-0" title="Remove">&#10005;</button>
