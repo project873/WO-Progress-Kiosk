@@ -407,6 +407,31 @@ export async function receiveWorkOrder(order, qty, receivedBy, binLocation) {
     }
 }
 
+// autoReceiveAssyWo — inserts a 'received' tracking row when an Assy WO is
+// completed, so it appears in the Close-Out list automatically.
+// No-ops if a tracking row already exists for this WO number.
+// Input: order object, operator string (name of completing operator).
+export async function autoReceiveAssyWo(order, operator) {
+    if (!order?.wo_number) return;
+    const { data: existing } = await withRetry(() =>
+        supabase.from('wo_status_tracking').select('id').eq('wo_number', order.wo_number).single()
+    );
+    if (existing) return; // already tracked, don't overwrite
+    const { error } = await withRetry(() =>
+        supabase.from('wo_status_tracking').insert([{
+            wo_number:               order.wo_number,
+            part_number:             order.part_number,
+            qty_required:            order.qty_required,
+            qty_received:            order.qty_completed || order.qty_required || 0,
+            received_by:             operator || 'Auto (Assy Complete)',
+            erp_status:              'received',
+            received_at:             new Date().toISOString(),
+            alere_bin_update_needed: false
+        }])
+    );
+    if (error) throw error;
+}
+
 // markAlereUpdated — clears the Alere bin update alert for a tracking row.
 // Records who cleared it and when. Input: tracking row id, office user name.
 export async function markAlereUpdated(id, updatedBy) {

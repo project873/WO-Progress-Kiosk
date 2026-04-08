@@ -386,6 +386,7 @@ export async function submitTvUnitStageFromUi(stageName) {
         stageRef.value.sessionQty = '';
         stageRef.value.reason     = '';
         store.showToast('Stage action recorded', 'success');
+        if (updated.status === 'completed') await db.autoReceiveAssyWo(updated, operator);
     } catch (err) {
         store.showToast('Failed: ' + err.message);
     } finally {
@@ -481,6 +482,7 @@ export async function submitTvStockActionFromUi() {
         store.tvStockSessionQty.value = '';
         store.tvStockReason.value     = '';
         store.showToast('Action recorded', 'success');
+        if (updated.status === 'completed') await db.autoReceiveAssyWo(updated, operator);
     } catch (err) {
         store.showToast('Failed: ' + err.message);
     } finally {
@@ -658,6 +660,7 @@ export async function submitTcStockActionFromUi() {
         store.tcStockReason.value     = '';
         store.tcStockNotes.value      = updated.tc_assy_notes_differences_mods || '';
         store.showToast('Action recorded', 'success');
+        if (updated.status === 'completed') await db.autoReceiveAssyWo(updated, operator);
     } catch (err) {
         store.showToast('Failed: ' + err.message);
     } finally {
@@ -798,6 +801,7 @@ export async function confirmTcWoComplete() {
         store.orders.value = store.orders.value.map(o => o.id === updated.id ? updated : o);
         store.showToast('WO marked complete', 'success');
         store.tcAssyCompleteModalOpen.value = false;
+        await db.autoReceiveAssyWo(updated, operator);
     } catch (err) {
         store.showToast('Failed: ' + err.message);
     } finally {

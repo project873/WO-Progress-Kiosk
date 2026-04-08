@@ -5,9 +5,8 @@
 
 import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm';
 
-// ⚠️  SANDBOX — points to dev Supabase project. Never merge these lines to main.
-const SUPABASE_URL = "https://jxxumifkxhfoxgfsduns.supabase.co";
-const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imp4eHVtaWZreGhmb3hnZnNkdW5zIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzU1OTE0OTMsImV4cCI6MjA5MTE2NzQ5M30.bq-7ETLp1w1rBVM22LR8BamEfNyLRLrVYsxR8KHqkFE";
+const SUPABASE_URL = "https://eqbybduwgzmbkbjyywgk.supabase.co";
+const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImVxYnliZHV3Z3ptYmtianl5d2drIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzIyMDMwNzksImV4cCI6MjA4Nzc3OTA3OX0.j77BJ8LlRzCinGOSHuiCRX1M7KO1A687o9yQGwNXh8M";
 
 export const supabase = createClient(SUPABASE_URL, SUPABASE_KEY);
 
