@@ -567,6 +567,31 @@ export async function tvUnitConfirmHold() {
     await submitTvUnitStageFromUi(stageName);
 }
 
+// tcUnitOpenHold — opens the sidebar hold form for the currently active TC unit stage.
+export function tcUnitOpenHold() {
+    store.tcUnitHoldOpen.value        = true;
+    store.tcUnitHoldReason.value      = '';
+    store.tcUnitHoldReasonError.value = false;
+}
+
+// tcUnitConfirmHold — validates reason and submits hold for the active TC unit stage.
+export async function tcUnitConfirmHold() {
+    if (!store.tcUnitHoldReason.value.trim()) {
+        store.tcUnitHoldReasonError.value = true;
+        return;
+    }
+    const order = store.activeOrder.value;
+    const stageName = order.tc_pre_lap_status === 'started' ? 'prelap'
+                    : order.tc_final_status   === 'started' ? 'final'
+                    : null;
+    if (!stageName) { store.tcUnitHoldOpen.value = false; return; }
+    const stageRef = stageName === 'prelap' ? store.tcPreStage : store.tcFinStage;
+    stageRef.value.pending = 'hold';
+    stageRef.value.reason  = store.tcUnitHoldReason.value;
+    store.tcUnitHoldOpen.value = false;
+    await submitTcUnitStageFromUi(stageName);
+}
+
 // ── TC Assy entry ──────────────────────────────────────────────
 // Always skips the entry modal and goes directly to the workflow screen.
 // Mode resolution: saved tc_job_mode → detectTcMode(part#) → 'stock' default.

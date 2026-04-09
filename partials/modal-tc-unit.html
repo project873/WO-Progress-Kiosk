@@ -6,35 +6,104 @@
                 <div class="shrink-0 bg-slate-900 border-b border-slate-700 px-5 py-3 flex items-center gap-4">
                     <button @click="tcAssyUnitOpen = false" class="shrink-0 text-slate-400 hover:text-white bg-slate-700 hover:bg-slate-600 px-3 py-1.5 rounded font-bold text-sm">&#10005; CLOSE</button>
                     <img src="assets/tru-cut-logo.png" alt="Tru-Cut" class="h-8 object-contain shrink-0">
-                    <!-- Operator + mode toggle -->
-                    <div class="flex items-center gap-3 shrink-0">
-                        <template v-if="!tcAssyOpEditing">
-                            <span class="text-teal-400 text-sm">Op: <span class="font-semibold">{{ tcAssyEntryName || '—' }}</span></span>
-                            <button @click="tcAssyOpEditing = true" class="text-slate-500 hover:text-teal-400 underline text-xs transition-colors">Change</button>
-                        </template>
-                        <template v-else>
-                            <input v-model="tcAssyEntryName" type="text" placeholder="Operator name"
-                                class="px-2 py-0.5 text-xs bg-slate-900 border border-teal-500 rounded text-white w-32 focus:outline-none">
-                            <button @click="tcAssyOpEditing = false" class="text-teal-400 text-xs font-bold px-2 py-0.5 bg-slate-700 rounded">&#10003;</button>
-                        </template>
-                        <div class="flex rounded-lg overflow-hidden border border-slate-600 shrink-0">
-                            <span class="px-3 py-1.5 text-xs font-bold bg-teal-600 text-white">UNIT</span>
-                            <button @click="tcAssyUnitOpen = false; tcAssyStockOpen = true" class="px-3 py-1.5 text-xs font-bold bg-slate-700 hover:bg-slate-600 text-slate-300 transition-colors">SUBASSY</button>
-                        </div>
-                    </div>
-                    <!-- WO info -->
                     <div class="flex items-center gap-3 min-w-0 flex-1">
                         <span class="text-xl font-extrabold text-teal-400 shrink-0">WO #{{ activeOrder?.wo_number }}</span>
                         <span class="text-sm font-bold text-slate-300 border border-slate-600 px-2 py-0.5 rounded shrink-0">{{ activeOrder?.part_number }}</span>
                         <span v-if="activeOrder?.sales_order" class="text-emerald-400 text-sm shrink-0">SO# {{ activeOrder.sales_order }}</span>
                         <span class="text-slate-500 text-xs shrink-0">Qty: {{ activeOrder?.qty_required }}</span>
+                        <span class="ml-2 px-2 py-0.5 rounded text-xs font-bold bg-teal-700 text-teal-200">UNIT</span>
                     </div>
+                    <button @click="tcAssyUnitOpen = false; tcAssyStockOpen = true"
+                        class="shrink-0 text-slate-400 hover:text-white bg-slate-700 hover:bg-slate-600 px-3 py-1.5 rounded text-xs font-bold">
+                        Switch to SUBASSY
+                    </button>
                 </div>
 
-                <!-- 2-zone body -->
+                <!-- 3-zone body -->
                 <div class="flex flex-1 min-h-0 overflow-hidden">
 
-                    <!-- LEFT: unit details + stage panels + complete button -->
+                    <!-- LEFT SIDEBAR -->
+                    <div class="w-72 shrink-0 bg-white border-r border-gray-200 flex flex-col overflow-y-auto">
+
+                        <!-- Operator name -->
+                        <div class="p-4 border-b border-gray-100">
+                            <div class="text-gray-500 text-xs font-bold uppercase tracking-wide mb-2">Operator</div>
+                            <input v-model="tcAssyEntryName" type="text" placeholder="Enter your name..."
+                                class="w-full px-3 py-2 bg-gray-50 border rounded-lg text-sm focus:outline-none focus:border-teal-500 transition-colors border-gray-300">
+                        </div>
+
+                        <!-- Hold / Delay -->
+                        <div class="p-4 border-b border-gray-100">
+                            <div class="text-gray-500 text-xs font-bold uppercase tracking-wide mb-2">Hold / Delay</div>
+                            <template v-if="!tcUnitHoldOpen">
+                                <template v-if="activeOrder?.tc_pre_lap_status === 'started' || activeOrder?.tc_final_status === 'started'">
+                                    <div class="text-gray-500 text-xs mb-2">
+                                        Active stage:
+                                        <span class="font-semibold text-gray-700">
+                                            {{ activeOrder?.tc_pre_lap_status === 'started' ? 'Prelap Assy' : 'Final Assy' }}
+                                        </span>
+                                    </div>
+                                    <button @click="tcUnitOpenHold()"
+                                        class="w-full px-3 py-2 bg-red-600 hover:bg-red-500 text-white font-bold rounded-lg text-sm active:scale-95 transition-all">
+                                        &#128722; Put on Hold
+                                    </button>
+                                </template>
+                                <div v-else class="text-gray-400 text-xs italic">No active stage to hold.</div>
+                            </template>
+                            <template v-else>
+                                <div class="text-gray-700 font-bold text-sm mb-2">Reason for Hold <span class="text-red-400">*</span></div>
+                                <input type="text" v-model="tcUnitHoldReason" placeholder="Enter reason..."
+                                    class="w-full px-3 py-2 bg-gray-50 border rounded-lg text-sm focus:outline-none focus:border-red-500 transition-colors mb-2"
+                                    :class="tcUnitHoldReasonError ? 'border-red-500' : 'border-gray-300'">
+                                <div v-if="tcUnitHoldReasonError" class="text-red-400 text-xs mb-2">&#9888; Reason required.</div>
+                                <div class="flex gap-2">
+                                    <button @click="tcUnitHoldOpen = false; tcUnitHoldReason = ''; tcUnitHoldReasonError = false"
+                                        class="flex-1 px-3 py-1.5 bg-gray-200 hover:bg-gray-300 text-gray-700 font-bold rounded text-xs">Cancel</button>
+                                    <button @click="tcUnitConfirmHold()"
+                                        class="flex-1 px-3 py-1.5 bg-red-600 hover:bg-red-500 text-white font-bold rounded text-xs active:scale-95 transition-all">Confirm &#10003;</button>
+                                </div>
+                            </template>
+                        </div>
+
+                        <!-- Notes / Differences / Mods -->
+                        <div class="p-4 border-b border-gray-100">
+                            <div class="text-gray-500 text-xs font-bold uppercase tracking-wide mb-2">Notes / Differences / Mods</div>
+                            <textarea v-model="tcUnitInfoForm.notes" rows="4" placeholder="Log any changes or anything different in this assembled unit/part here."
+                                class="w-full px-3 py-2 bg-gray-50 border border-gray-300 rounded-lg text-sm focus:outline-none focus:border-teal-500 resize-none transition-colors"></textarea>
+                            <button @click="saveTcUnitDetails()"
+                                class="mt-2 w-full px-3 py-1.5 bg-teal-600 hover:bg-teal-500 text-white font-bold rounded-lg text-xs active:scale-95 transition-all">
+                                Save Notes
+                            </button>
+                        </div>
+
+                        <!-- Action History -->
+                        <div class="p-4 flex-1">
+                            <div class="text-gray-500 text-xs font-bold uppercase tracking-wide mb-2">Action History</div>
+                            <div v-if="!(activeOrder?.notes || '').match(/TCPRE\||TCFIN\||TCWOC\|/)" class="text-gray-300 text-xs italic">No stage actions yet.</div>
+                            <div class="space-y-1.5">
+                                <div v-for="entry in (activeOrder?.notes || '').split('\n').filter(l => l.startsWith('TCPRE|') || l.startsWith('TCFIN|') || l.startsWith('TCWOC|')).slice().reverse()" :key="entry"
+                                    class="bg-gray-50 border border-gray-200 rounded px-2 py-1.5 text-xs">
+                                    <div class="flex items-center gap-1.5 flex-wrap">
+                                        <span class="font-bold px-1.5 py-0.5 rounded text-xs"
+                                            :class="entry.startsWith('TCPRE|') ? 'bg-blue-100 text-blue-700' : entry.startsWith('TCFIN|') ? 'bg-emerald-100 text-emerald-700' : 'bg-violet-100 text-violet-700'">
+                                            {{ entry.startsWith('TCPRE|') ? 'PRELAP' : entry.startsWith('TCFIN|') ? 'FINAL' : 'WO' }}
+                                        </span>
+                                        <span class="text-gray-500">{{ entry.split('|')[1] }}</span>
+                                        <span class="text-teal-600 font-semibold">{{ entry.split('|')[2] }}</span>
+                                        <span class="font-bold uppercase text-xs px-1.5 py-0.5 rounded"
+                                            :class="entry.split('|')[3] === 'completed' ? 'bg-emerald-100 text-emerald-700' : (entry.split('|')[3] || '').includes('started') ? 'bg-blue-100 text-blue-700' : entry.split('|')[3] === 'paused' ? 'bg-amber-100 text-amber-700' : entry.split('|')[3] === 'on_hold' ? 'bg-red-100 text-red-700' : 'bg-gray-100 text-gray-600'">
+                                            {{ entry.split('|')[3] }}
+                                        </span>
+                                    </div>
+                                    <div v-if="entry.split('|')[4]" class="text-amber-600 mt-0.5">sess: {{ entry.split('|')[4] }} &nbsp; total: {{ entry.split('|')[5] }}</div>
+                                    <div v-if="entry.split('|')[6]" class="text-gray-400 italic mt-0.5">{{ entry.split('|')[6] }}</div>
+                                </div>
+                            </div>
+                        </div>
+
+                    </div><!-- /LEFT SIDEBAR -->
+
+                    <!-- CENTER: unit details + stage panels + complete button -->
                     <div class="flex-1 bg-white border-r border-gray-200 overflow-y-auto flex flex-col">
                         <div class="p-4 flex flex-col gap-4">
 
@@ -70,12 +139,6 @@
                                         <input v-model="tcUnitInfoForm.numBlades" @blur="saveTcUnitDetails()" type="text" placeholder="—"
                                             class="w-full bg-white p-2 rounded-lg border border-gray-300 focus:outline-none focus:border-teal-500 text-gray-800 text-sm transition-colors">
                                     </div>
-                                </div>
-                                <div>
-                                    <label class="block text-gray-500 text-xs font-bold uppercase tracking-wide mb-1">Notes / Differences / Modifications</label>
-                                    <textarea v-model="tcUnitInfoForm.notes" @blur="saveTcUnitDetails()" rows="3"
-                                        class="w-full bg-white p-2 rounded-lg border border-gray-300 focus:outline-none focus:border-teal-500 text-gray-800 text-sm transition-colors"
-                                        placeholder="Log any changes or anything different in this assembled unit/part here."></textarea>
                                 </div>
                             </div>
 
@@ -216,7 +279,7 @@
                             </div>
 
                         </div>
-                    </div>
+                    </div><!-- /CENTER -->
 
                     <!-- RIGHT: tabs -->
                     <div class="w-80 shrink-0 bg-white border-l border-gray-200 flex flex-col">
@@ -242,43 +305,38 @@
                                 </label>
                             </div>
                             <!-- Problems tab -->
-                            <div v-if="woActionTab === 'notes'">
-                                <button @click="notesPanelOpen = true" class="w-full py-3 bg-orange-500 hover:bg-orange-400 text-white font-bold rounded-xl active:scale-95 transition-all text-sm mb-1">
-                                    Add Problem with WO
-                                </button>
-                                <div class="text-gray-400 text-xs text-center mb-4">Ex: Die problem, machine problem, etc.</div>
-                                <div class="text-gray-500 text-xs font-bold uppercase tracking-wide mb-2">Stage History</div>
-                                <div v-if="!(activeOrder?.notes || '').match(/TCPRE\||TCFIN\||TCWOC\|/)" class="text-gray-400 text-sm italic">No stage actions yet.</div>
-                                <div class="space-y-1.5">
-                                    <div v-for="entry in (activeOrder?.notes || '').split('\n').filter(l => l.startsWith('TCPRE|') || l.startsWith('TCFIN|') || l.startsWith('TCWOC|')).slice().reverse()" :key="entry"
-                                        class="bg-gray-50 border border-gray-200 rounded px-2 py-1.5 text-xs flex flex-wrap gap-x-2 gap-y-1 items-center">
-                                        <span class="font-bold text-xs px-1.5 py-0.5 rounded"
-                                            :class="entry.startsWith('TCPRE|') ? 'bg-blue-100 text-blue-700' : entry.startsWith('TCFIN|') ? 'bg-emerald-100 text-emerald-700' : 'bg-violet-100 text-violet-700'">
-                                            {{ entry.startsWith('TCPRE|') ? 'PRELAP' : entry.startsWith('TCFIN|') ? 'FINAL' : 'WO' }}
-                                        </span>
-                                        <span class="text-gray-400 text-xs">{{ entry.split('|')[1] }}</span>
-                                        <span class="text-teal-600 font-semibold">{{ entry.split('|')[2] }}</span>
-                                        <span class="font-bold uppercase tracking-wide text-xs px-1.5 py-0.5 rounded"
-                                            :class="entry.split('|')[3] === 'completed' ? 'bg-emerald-100 text-emerald-700' : entry.split('|')[3].includes('started') ? 'bg-blue-100 text-blue-700' : entry.split('|')[3] === 'paused' ? 'bg-amber-100 text-amber-700' : entry.split('|')[3] === 'on_hold' ? 'bg-red-100 text-red-700' : 'bg-gray-100 text-gray-600'">
-                                            {{ entry.split('|')[3] }}
-                                        </span>
-                                        <span v-if="entry.split('|')[4]" class="text-gray-400 text-xs">Sess: <span class="text-amber-600 font-semibold">{{ entry.split('|')[4] }}</span></span>
-                                        <span v-if="entry.split('|')[5]" class="text-gray-400 text-xs">Total: <span class="text-emerald-600 font-semibold">{{ entry.split('|')[5] }}</span></span>
-                                        <span v-if="entry.split('|')[6]" class="text-gray-400 text-xs italic">&#8220;{{ entry.split('|')[6] }}&#8221;</span>
-                                    </div>
+                            <div v-if="woActionTab === 'notes'" class="flex flex-col gap-3">
+                                <div v-if="activeOrder?.wo_problem_text && activeOrder?.wo_problem_status === 'open'"
+                                    class="bg-red-50 border border-red-200 rounded-lg px-3 py-2">
+                                    <div class="text-xs font-bold text-red-500 uppercase tracking-wide mb-0.5">Open Problem</div>
+                                    <div class="text-red-800 text-xs">{{ activeOrder.wo_problem_text }}</div>
                                 </div>
+                                <input v-model="woProblemDraftName" @input="woProblemDraftNameError = false"
+                                    type="text" placeholder="Your name"
+                                    class="w-full p-2.5 text-sm border rounded-lg focus:outline-none focus:border-red-400 transition-colors"
+                                    :class="woProblemDraftNameError ? 'border-red-500 bg-red-50' : 'border-gray-300'">
+                                <p v-if="woProblemDraftNameError" class="text-red-500 text-xs -mt-2">Name is required</p>
+                                <textarea v-model="woProblemDraftText" @input="woProblemDraftError = false"
+                                    rows="3" placeholder="Describe the problem (e.g. die problem, machine issue)…"
+                                    class="w-full p-2.5 text-sm border rounded-lg resize-none focus:outline-none focus:border-red-400 transition-colors"
+                                    :class="woProblemDraftError ? 'border-red-500 bg-red-50' : 'border-gray-300'"></textarea>
+                                <p v-if="woProblemDraftError" class="text-red-500 text-xs -mt-2">Problem description is required</p>
+                                <button @click="submitWoProblemFromUi()"
+                                    class="w-full bg-red-600 hover:bg-red-500 text-white px-3 py-2.5 rounded-lg font-bold text-sm transition-colors active:scale-95">
+                                    Log Problem with WO
+                                </button>
                             </div>
                             <!-- Done tab -->
                             <div v-if="woActionTab === 'complete'" class="text-center py-6 text-gray-400 text-sm">
-                                Use <strong class="text-gray-700">"Mark Whole WO Complete"</strong> in the left panel to complete this WO.
+                                Use <strong class="text-gray-700">"Mark Whole WO Complete"</strong> in the center panel to complete this WO.
                             </div>
                         </div>
                     </div>
 
-                </div><!-- /3-zone body -->
+                </div><!-- /body -->
 
             </div>
-        </div>
+        </div><!-- /TC ASSY UNIT MODAL -->
 
         <!-- TC ASSY UNIT COMPLETE PROMPT MODAL -->
         <div v-if="tcAssyCompleteModalOpen" class="fixed z-50 inset-0 bg-black/80 flex items-center justify-center p-4">

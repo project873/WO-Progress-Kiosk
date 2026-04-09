@@ -216,6 +216,10 @@ export const tvStockNotes       = ref('');
 export const tvUnitHoldOpen        = ref(false);
 export const tvUnitHoldReason      = ref('');
 export const tvUnitHoldReasonError = ref(false);
+
+export const tcUnitHoldOpen        = ref(false);
+export const tcUnitHoldReason      = ref('');
+export const tcUnitHoldReasonError = ref(false);
 export const tvEngStage = ref({ pending: '', sessionQty: '', reason: '', qtyError: false, reasonError: false });
 
 // ── TC Assy entry / workflow ──────────────────────────────────
