@@ -198,21 +198,24 @@ export const partsWithFiles = ref(new Set());  // sanitized folder names of part
 export const woActionTab = ref('notes');
 
 // ── Error toast ───────────────────────────────────────────────
-export const tvAssyEntryOpen  = ref(false);
-export const tvAssyEntryStep  = ref(1);
+export const tvModeSelectOpen = ref(false); // mode picker shown when tv_job_mode not yet saved
 export const tvAssyEntryName  = ref('');
 export const tvAssyNameError  = ref(false);
 export const tvAssyOpEditing  = ref(false);  // inline operator-name edit in unit/stock modal
 export const tvAssyJobType    = ref('');    // 'stock' | 'unit'
 export const tvAssyStockOpen  = ref(false);
 export const tvAssyUnitOpen   = ref(false);
-export const tvStockPending   = ref('');    // ''|'start'|'cant_start'|'pause'|'resume'|'complete'|'hold'
-export const tvStockSessionQty = ref('');
-export const tvStockReason    = ref('');
-export const tvStockQtyError  = ref(false);
+export const tvStockPending     = ref('');   // ''|'cant_start'|'pause'|'complete'|'hold'
+export const tvStockSessionQty  = ref('');
+export const tvStockReason      = ref('');
+export const tvStockQtyError    = ref(false);
 export const tvStockReasonError = ref(false);
+export const tvStockNotes       = ref('');
 
 // ── TV Assy Unit: per-stage action state ──────────────────────
+export const tvUnitHoldOpen        = ref(false);
+export const tvUnitHoldReason      = ref('');
+export const tvUnitHoldReasonError = ref(false);
 export const tvEngStage = ref({ pending: '', sessionQty: '', reason: '', qtyError: false, reasonError: false });
 
 // ── TC Assy entry / workflow ──────────────────────────────────

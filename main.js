@@ -27,8 +27,10 @@ import { formatDateLocal, getStageCum, detectTcMode, sanitizePartKey } from './l
 // ── Page controllers ──────────────────────────────────────────
 import { selectDept, promptPin, submitPin, goBack } from './pages/splash-view.js';
 import {
-    openActionPanel, openTvAssyEntry, tvAssyNameContinue, tvAssyContinue,
+    openActionPanel, openTvAssyEntry, tvSelectMode,
     submitTvUnitStageFromUi, openTvAssyUnit, openTvAssyStock, submitTvStockActionFromUi,
+    tvStockDirectAction, saveTvStockNotes,
+    tvUnitStageDirectAction, tvUnitOpenHold, tvUnitConfirmHold,
     openTcAssyEntry, tcAssyContinue, openTcAssyUnit, openTcAssyStock, submitTcStockActionFromUi,
     saveTcStockNotes, saveTcUnitDetails,
     submitTcUnitStageFromUi, openTcAssyCompleteModal, confirmTcWoComplete, toggleTcNewWoMode,
@@ -184,27 +186,30 @@ try {
 
                 // TV Assy stock
                 // TV Assy unit stage state
-                tvEngStage:      store.tvEngStage,
-                tvCrtStage:      store.tvCrtStage,
-                tvFinStage:      store.tvFinStage,
+                tvUnitHoldOpen:        store.tvUnitHoldOpen,
+                tvUnitHoldReason:      store.tvUnitHoldReason,
+                tvUnitHoldReasonError: store.tvUnitHoldReasonError,
+                tvEngStage:            store.tvEngStage,
+                tvCrtStage:            store.tvCrtStage,
+                tvFinStage:            store.tvFinStage,
                 tvEngineCum:     store.tvEngineCum,
                 tvCartCum:       store.tvCartCum,
                 tvFinalCum:      store.tvFinalCum,
 
                 tvAssyUnitOpen:   store.tvAssyUnitOpen,
                 tvAssyStockOpen:  store.tvAssyStockOpen,
-                tvStockPending:   store.tvStockPending,
-                tvStockSessionQty: store.tvStockSessionQty,
-                tvStockReason:    store.tvStockReason,
-                tvStockQtyError:  store.tvStockQtyError,
+                tvStockPending:     store.tvStockPending,
+                tvStockSessionQty:  store.tvStockSessionQty,
+                tvStockReason:      store.tvStockReason,
+                tvStockQtyError:    store.tvStockQtyError,
                 tvStockReasonError: store.tvStockReasonError,
+                tvStockNotes:       store.tvStockNotes,
 
                 // TV Assy entry
-                tvAssyEntryOpen: store.tvAssyEntryOpen,
-                tvAssyEntryStep: store.tvAssyEntryStep,
-                tvAssyEntryName: store.tvAssyEntryName,
-                tvAssyOpEditing: store.tvAssyOpEditing,
-                tvAssyNameError: store.tvAssyNameError,
+                tvModeSelectOpen: store.tvModeSelectOpen,
+                tvAssyEntryName:  store.tvAssyEntryName,
+                tvAssyOpEditing:  store.tvAssyOpEditing,
+                tvAssyNameError:  store.tvAssyNameError,
 
                 // TC Assy entry
                 tcAssyEntryOpen:  store.tcAssyEntryOpen,
@@ -324,8 +329,10 @@ try {
                 selectDept, promptPin, submitPin, goBack,
 
                 // Dashboard
-                openActionPanel, openTvAssyEntry, tvAssyNameContinue, tvAssyContinue,
+                openActionPanel, openTvAssyEntry, tvSelectMode,
                 submitTvUnitStageFromUi, openTvAssyUnit, openTvAssyStock, submitTvStockActionFromUi,
+                tvStockDirectAction, saveTvStockNotes,
+                tvUnitStageDirectAction, tvUnitOpenHold, tvUnitConfirmHold,
                 openTcAssyEntry, tcAssyContinue, openTcAssyUnit, openTcAssyStock, submitTcStockActionFromUi,
                 saveTcStockNotes, saveTcUnitDetails,
                 submitTcUnitStageFromUi, openTcAssyCompleteModal, confirmTcWoComplete,

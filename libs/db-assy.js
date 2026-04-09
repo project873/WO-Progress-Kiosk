@@ -274,6 +274,17 @@ export async function saveTcUnitInfo(id, fields) {
 
 // Save the notes/differences/mods field for a TC Assy WO (standalone, any time)
 // Accepts id (WO id) and notes (string). Clears the field if notes is empty.
+// saveTvAssyNotes — saves TV Assy notes/mods text. Input: WO id, notes string.
+export async function saveTvAssyNotes(id, notes) {
+    if (!id) return { data: null, error: new Error('Missing WO ID') };
+    return withRetry(() =>
+        supabase.from('work_orders')
+            .update({ tv_assy_notes: notes && notes.trim() ? notes.trim() : null })
+            .eq('id', id)
+            .select()
+    );
+}
+
 export async function saveTcAssyNotes(id, notes) {
     if (!id) return { data: null, error: new Error('Missing WO ID') };
     return withRetry(() =>

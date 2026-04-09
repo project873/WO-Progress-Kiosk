@@ -1,3 +1,36 @@
+        <!-- TV ASSY MODE SELECT -->
+        <div v-if="tvModeSelectOpen" class="fixed z-50 inset-0 flex flex-col bg-slate-900">
+            <!-- Top bar -->
+            <div class="shrink-0 bg-slate-900 border-b border-slate-700 px-5 py-3 flex items-center gap-4">
+                <button @click="tvModeSelectOpen = false" class="shrink-0 text-slate-400 hover:text-white bg-slate-700 hover:bg-slate-600 px-3 py-1.5 rounded font-bold text-sm">&#10005; CLOSE</button>
+                <img src="assets/trac-vac-logo.png" alt="Trac Vac" class="h-8 object-contain shrink-0">
+                <div class="flex items-center gap-3 min-w-0 flex-1">
+                    <span class="text-xl font-extrabold text-blue-400 shrink-0">WO #{{ activeOrder?.wo_number }}</span>
+                    <span class="text-sm font-bold text-slate-300 border border-slate-600 px-2 py-0.5 rounded shrink-0">{{ activeOrder?.part_number }}</span>
+                    <span v-if="activeOrder?.sales_order" class="text-emerald-400 text-sm shrink-0">SO# {{ activeOrder.sales_order }}</span>
+                    <span class="text-slate-500 text-xs shrink-0">Qty: {{ activeOrder?.qty_required }}</span>
+                </div>
+            </div>
+            <!-- Mode picker -->
+            <div class="flex-1 flex flex-col items-center justify-center gap-8 p-8">
+                <div class="text-slate-300 text-2xl font-bold">What type of job is this?</div>
+                <div class="flex gap-6">
+                    <button @click="tvSelectMode('unit')"
+                        class="flex flex-col items-center gap-3 px-14 py-10 bg-blue-700 hover:bg-blue-600 rounded-2xl border-2 border-blue-500 text-white active:scale-95 transition-all shadow-xl">
+                        <span class="text-5xl">&#128187;</span>
+                        <span class="text-2xl font-extrabold tracking-wide">UNIT</span>
+                        <span class="text-blue-200 text-sm font-normal">Full machine assembly</span>
+                    </button>
+                    <button @click="tvSelectMode('stock')"
+                        class="flex flex-col items-center gap-3 px-14 py-10 bg-emerald-700 hover:bg-emerald-600 rounded-2xl border-2 border-emerald-500 text-white active:scale-95 transition-all shadow-xl">
+                        <span class="text-5xl">&#128230;</span>
+                        <span class="text-2xl font-extrabold tracking-wide">SUBASSY</span>
+                        <span class="text-emerald-200 text-sm font-normal">Sub-assembly / stock</span>
+                    </button>
+                </div>
+            </div>
+        </div>
+
         <!-- NEW MANUAL WO MODAL -->
         <div v-if="newWoModalOpen" class="fixed z-50 inset-0 bg-black/80 flex items-center justify-center p-4">
 
@@ -115,32 +148,19 @@
                 </div>
             </div>
 
-            <!-- ── TV Assy / fallback generic form (unchanged) ─────────────────── -->
+            <!-- ── TV Assy / fallback generic form ───────────────────────────── -->
             <div v-else class="bg-slate-800 rounded-xl w-full max-w-lg p-6 border border-emerald-500/50">
                 <h2 class="text-2xl font-bold mb-4 text-emerald-400">Add New {{ selectedDept }} Job</h2>
                 <div class="space-y-4">
                     <div>
-                        <label class="block font-bold text-slate-400 text-sm">Part Number</label>
-                        <input v-model="newWoForm.part" type="text" class="w-full bg-slate-900 p-3 rounded font-bold uppercase border border-slate-700 mt-1">
+                        <label class="block font-bold text-slate-400 text-sm">Part Number <span class="text-red-400">*</span></label>
+                        <input v-model="newWoForm.part" type="text" class="w-full bg-slate-900 p-3 rounded font-bold uppercase border border-slate-700 mt-1 focus:outline-none focus:border-emerald-500">
                     </div>
                     <div>
                         <label class="block font-bold text-slate-400 text-sm">Description</label>
-                        <input v-model="newWoForm.desc" type="text" class="w-full bg-slate-900 p-3 rounded border border-slate-700 mt-1">
+                        <input v-model="newWoForm.desc" type="text" class="w-full bg-slate-900 p-3 rounded border border-slate-700 mt-1 focus:outline-none focus:border-emerald-500">
                     </div>
-                    <div class="flex gap-4">
-                        <div class="flex-1">
-                            <label class="block font-bold text-slate-400 text-sm">Qty required</label>
-                            <input v-model="newWoForm.qty" type="number" class="w-full bg-slate-900 p-3 rounded font-bold border border-slate-700 mt-1">
-                        </div>
-                        <div class="flex-1">
-                            <label class="block font-bold text-slate-400 text-sm">Job Type</label>
-                            <select v-model="newWoForm.type" class="w-full bg-slate-900 p-3 rounded border border-slate-700 mt-1">
-                                <option value="Unit">Unit (Full)</option>
-                                <option value="Cart">Cart Only</option>
-                                <option value="Engine/Subassy">Engine / Subassy</option>
-                            </select>
-                        </div>
-                    </div>
+                    <p class="text-slate-500 text-xs">Unit/Subassy type and qty will be set when the WO is opened.</p>
                 </div>
                 <div class="mt-8 flex gap-4">
                     <button @click="newWoModalOpen = false" class="px-6 py-3 bg-slate-700 rounded font-bold">CANCEL</button>

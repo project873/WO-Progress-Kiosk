@@ -208,13 +208,9 @@ export async function submitNewWo() {
         return;
     }
 
-    // ── Generic / TV Assy: original flow unchanged ─────────────
+    // ── Generic / TV Assy ─────────────────────────────────────────
     if (!isNonEmpty(form.part)) {
         store.showToast('Part number is required.', 'error');
-        return;
-    }
-    if (!isValidQty(form.qty) || parseInt(form.qty, 10) < 1) {
-        store.showToast('Quantity must be at least 1.', 'error');
         return;
     }
 
@@ -223,9 +219,8 @@ export async function submitNewWo() {
         const { error } = await db.insertManualWorkOrder({
             partNumber:  sanitizeText(form.part),
             description: sanitizeText(form.desc),
-            qty:         parseInt(form.qty, 10),
-            dept,
-            woType:      form.type
+            qty:         1,
+            dept
         });
         if (error) throw error;
 
@@ -330,15 +325,26 @@ export async function submitWoProblemFromUi() {
 // ── Internal helpers ──────────────────────────────────────────
 
 // Always skips the entry modal and goes directly to the workflow screen.
-// Mode resolution: saved tv_job_mode → 'unit' default.
-// If no operator is saved, opens the inline name editor automatically.
+// openTvAssyEntry — routes to mode-select screen if tv_job_mode not yet saved;
+// otherwise goes straight to the saved workflow screen.
 export function openTvAssyEntry(order) {
-    const mode = order.tv_job_mode || 'unit';
+    store.activeOrder.value     = order;
     store.tvAssyEntryName.value = order.operator || '';
+    if (order.tv_job_mode) {
+        if (order.tv_job_mode === 'unit') openTvAssyUnit(order);
+        else                              openTvAssyStock(order);
+    } else {
+        store.tvModeSelectOpen.value = true;
+    }
+}
+
+// tvSelectMode — called from the mode-select screen; saves mode and opens workflow.
+// Input: mode = 'unit' | 'stock'
+export function tvSelectMode(mode) {
+    store.tvModeSelectOpen.value = false;
+    const order = store.activeOrder.value;
     if (mode === 'unit') openTvAssyUnit(order);
     else                 openTvAssyStock(order);
-    // Set AFTER open functions — they both reset opEditing to false
-    store.tvAssyOpEditing.value = !order.operator;
 }
 
 export async function submitTvUnitStageFromUi(stageName) {
@@ -397,7 +403,7 @@ export async function submitTvUnitStageFromUi(stageName) {
 export function openTvAssyUnit(order) {
     store.activeOrder.value      = order;
     store.tvAssyJobType.value    = 'unit';
-    store.tvAssyEntryOpen.value  = false;
+    store.tvModeSelectOpen.value = false;
     store.tvAssyUnitOpen.value   = true;
     store.tvAssyOpEditing.value  = false;
     loadWoFiles(order.part_number);
@@ -406,6 +412,10 @@ export function openTvAssyUnit(order) {
     store.tvEngStage.value = { ...blank };
     store.tvCrtStage.value = { ...blank };
     store.tvFinStage.value = { ...blank };
+    store.tvUnitHoldOpen.value        = false;
+    store.tvUnitHoldReason.value      = '';
+    store.tvUnitHoldReasonError.value = false;
+    store.tvStockNotes.value          = order.tv_assy_notes || '';
     // Persist mode on first selection so future openings skip the choice screen
     if (!order.tv_job_mode) {
         dbAssy.saveTvJobMode(order.id, 'unit').then(res => {
@@ -421,7 +431,7 @@ export function openTvAssyUnit(order) {
 export function openTvAssyStock(order) {
     store.activeOrder.value        = order;
     store.tvAssyJobType.value      = 'stock';
-    store.tvAssyEntryOpen.value    = false;
+    store.tvModeSelectOpen.value   = false;
     store.tvAssyStockOpen.value    = true;
     store.tvAssyOpEditing.value    = false;
     loadWoFiles(order.part_number);
@@ -430,6 +440,7 @@ export function openTvAssyStock(order) {
     store.tvStockReason.value      = '';
     store.tvStockQtyError.value    = false;
     store.tvStockReasonError.value = false;
+    store.tvStockNotes.value       = order.tv_assy_notes || '';
     // Persist mode on first selection so future openings skip the choice screen
     if (!order.tv_job_mode) {
         dbAssy.saveTvJobMode(order.id, 'stock').then(res => {
@@ -490,25 +501,70 @@ export async function submitTvStockActionFromUi() {
     }
 }
 
-export function tvAssyNameContinue() {
-    if (!store.tvAssyEntryName.value.trim()) {
-        store.tvAssyNameError.value = true;
-        return;
-    }
-    store.tvAssyNameError.value = false;
-    store.tvAssyEntryStep.value = 2;
+
+// tvStockDirectAction — submits a TV Subassy action immediately without a confirm step.
+// Used for start and resume which need no qty or reason input.
+export async function tvStockDirectAction(action) {
+    store.tvStockPending.value = action;
+    await submitTvStockActionFromUi();
 }
 
-// Single-screen entry: validate name then route to unit or stock workflow
-export function tvAssyContinue(mode) {
-    if (!store.tvAssyEntryName.value.trim()) {
-        store.tvAssyNameError.value = true;
+// saveTvStockNotes — saves TV Subassy notes/mods text to the database.
+export async function saveTvStockNotes() {
+    const order = store.activeOrder.value;
+    if (!order?.id) return;
+    store.loading.value = true;
+    try {
+        const result = await dbAssy.saveTvAssyNotes(order.id, store.tvStockNotes.value);
+        if (result.error) throw result.error;
+        const updated = result.data[0];
+        store.activeOrder.value = updated;
+        store.orders.value = store.orders.value.map(o => o.id === updated.id ? updated : o);
+        store.showToast('Notes saved', 'success');
+    } catch (err) {
+        store.showToast('Failed to save notes: ' + err.message);
+    } finally {
+        store.loading.value = false;
+    }
+}
+
+// tvUnitStageDirectAction — submits a TV Unit stage action immediately (no confirm step).
+// Used for start and resume which need no qty or reason input.
+// Input: stageName = 'engine'|'cart'|'final', action = 'start'|'resume'
+export async function tvUnitStageDirectAction(stageName, action) {
+    const stageRef = stageName === 'engine' ? store.tvEngStage
+                   : stageName === 'cart'   ? store.tvCrtStage
+                   : store.tvFinStage;
+    stageRef.value.pending = action;
+    await submitTvUnitStageFromUi(stageName);
+}
+
+// tvUnitOpenHold — opens the sidebar hold form for the currently active unit stage.
+export function tvUnitOpenHold() {
+    store.tvUnitHoldOpen.value        = true;
+    store.tvUnitHoldReason.value      = '';
+    store.tvUnitHoldReasonError.value = false;
+}
+
+// tvUnitConfirmHold — validates reason and submits hold for the active stage.
+export async function tvUnitConfirmHold() {
+    if (!store.tvUnitHoldReason.value.trim()) {
+        store.tvUnitHoldReasonError.value = true;
         return;
     }
-    store.tvAssyNameError.value = false;
     const order = store.activeOrder.value;
-    if (mode === 'unit')  openTvAssyUnit(order);
-    else                  openTvAssyStock(order);
+    const stageName = order.tv_final_status === 'started'  ? 'final'
+                    : order.tv_cart_status  === 'started'  ? 'cart'
+                    : order.tv_engine_status === 'started' ? 'engine'
+                    : null;
+    if (!stageName) { store.tvUnitHoldOpen.value = false; return; }
+    const stageRef = stageName === 'engine' ? store.tvEngStage
+                   : stageName === 'cart'   ? store.tvCrtStage
+                   : store.tvFinStage;
+    stageRef.value.pending = 'hold';
+    stageRef.value.reason  = store.tvUnitHoldReason.value;
+    store.tvUnitHoldOpen.value = false;
+    await submitTvUnitStageFromUi(stageName);
 }
 
 // ── TC Assy entry ──────────────────────────────────────────────
