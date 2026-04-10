@@ -1,48 +1,281 @@
-            <!-- ── SPLASH ──────────────────────────────────── -->
+            <!-- ── SPLASH ──────────────────────────────────────── -->
             <div v-if="currentView === 'splash'"
                 class="h-full w-full flex flex-col items-center justify-center p-8 bg-slate-900 absolute inset-0">
-                <div class="text-center mb-12">
-                    <h2 class="text-5xl font-extrabold text-white mb-4">Shop Floor Kiosk</h2>
-                    <p class="text-xl text-slate-400">Select your department to begin</p>
+
+                <!-- ── Level 0: Root ───────────────────────────── -->
+                <div v-if="splashLevel === 0" class="w-full max-w-7xl px-4 flex flex-col items-center gap-10">
+                    <div class="text-center">
+                        <h2 class="text-5xl font-extrabold text-white mb-3">Midwest Mfg.</h2>
+                        <p class="text-xl text-slate-400">Select a category to begin</p>
+                    </div>
+                    <div class="grid grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-6 w-full">
+                        <!-- Production -->
+                        <button @click="selectCategory('production')"
+                            class="bg-white hover:bg-blue-50 text-gray-800 rounded-2xl shadow-md p-10 flex flex-col items-center gap-3 border-2 border-blue-400 active:scale-95 transition-transform">
+                            <svg class="w-10 h-10 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19.428 15.428a2 2 0 00-1.022-.547l-2.387-.477a6 6 0 00-3.86.517l-.318.158a6 6 0 01-3.86.517L6.05 15.21a2 2 0 00-1.806.547M8 4h8l-1 1v5.172a2 2 0 00.586 1.414l5 5c1.26 1.26.367 3.414-1.415 3.414H4.828c-1.782 0-2.674-2.154-1.414-3.414l5-5A2 2 0 009 10.172V5L8 4z"/>
+                            </svg>
+                            <span class="text-3xl font-bold uppercase">Production</span>
+                        </button>
+                        <!-- Inventory -->
+                        <button @click="selectCategory('inventory')"
+                            class="bg-white hover:bg-green-50 text-gray-800 rounded-2xl shadow-md p-10 flex flex-col items-center gap-3 border-2 border-green-400 active:scale-95 transition-transform">
+                            <svg class="w-10 h-10 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4"/>
+                            </svg>
+                            <span class="text-3xl font-bold uppercase">Inventory</span>
+                        </button>
+                        <!-- Customer Service -->
+                        <button @click="selectDept('CS')"
+                            class="bg-white hover:bg-teal-50 text-gray-800 rounded-2xl shadow-md p-10 flex flex-col items-center gap-3 border-2 border-teal-400 active:scale-95 transition-transform">
+                            <svg class="w-10 h-10 text-teal-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 8h2a2 2 0 012 2v6a2 2 0 01-2 2h-2v4l-4-4H9a1.994 1.994 0 01-1.414-.586m0 0L11 14h4a2 2 0 002-2V6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2v4l.586-.586z"/>
+                            </svg>
+                            <span class="text-3xl font-bold uppercase">Customer Service</span>
+                        </button>
+                        <!-- Management -->
+                        <button @click="promptPin('manager')"
+                            class="relative bg-white hover:bg-purple-50 text-gray-800 rounded-2xl shadow-md p-10 flex flex-col items-center gap-3 border-2 border-purple-400 active:scale-95 transition-transform">
+                            <span v-if="managerTotalBadge > 0"
+                                class="absolute top-3 right-3 bg-red-500 text-white text-xs font-bold rounded-full min-w-[1.5rem] h-6 flex items-center justify-center px-1">
+                                {{ managerTotalBadge }}
+                            </span>
+                            <svg class="w-10 h-10 text-purple-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/>
+                            </svg>
+                            <span class="text-3xl font-bold uppercase">Management</span>
+                        </button>
+                        <!-- Purchasing -->
+                        <button @click="selectCategory('purchasing')"
+                            class="bg-white hover:bg-amber-50 text-gray-800 rounded-2xl shadow-md p-10 flex flex-col items-center gap-3 border-2 border-amber-400 active:scale-95 transition-transform">
+                            <svg class="w-10 h-10 text-amber-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z"/>
+                            </svg>
+                            <span class="text-3xl font-bold uppercase">Purchasing</span>
+                        </button>
+                    </div>
                 </div>
-                <!-- Row 1: Production departments -->
-                <div class="grid grid-cols-2 lg:grid-cols-4 gap-6 w-full max-w-7xl px-4 mb-6">
-                    <button @click="selectDept('Fab')"
-                        class="bg-white hover:bg-gray-50 text-gray-800 rounded-2xl shadow-md p-10 flex flex-col items-center gap-4 border-2 border-gray-300 active:scale-95 transition-transform">
-                        <span class="text-4xl font-bold uppercase">Fabrication</span>
-                    </button>
-                    <button @click="selectDept('Weld')"
-                        class="bg-white hover:bg-gray-50 text-gray-800 rounded-2xl shadow-md p-10 flex flex-col items-center gap-4 border-2 border-gray-300 active:scale-95 transition-transform">
-                        <span class="text-4xl font-bold uppercase">Welding</span>
-                    </button>
-                    <button @click="selectDept('Trac Vac Assy')"
-                        class="bg-white hover:bg-gray-50 text-gray-800 rounded-2xl shadow-md p-10 flex flex-col items-center justify-between gap-2 border-2 border-gray-300 active:scale-95 transition-transform">
-                        <img src="assets/trac-vac-logo.png" alt="Trac Vac" class="h-12 object-contain">
-                        <span class="text-2xl font-bold uppercase tracking-wide">Assembly</span>
-                    </button>
-                    <button @click="selectDept('Tru Cut Assy')"
-                        class="bg-white hover:bg-gray-50 text-gray-800 rounded-2xl shadow-md p-10 flex flex-col items-center justify-between gap-2 border-2 border-gray-300 active:scale-95 transition-transform">
-                        <img src="assets/tru-cut-logo.png" alt="Tru-Cut" class="h-12 object-contain">
-                        <span class="text-2xl font-bold uppercase tracking-wide">Assembly</span>
-                    </button>
+
+                <!-- ── Level 1: Production sub-menu ────────────── -->
+                <div v-else-if="splashLevel === 1 && splashCategory === 'production'"
+                    class="w-full max-w-7xl px-4 flex flex-col items-center gap-8">
+                    <div class="w-full flex items-center gap-6">
+                        <button @click="splashBack"
+                            class="bg-slate-700 hover:bg-slate-600 text-white rounded-xl p-3 active:scale-95 transition-transform flex items-center justify-center shrink-0">
+                            <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M15 19l-7-7 7-7"/>
+                            </svg>
+                        </button>
+                        <h2 class="text-4xl font-extrabold text-white">Production</h2>
+                    </div>
+                    <div class="grid grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-6 w-full">
+                        <!-- Active WO's -->
+                        <button @click="selectSubCategory('active-wos')"
+                            class="bg-white hover:bg-blue-50 text-gray-800 rounded-2xl shadow-md p-8 flex flex-col items-center gap-3 border-2 border-blue-400 active:scale-95 transition-transform">
+                            <svg class="w-8 h-8 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4"/>
+                            </svg>
+                            <span class="text-2xl font-bold uppercase">Active WO's</span>
+                        </button>
+                        <!-- Request WO -->
+                        <button @click="enterWoRequestView"
+                            class="bg-white hover:bg-blue-50 text-gray-800 rounded-2xl shadow-md p-8 flex flex-col items-center gap-3 border-2 border-blue-400 active:scale-95 transition-transform">
+                            <svg class="w-8 h-8 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/>
+                            </svg>
+                            <span class="text-2xl font-bold uppercase">Request WO</span>
+                        </button>
+                        <!-- Create WO -->
+                        <button @click="enterCreateWoView"
+                            class="bg-white hover:bg-blue-50 text-gray-800 rounded-2xl shadow-md p-8 flex flex-col items-center gap-3 border-2 border-blue-400 active:scale-95 transition-transform">
+                            <svg class="w-8 h-8 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/>
+                            </svg>
+                            <span class="text-2xl font-bold uppercase">Create WO</span>
+                        </button>
+                        <!-- Shipping -->
+                        <button @click="selectSubCategory('shipping')"
+                            class="bg-white hover:bg-blue-50 text-gray-800 rounded-2xl shadow-md p-8 flex flex-col items-center gap-3 border-2 border-blue-300 active:scale-95 transition-transform">
+                            <svg class="w-8 h-8 text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 8h14M5 8a2 2 0 110-4h14a2 2 0 110 4M5 8v10a2 2 0 002 2h10a2 2 0 002-2V8m-9 4h4"/>
+                            </svg>
+                            <span class="text-2xl font-bold uppercase">Shipping</span>
+                        </button>
+                    </div>
                 </div>
-                <!-- Row 2: Office / CS / Manager -->
-                <div class="grid grid-cols-3 gap-6 w-full max-w-7xl px-4">
-                    <button @click="selectDept('WO Status')"
-                        class="bg-white hover:bg-gray-50 text-gray-800 rounded-2xl shadow-md p-8 flex flex-col items-center justify-center border-2 border-gray-300 active:scale-95 transition-transform">
-                        <span class="text-3xl font-bold uppercase">WO Status / Office</span>
-                    </button>
-                    <button @click="selectDept('CS')"
-                        class="bg-white hover:bg-gray-50 text-gray-800 rounded-2xl shadow-md p-8 flex flex-col items-center justify-center border-2 border-gray-300 active:scale-95 transition-transform">
-                        <span class="text-3xl font-bold uppercase">Customer Service</span>
-                    </button>
-                    <button @click="promptPin('manager')"
-                        class="relative bg-white hover:bg-gray-50 text-gray-800 rounded-2xl shadow-md p-8 flex flex-col items-center justify-center border-2 border-gray-300 active:scale-95 transition-transform">
-                        <span v-if="managerTotalBadge > 0"
-                            class="absolute top-3 right-3 bg-red-500 text-white text-xs font-bold rounded-full min-w-[1.5rem] h-6 flex items-center justify-center px-1">
-                            {{ managerTotalBadge }}
-                        </span>
-                        <span class="text-3xl font-bold uppercase">Management</span>
-                    </button>
+
+                <!-- ── Level 1: Inventory sub-menu ─────────────── -->
+                <div v-else-if="splashLevel === 1 && splashCategory === 'inventory'"
+                    class="w-full max-w-7xl px-4 flex flex-col items-center gap-8">
+                    <div class="w-full flex items-center gap-6">
+                        <button @click="splashBack"
+                            class="bg-slate-700 hover:bg-slate-600 text-white rounded-xl p-3 active:scale-95 transition-transform flex items-center justify-center shrink-0">
+                            <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M15 19l-7-7 7-7"/>
+                            </svg>
+                        </button>
+                        <h2 class="text-4xl font-extrabold text-white">Inventory</h2>
+                    </div>
+                    <div class="grid grid-cols-2 lg:grid-cols-4 gap-6 w-full">
+                        <!-- WO Receive & Close Out -->
+                        <button @click="selectDept('WO Status')"
+                            class="bg-white hover:bg-green-50 text-gray-800 rounded-2xl shadow-md p-8 flex flex-col items-center gap-3 border-2 border-green-400 active:scale-95 transition-transform">
+                            <svg class="w-8 h-8 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
+                            </svg>
+                            <span class="text-2xl font-bold uppercase">WO Receive &amp; Close Out</span>
+                        </button>
+                        <!-- PO Receive (stub) -->
+                        <button disabled class="bg-white text-gray-400 rounded-2xl shadow-md p-8 flex flex-col items-center gap-3 border-2 border-gray-200 opacity-50 cursor-not-allowed">
+                            <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/></svg>
+                            <span class="text-2xl font-bold uppercase">PO Receive</span>
+                            <span class="text-xs uppercase tracking-widest">Coming Soon</span>
+                        </button>
+                        <!-- Chutes -->
+                        <button @click="enterInventoryView('chute')"
+                            class="bg-white hover:bg-green-50 text-gray-800 rounded-2xl shadow-md p-8 flex flex-col items-center gap-3 border-2 border-green-300 active:scale-95 transition-transform">
+                            <svg class="w-8 h-8 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"/></svg>
+                            <span class="text-2xl font-bold uppercase">Chutes</span>
+                        </button>
+                        <!-- Hitches -->
+                        <button @click="enterInventoryView('hitch')"
+                            class="bg-white hover:bg-green-50 text-gray-800 rounded-2xl shadow-md p-8 flex flex-col items-center gap-3 border-2 border-green-300 active:scale-95 transition-transform">
+                            <svg class="w-8 h-8 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1"/></svg>
+                            <span class="text-2xl font-bold uppercase">Hitches</span>
+                        </button>
+                        <!-- Engines -->
+                        <button @click="enterInventoryView('engine')"
+                            class="bg-white hover:bg-green-50 text-gray-800 rounded-2xl shadow-md p-8 flex flex-col items-center gap-3 border-2 border-green-300 active:scale-95 transition-transform">
+                            <svg class="w-8 h-8 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4"/></svg>
+                            <span class="text-2xl font-bold uppercase">Engines</span>
+                        </button>
+                        <!-- Hardware / Fasteners -->
+                        <button @click="enterInventoryView('hardware')"
+                            class="bg-white hover:bg-green-50 text-gray-800 rounded-2xl shadow-md p-8 flex flex-col items-center gap-3 border-2 border-green-300 active:scale-95 transition-transform">
+                            <svg class="w-8 h-8 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
+                            <span class="text-2xl font-bold uppercase">Hardware / Fasteners</span>
+                        </button>
+                        <!-- Hoses -->
+                        <button @click="enterInventoryView('hoses')"
+                            class="bg-white hover:bg-green-50 text-gray-800 rounded-2xl shadow-md p-8 flex flex-col items-center gap-3 border-2 border-green-300 active:scale-95 transition-transform">
+                            <svg class="w-8 h-8 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg>
+                            <span class="text-2xl font-bold uppercase">Hoses</span>
+                        </button>
+                    </div>
                 </div>
+
+                <!-- ── Level 1: Purchasing sub-menu ────────────── -->
+                <div v-else-if="splashLevel === 1 && splashCategory === 'purchasing'"
+                    class="w-full max-w-7xl px-4 flex flex-col items-center gap-8">
+                    <div class="w-full flex items-center gap-6">
+                        <button @click="splashBack"
+                            class="bg-slate-700 hover:bg-slate-600 text-white rounded-xl p-3 active:scale-95 transition-transform flex items-center justify-center shrink-0">
+                            <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M15 19l-7-7 7-7"/>
+                            </svg>
+                        </button>
+                        <h2 class="text-4xl font-extrabold text-white">Purchasing</h2>
+                    </div>
+                    <div class="grid grid-cols-2 lg:grid-cols-3 gap-6 w-full max-w-3xl">
+                        <!-- PO Requests (stub) -->
+                        <button disabled class="bg-white text-gray-400 rounded-2xl shadow-md p-10 flex flex-col items-center gap-3 border-2 border-gray-200 opacity-50 cursor-not-allowed">
+                            <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
+                            <span class="text-2xl font-bold uppercase">PO Requests</span>
+                            <span class="text-xs uppercase tracking-widest">Coming Soon</span>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- ── Level 2: Active WO's dept selection ──────── -->
+                <div v-else-if="splashLevel === 2 && splashSubCategory === 'active-wos'"
+                    class="w-full max-w-7xl px-4 flex flex-col items-center gap-8">
+                    <div class="w-full flex items-center gap-6">
+                        <button @click="splashBack"
+                            class="bg-slate-700 hover:bg-slate-600 text-white rounded-xl p-3 active:scale-95 transition-transform flex items-center justify-center shrink-0">
+                            <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M15 19l-7-7 7-7"/>
+                            </svg>
+                        </button>
+                        <h2 class="text-4xl font-extrabold text-white">Active WO's</h2>
+                    </div>
+                    <div class="grid grid-cols-2 lg:grid-cols-4 gap-6 w-full">
+                        <button @click="selectDept('Fab')"
+                            class="bg-white hover:bg-gray-50 text-gray-800 rounded-2xl shadow-md p-10 flex flex-col items-center gap-4 border-2 border-gray-300 active:scale-95 transition-transform">
+                            <span class="text-4xl font-bold uppercase">Fabrication</span>
+                        </button>
+                        <button @click="selectDept('Weld')"
+                            class="bg-white hover:bg-gray-50 text-gray-800 rounded-2xl shadow-md p-10 flex flex-col items-center gap-4 border-2 border-gray-300 active:scale-95 transition-transform">
+                            <span class="text-4xl font-bold uppercase">Welding</span>
+                        </button>
+                        <button @click="selectDept('Trac Vac Assy')"
+                            class="bg-white hover:bg-gray-50 text-gray-800 rounded-2xl shadow-md p-10 flex flex-col items-center justify-between gap-2 border-2 border-gray-300 active:scale-95 transition-transform">
+                            <img src="assets/trac-vac-logo.png" alt="Trac Vac" class="h-12 object-contain">
+                            <span class="text-2xl font-bold uppercase tracking-wide">Assembly</span>
+                        </button>
+                        <button @click="selectDept('Tru Cut Assy')"
+                            class="bg-white hover:bg-gray-50 text-gray-800 rounded-2xl shadow-md p-10 flex flex-col items-center justify-between gap-2 border-2 border-gray-300 active:scale-95 transition-transform">
+                            <img src="assets/tru-cut-logo.png" alt="Tru-Cut" class="h-12 object-contain">
+                            <span class="text-2xl font-bold uppercase tracking-wide">Assembly</span>
+                        </button>
+                    </div>
+
+                    <!-- Quick Actions row -->
+                    <div class="w-full border-t border-slate-600 pt-6">
+                        <p class="text-slate-400 text-sm uppercase tracking-widest mb-4 text-center">Quick Actions</p>
+                        <div class="grid grid-cols-3 gap-6 w-full">
+                            <!-- PO Requests -->
+                            <button disabled
+                                class="bg-white text-gray-400 rounded-2xl shadow-md p-6 flex flex-col items-center gap-2 border-2 border-gray-200 opacity-50 cursor-not-allowed">
+                                <svg class="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
+                                <span class="text-xs text-gray-400 uppercase tracking-wide">Request PO Here</span>
+                                <span class="text-xl font-bold uppercase">PO Requests</span>
+                                <span class="text-xs uppercase tracking-widest text-gray-400">Coming Soon</span>
+                            </button>
+                            <!-- Request WO -->
+                            <button @click="enterWoRequestView"
+                                class="bg-white hover:bg-blue-50 text-gray-800 rounded-2xl shadow-md p-6 flex flex-col items-center gap-2 border-2 border-blue-300 active:scale-95 transition-transform">
+                                <svg class="w-7 h-7 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/></svg>
+                                <span class="text-xs text-blue-500 uppercase tracking-wide font-semibold">Request WO Here</span>
+                                <span class="text-xl font-bold uppercase">Request WO</span>
+                            </button>
+                            <!-- Inventory -->
+                            <button @click="selectCategory('inventory')"
+                                class="bg-white hover:bg-green-50 text-gray-800 rounded-2xl shadow-md p-6 flex flex-col items-center gap-2 border-2 border-green-300 active:scale-95 transition-transform">
+                                <svg class="w-7 h-7 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4"/></svg>
+                                <span class="text-xs text-green-600 uppercase tracking-wide font-semibold">Turn In Received WO's &amp; PO's</span>
+                                <span class="text-xl font-bold uppercase">Inventory</span>
+                                <span class="text-xs text-green-600 uppercase tracking-wide font-semibold">Inventory List</span>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- ── Level 2: Shipping ────────────────────────── -->
+                <div v-else-if="splashLevel === 2 && splashSubCategory === 'shipping'"
+                    class="w-full max-w-7xl px-4 flex flex-col items-center gap-8">
+                    <div class="w-full flex items-center gap-6">
+                        <button @click="splashBack"
+                            class="bg-slate-700 hover:bg-slate-600 text-white rounded-xl p-3 active:scale-95 transition-transform flex items-center justify-center shrink-0">
+                            <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M15 19l-7-7 7-7"/>
+                            </svg>
+                        </button>
+                        <h2 class="text-4xl font-extrabold text-white">Shipping</h2>
+                    </div>
+                    <div class="grid grid-cols-2 gap-6 w-full max-w-2xl">
+                        <!-- Open Orders (stub) -->
+                        <button disabled class="bg-white text-gray-400 rounded-2xl shadow-md p-10 flex flex-col items-center gap-3 border-2 border-gray-200 opacity-50 cursor-not-allowed">
+                            <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/></svg>
+                            <span class="text-2xl font-bold uppercase">Open Orders</span>
+                            <span class="text-xs uppercase tracking-widest">Coming Soon</span>
+                        </button>
+                        <!-- Completed Units in Stock (stub) -->
+                        <button disabled class="bg-white text-gray-400 rounded-2xl shadow-md p-10 flex flex-col items-center gap-3 border-2 border-gray-200 opacity-50 cursor-not-allowed">
+                            <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
+                            <span class="text-2xl font-bold uppercase">Completed Units in Stock</span>
+                            <span class="text-xs uppercase tracking-widest">Coming Soon</span>
+                        </button>
+                    </div>
+                </div>
+
             </div>

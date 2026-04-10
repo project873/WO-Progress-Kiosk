@@ -9,6 +9,33 @@ import * as store  from '../libs/store.js';
 import * as db     from '../libs/db.js';
 import { MANAGER_PIN, CS_PIN, CLOSEOUT_PIN } from '../libs/config.js';
 
+// ── selectCategory ────────────────────────────────────────────
+// Navigate to a top-level category sub-menu (level 1).
+export function selectCategory(cat) {
+    store.splashCategory.value    = cat;
+    store.splashSubCategory.value = '';
+    store.splashLevel.value       = 1;
+}
+
+// ── selectSubCategory ─────────────────────────────────────────
+// Navigate to a second-level sub-menu (level 2).
+export function selectSubCategory(sub) {
+    store.splashSubCategory.value = sub;
+    store.splashLevel.value       = 2;
+}
+
+// ── splashBack ────────────────────────────────────────────────
+// Step back one level within the splash navigation hierarchy.
+export function splashBack() {
+    if (store.splashLevel.value === 2) {
+        store.splashLevel.value       = 1;
+        store.splashSubCategory.value = '';
+    } else {
+        store.splashLevel.value    = 0;
+        store.splashCategory.value = '';
+    }
+}
+
 // ── promptPin ─────────────────────────────────────────────────
 // Opens the PIN modal for manager or CS access
 export function promptPin(role) {
@@ -99,8 +126,37 @@ export async function selectDept(dept) {
     await _loadDeptOrders(dept);
 }
 
+// ── enterWoRequestView ────────────────────────────────────────
+// Navigate to the WO Request view. Sets splash state so Back returns
+// to the Production sub-menu regardless of which entry point was used.
+export function enterWoRequestView() {
+    store.splashLevel.value    = 1;
+    store.splashCategory.value = 'production';
+    store.currentView.value    = 'wo_request';
+}
+
+// ── enterCreateWoView ─────────────────────────────────────────
+// Navigate to the Create WO queue. Sets splash state so Back returns
+// to the Production sub-menu.
+export function enterCreateWoView() {
+    store.splashLevel.value    = 1;
+    store.splashCategory.value = 'production';
+    store.currentView.value    = 'create_wo';
+}
+
+// ── enterInventoryView ────────────────────────────────────────
+// Navigate to the inventory view for a specific tab.
+// splashLevel/Category are preserved so goBack() returns to the inventory sub-menu.
+export function enterInventoryView(tab) {
+    store.inventoryTab.value    = tab;
+    store.inventorySearch.value = '';
+    store.inventoryItems.value  = [];
+    store.currentView.value     = 'inventory';
+}
+
 // ── goBack ────────────────────────────────────────────────────
-// Return to splash, reset navigation state
+// Return to splash. Preserves splashLevel/Category/SubCategory so the
+// user lands back on the sub-menu they came from, not the root.
 export function goBack() {
     store.currentView.value    = 'splash';
     store.selectedDept.value   = '';

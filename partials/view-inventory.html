@@ -1,0 +1,290 @@
+            <!-- ── INVENTORY ──────────────────────────────────────── -->
+            <div v-if="currentView === 'inventory'"
+                class="h-full w-full bg-slate-900 absolute inset-0 flex flex-col overflow-hidden">
+
+                <!-- Toolbar -->
+                <div class="bg-slate-800 border-b border-slate-700 shrink-0 px-4 py-3 flex items-center gap-3">
+                    <input v-model="inventorySearch" type="text"
+                        placeholder="Search part # or description..."
+                        class="flex-1 max-w-md px-3 py-2 bg-slate-900 border border-slate-600 rounded-lg text-sm text-white placeholder-slate-500 focus:outline-none focus:border-green-500">
+
+                    <button @click="openAddItemForm"
+                        class="bg-green-600 hover:bg-green-500 text-white px-5 py-2 rounded-lg font-bold text-sm uppercase tracking-wide active:scale-95 transition-all flex items-center gap-2 shrink-0">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M12 4v16m8-8H4"/>
+                        </svg>
+                        Add Part
+                    </button>
+                </div>
+
+                <!-- Parts table -->
+                <div class="flex-1 overflow-auto p-6">
+
+                    <div v-if="inventoryLoading"
+                        class="flex items-center justify-center h-40 text-slate-400 text-lg">
+                        Loading...
+                    </div>
+
+                    <div v-else-if="filteredInventoryItems.length === 0"
+                        class="flex flex-col items-center justify-center h-40 text-slate-500">
+                        <svg class="w-12 h-12 mb-3 opacity-40" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4"/>
+                        </svg>
+                        <p class="text-lg font-medium">No parts found</p>
+                        <p class="text-sm mt-1 text-slate-600">Add a part using the button above</p>
+                    </div>
+
+                    <table v-else class="w-full text-sm text-left">
+                        <thead>
+                            <tr class="text-slate-400 uppercase text-xs border-b border-slate-700">
+                                <th class="pb-3 pr-4 font-semibold">Part #</th>
+                                <th class="pb-3 pr-4 font-semibold">Description</th>
+                                <th class="pb-3 pr-4 font-semibold text-right">Qty</th>
+                                <th class="pb-3 pr-4 font-semibold">Location</th>
+                                <th class="pb-3 pr-4 font-semibold">Refill Location</th>
+                                <th class="pb-3 font-semibold text-right">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr v-for="item in filteredInventoryItems" :key="item.id"
+                                class="border-b border-slate-800 hover:bg-slate-800/50 transition-colors">
+                                <td class="py-3 pr-4 font-mono font-bold text-white">{{ item.part_number }}</td>
+                                <td class="py-3 pr-4 text-slate-300">{{ item.description || '—' }}</td>
+                                <td class="py-3 pr-4 text-right font-bold text-lg"
+                                    :class="item.qty <= 0 ? 'text-red-400' : item.qty <= 5 ? 'text-amber-400' : 'text-green-400'">
+                                    {{ item.qty }}
+                                </td>
+                                <td class="py-3 pr-4 text-slate-400">{{ item.location || '—' }}</td>
+                                <td class="py-3 pr-4 text-slate-400">{{ item.refill_location || '—' }}</td>
+                                <td class="py-3 text-right">
+                                    <div class="flex gap-2 justify-end">
+                                        <button @click="openPullForm(item)"
+                                            class="bg-green-700 hover:bg-green-600 text-white px-3 py-1.5 rounded text-xs font-bold uppercase active:scale-95 transition-all">
+                                            Pull
+                                        </button>
+                                        <button @click="openPullHistory(item)"
+                                            class="bg-slate-600 hover:bg-slate-500 text-white px-3 py-1.5 rounded text-xs font-bold uppercase active:scale-95 transition-all">
+                                            History
+                                        </button>
+                                        <button @click="openEditItemForm(item)"
+                                            class="bg-blue-700 hover:bg-blue-600 text-white px-3 py-1.5 rounded text-xs font-bold uppercase active:scale-95 transition-all">
+                                            Edit
+                                        </button>
+                                        <button @click="confirmDeleteInventoryItem(item)"
+                                            class="bg-red-800 hover:bg-red-700 text-white px-3 py-1.5 rounded text-xs font-bold uppercase active:scale-95 transition-all">
+                                            Del
+                                        </button>
+                                    </div>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+
+                <!-- ── Pull Form Modal ────────────────────────── -->
+                <div v-if="pullFormOpen"
+                    class="fixed inset-0 bg-black/70 flex items-center justify-center z-50 p-4">
+                    <div class="bg-slate-800 rounded-2xl shadow-2xl w-full max-w-md border border-slate-700">
+                        <div class="p-6 border-b border-slate-700">
+                            <h3 class="text-xl font-bold text-white">Record Pull</h3>
+                            <p v-if="pullFormTarget" class="text-sm text-slate-400 mt-1">
+                                {{ pullFormTarget.part_number }}
+                                <span v-if="pullFormTarget.description"> — {{ pullFormTarget.description }}</span>
+                                <span class="ml-2 font-bold"
+                                    :class="pullFormTarget.qty <= 0 ? 'text-red-400' : 'text-green-400'">
+                                    ({{ pullFormTarget.qty }} in stock)
+                                </span>
+                            </p>
+                        </div>
+                        <div class="p-6 space-y-4">
+                            <div>
+                                <label class="block text-xs font-semibold text-slate-400 uppercase mb-1">Your Name *</label>
+                                <input v-model="pullForm.name" type="text"
+                                    :class="pullFormErrors.name ? 'border-red-500' : 'border-slate-600'"
+                                    class="w-full px-3 py-2 bg-slate-900 border rounded-lg text-white focus:outline-none focus:border-green-500">
+                                <p v-if="pullFormErrors.name" class="text-red-400 text-xs mt-1">Name is required</p>
+                            </div>
+                            <div>
+                                <label class="block text-xs font-semibold text-slate-400 uppercase mb-1">Qty Pulled *</label>
+                                <input v-model="pullForm.qty_pulled" type="number" min="1" step="1"
+                                    :class="pullFormErrors.qty_pulled ? 'border-red-500' : 'border-slate-600'"
+                                    class="w-full px-3 py-2 bg-slate-900 border rounded-lg text-white focus:outline-none focus:border-green-500">
+                                <p v-if="pullFormErrors.qty_pulled" class="text-red-400 text-xs mt-1">Enter a positive quantity</p>
+                            </div>
+                            <div>
+                                <label class="block text-xs font-semibold text-slate-400 uppercase mb-1">Date Pulled</label>
+                                <input v-model="pullForm.date_pulled" type="date"
+                                    class="w-full px-3 py-2 bg-slate-900 border border-slate-600 rounded-lg text-white focus:outline-none focus:border-green-500">
+                            </div>
+                            <div>
+                                <label class="block text-xs font-semibold text-slate-400 uppercase mb-1">New Location</label>
+                                <input v-model="pullForm.new_location" type="text" placeholder="Where is it going?"
+                                    class="w-full px-3 py-2 bg-slate-900 border border-slate-600 rounded-lg text-white placeholder-slate-600 focus:outline-none focus:border-green-500">
+                            </div>
+                            <div>
+                                <label class="block text-xs font-semibold text-slate-400 uppercase mb-1">Where Used</label>
+                                <input v-model="pullForm.where_used" type="text" placeholder="WO #, assembly, etc."
+                                    class="w-full px-3 py-2 bg-slate-900 border border-slate-600 rounded-lg text-white placeholder-slate-600 focus:outline-none focus:border-green-500">
+                            </div>
+                        </div>
+                        <div class="p-6 border-t border-slate-700 flex gap-3">
+                            <button @click="closePullForm"
+                                class="flex-1 bg-slate-700 hover:bg-slate-600 text-white py-3 rounded-xl font-bold active:scale-95 transition-all">
+                                Cancel
+                            </button>
+                            <button @click="submitPull"
+                                class="flex-1 bg-green-600 hover:bg-green-500 text-white py-3 rounded-xl font-bold active:scale-95 transition-all">
+                                Record Pull
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- ── Add Part Modal ─────────────────────────── -->
+                <div v-if="addItemFormOpen"
+                    class="fixed inset-0 bg-black/70 flex items-center justify-center z-50 p-4">
+                    <div class="bg-slate-800 rounded-2xl shadow-2xl w-full max-w-md border border-slate-700">
+                        <div class="p-6 border-b border-slate-700">
+                            <h3 class="text-xl font-bold text-white">Add Part</h3>
+                        </div>
+                        <div class="p-6 space-y-4">
+                            <div>
+                                <label class="block text-xs font-semibold text-slate-400 uppercase mb-1">Part # *</label>
+                                <input v-model="addItemForm.part_number" type="text"
+                                    :class="addItemFormErrors.part_number ? 'border-red-500' : 'border-slate-600'"
+                                    class="w-full px-3 py-2 bg-slate-900 border rounded-lg text-white focus:outline-none focus:border-green-500">
+                                <p v-if="addItemFormErrors.part_number" class="text-red-400 text-xs mt-1">Part number is required</p>
+                            </div>
+                            <div>
+                                <label class="block text-xs font-semibold text-slate-400 uppercase mb-1">Description</label>
+                                <input v-model="addItemForm.description" type="text"
+                                    class="w-full px-3 py-2 bg-slate-900 border border-slate-600 rounded-lg text-white focus:outline-none focus:border-green-500">
+                            </div>
+                            <div>
+                                <label class="block text-xs font-semibold text-slate-400 uppercase mb-1">Qty</label>
+                                <input v-model="addItemForm.qty" type="number" min="0"
+                                    class="w-full px-3 py-2 bg-slate-900 border border-slate-600 rounded-lg text-white focus:outline-none focus:border-green-500">
+                            </div>
+                            <div>
+                                <label class="block text-xs font-semibold text-slate-400 uppercase mb-1">Location</label>
+                                <input v-model="addItemForm.location" type="text"
+                                    class="w-full px-3 py-2 bg-slate-900 border border-slate-600 rounded-lg text-white focus:outline-none focus:border-green-500">
+                            </div>
+                            <div>
+                                <label class="block text-xs font-semibold text-slate-400 uppercase mb-1">Refill Location</label>
+                                <input v-model="addItemForm.refill_location" type="text"
+                                    class="w-full px-3 py-2 bg-slate-900 border border-slate-600 rounded-lg text-white focus:outline-none focus:border-green-500">
+                            </div>
+                        </div>
+                        <div class="p-6 border-t border-slate-700 flex gap-3">
+                            <button @click="closeAddItemForm"
+                                class="flex-1 bg-slate-700 hover:bg-slate-600 text-white py-3 rounded-xl font-bold active:scale-95 transition-all">
+                                Cancel
+                            </button>
+                            <button @click="submitAddItem"
+                                class="flex-1 bg-green-600 hover:bg-green-500 text-white py-3 rounded-xl font-bold active:scale-95 transition-all">
+                                Add Part
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- ── Edit Part Modal ────────────────────────── -->
+                <div v-if="editItemFormOpen"
+                    class="fixed inset-0 bg-black/70 flex items-center justify-center z-50 p-4">
+                    <div class="bg-slate-800 rounded-2xl shadow-2xl w-full max-w-md border border-slate-700">
+                        <div class="p-6 border-b border-slate-700">
+                            <h3 class="text-xl font-bold text-white">Edit Part</h3>
+                            <p v-if="editItemFormTarget" class="text-sm text-slate-400 mt-1">{{ editItemFormTarget.part_number }}</p>
+                        </div>
+                        <div class="p-6 space-y-4">
+                            <div>
+                                <label class="block text-xs font-semibold text-slate-400 uppercase mb-1">Part # *</label>
+                                <input v-model="editItemForm.part_number" type="text"
+                                    :class="editItemFormErrors.part_number ? 'border-red-500' : 'border-slate-600'"
+                                    class="w-full px-3 py-2 bg-slate-900 border rounded-lg text-white focus:outline-none focus:border-green-500">
+                                <p v-if="editItemFormErrors.part_number" class="text-red-400 text-xs mt-1">Part number is required</p>
+                            </div>
+                            <div>
+                                <label class="block text-xs font-semibold text-slate-400 uppercase mb-1">Description</label>
+                                <input v-model="editItemForm.description" type="text"
+                                    class="w-full px-3 py-2 bg-slate-900 border border-slate-600 rounded-lg text-white focus:outline-none focus:border-green-500">
+                            </div>
+                            <div>
+                                <label class="block text-xs font-semibold text-slate-400 uppercase mb-1">Qty</label>
+                                <input v-model="editItemForm.qty" type="number" min="0"
+                                    class="w-full px-3 py-2 bg-slate-900 border border-slate-600 rounded-lg text-white focus:outline-none focus:border-green-500">
+                            </div>
+                            <div>
+                                <label class="block text-xs font-semibold text-slate-400 uppercase mb-1">Location</label>
+                                <input v-model="editItemForm.location" type="text"
+                                    class="w-full px-3 py-2 bg-slate-900 border border-slate-600 rounded-lg text-white focus:outline-none focus:border-green-500">
+                            </div>
+                            <div>
+                                <label class="block text-xs font-semibold text-slate-400 uppercase mb-1">Refill Location</label>
+                                <input v-model="editItemForm.refill_location" type="text"
+                                    class="w-full px-3 py-2 bg-slate-900 border border-slate-600 rounded-lg text-white focus:outline-none focus:border-green-500">
+                            </div>
+                        </div>
+                        <div class="p-6 border-t border-slate-700 flex gap-3">
+                            <button @click="closeEditItemForm"
+                                class="flex-1 bg-slate-700 hover:bg-slate-600 text-white py-3 rounded-xl font-bold active:scale-95 transition-all">
+                                Cancel
+                            </button>
+                            <button @click="submitEditItem"
+                                class="flex-1 bg-blue-600 hover:bg-blue-500 text-white py-3 rounded-xl font-bold active:scale-95 transition-all">
+                                Save Changes
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- ── Pull History Modal ─────────────────────── -->
+                <div v-if="pullHistoryOpen"
+                    class="fixed inset-0 bg-black/70 flex items-center justify-center z-50 p-4">
+                    <div class="bg-slate-800 rounded-2xl shadow-2xl w-full max-w-2xl border border-slate-700 max-h-[80vh] flex flex-col">
+                        <div class="p-6 border-b border-slate-700 flex items-center justify-between shrink-0">
+                            <div>
+                                <h3 class="text-xl font-bold text-white">Pull History</h3>
+                                <p v-if="pullHistoryTarget" class="text-sm text-slate-400 mt-1">
+                                    {{ pullHistoryTarget.part_number }}
+                                    <span v-if="pullHistoryTarget.description"> — {{ pullHistoryTarget.description }}</span>
+                                </p>
+                            </div>
+                            <button @click="closePullHistory"
+                                class="bg-slate-700 hover:bg-slate-600 text-white p-2 rounded-lg active:scale-95 transition-all">
+                                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+                                </svg>
+                            </button>
+                        </div>
+                        <div class="flex-1 overflow-y-auto p-6">
+                            <div v-if="pullHistoryLoading" class="text-center text-slate-400 py-8">Loading...</div>
+                            <div v-else-if="pullHistoryItems.length === 0"
+                                class="text-center text-slate-500 py-8">No pull history recorded yet.</div>
+                            <table v-else class="w-full text-sm">
+                                <thead>
+                                    <tr class="text-slate-400 uppercase text-xs border-b border-slate-700">
+                                        <th class="pb-2 pr-4 text-left font-semibold">Date</th>
+                                        <th class="pb-2 pr-4 text-left font-semibold">Name</th>
+                                        <th class="pb-2 pr-4 text-right font-semibold">Qty</th>
+                                        <th class="pb-2 pr-4 text-left font-semibold">New Location</th>
+                                        <th class="pb-2 text-left font-semibold">Where Used</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr v-for="row in pullHistoryItems" :key="row.id"
+                                        class="border-b border-slate-800 hover:bg-slate-800/40">
+                                        <td class="py-2.5 pr-4 text-slate-300">{{ row.date_pulled }}</td>
+                                        <td class="py-2.5 pr-4 text-white font-medium">{{ row.name }}</td>
+                                        <td class="py-2.5 pr-4 text-right text-amber-400 font-bold">{{ row.qty_pulled }}</td>
+                                        <td class="py-2.5 pr-4 text-slate-400">{{ row.new_location || '—' }}</td>
+                                        <td class="py-2.5 text-slate-400">{{ row.where_used || '—' }}</td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+
+            </div>

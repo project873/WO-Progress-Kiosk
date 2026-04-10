@@ -9,7 +9,7 @@
 // ============================================================
 
 import { supabase } from './config.js';
-import { sanitizePartKey } from './utils.js';
+import { sanitizePartKey, detectTcMode } from './utils.js';
 
 // ── Retry helper ──────────────────────────────────────────────
 // Retries a Supabase operation up to maxRetries times on network failure.
@@ -215,6 +215,7 @@ export async function restoreOrderSnapshot(id, previousData) {
         tv_engine_status:      previousData.tv_engine_status,
         tv_cart_status:        previousData.tv_cart_status,
         tv_final_status:       previousData.tv_final_status,
+        fab_bring_to:          previousData.fab_bring_to,
     };
     return withRetry(() =>
         supabase.from('work_orders').update(restore).eq('id', id).select()
@@ -686,6 +687,273 @@ export async function fetchAiContextData() {
         todayStart,
         error: activeRes.error || completedRes.error
     };
+}
+
+// ── Inventory queries ─────────────────────────────────────────
+
+// Allowed inventory categories — guards against dynamic table name injection.
+const INVENTORY_TABLES = new Set(['chute', 'hitch', 'engine', 'hardware', 'hoses']);
+
+function assertInventoryTable(table) {
+    if (!INVENTORY_TABLES.has(table)) throw new Error(`Invalid inventory table: ${table}`);
+}
+
+// fetchInventory — all rows from <table>_inventory, ordered by part_number.
+// Input: table (string, e.g. 'chute'). Returns { data, error }.
+export async function fetchInventory(table) {
+    assertInventoryTable(table);
+    return withRetry(() =>
+        supabase.from(`${table}_inventory`)
+            .select('*')
+            .order('part_number', { ascending: true })
+    );
+}
+
+// addInventoryItem — insert a new part into <table>_inventory.
+// Input: table, item { part_number, description, qty, location, refill_location }.
+// Returns { data, error }.
+export async function addInventoryItem(table, item) {
+    assertInventoryTable(table);
+    if (!item?.part_number?.trim()) return { data: null, error: new Error('Part number is required') };
+    return withRetry(() =>
+        supabase.from(`${table}_inventory`).insert([{
+            part_number:     item.part_number.trim().toUpperCase(),
+            description:     (item.description  || '').trim() || null,
+            qty:             parseFloat(item.qty) || 0,
+            location:        (item.location      || '').trim() || null,
+            refill_location: (item.refill_location || '').trim() || null,
+        }]).select()
+    );
+}
+
+// updateInventoryItem — update fields on a part row.
+// Input: table, id (uuid), updates (partial item fields).
+// Returns { data, error }.
+export async function updateInventoryItem(table, id, updates) {
+    assertInventoryTable(table);
+    if (!id) return { data: null, error: new Error('Missing inventory item ID') };
+    const payload = {};
+    if (updates.part_number     !== undefined) payload.part_number     = updates.part_number.trim().toUpperCase();
+    if (updates.description     !== undefined) payload.description     = (updates.description     || '').trim() || null;
+    if (updates.qty             !== undefined) payload.qty             = parseFloat(updates.qty) || 0;
+    if (updates.location        !== undefined) payload.location        = (updates.location        || '').trim() || null;
+    if (updates.refill_location !== undefined) payload.refill_location = (updates.refill_location || '').trim() || null;
+    payload.updated_at = new Date().toISOString();
+    return withRetry(() =>
+        supabase.from(`${table}_inventory`).update(payload).eq('id', id).select()
+    );
+}
+
+// deleteInventoryItem — hard delete a part from <table>_inventory.
+// Pull log rows cascade-delete automatically via FK.
+// Input: table, id (uuid). Returns { data, error }.
+export async function deleteInventoryItem(table, id) {
+    assertInventoryTable(table);
+    if (!id) return { data: null, error: new Error('Missing inventory item ID') };
+    return withRetry(() =>
+        supabase.from(`${table}_inventory`).delete().eq('id', id).select()
+    );
+}
+
+// recordPull — inserts a pull log row and decrements qty on the inventory row.
+// Input: table, inventoryId (uuid), pull { name, qty_pulled, new_location, where_used }.
+// Returns { data, error } from the pull insert.
+export async function recordPull(table, inventoryId, pull) {
+    assertInventoryTable(table);
+    if (!inventoryId)           return { data: null, error: new Error('Missing inventory item ID') };
+    if (!pull?.name?.trim())    return { data: null, error: new Error('Name is required') };
+    const qtyPulled = parseFloat(pull.qty_pulled);
+    if (!qtyPulled || qtyPulled <= 0) return { data: null, error: new Error('qty_pulled must be a positive number') };
+
+    // Fetch current qty first
+    const { data: current, error: fetchErr } = await withRetry(() =>
+        supabase.from(`${table}_inventory`).select('qty').eq('id', inventoryId).single()
+    );
+    if (fetchErr) return { data: null, error: fetchErr };
+
+    const newQty = (parseFloat(current.qty) || 0) - qtyPulled;
+
+    // Decrement qty on the inventory row
+    const { error: updateErr } = await withRetry(() =>
+        supabase.from(`${table}_inventory`).update({
+            qty:        newQty,
+            updated_at: new Date().toISOString()
+        }).eq('id', inventoryId)
+    );
+    if (updateErr) return { data: null, error: updateErr };
+
+    // Insert pull log row
+    return withRetry(() =>
+        supabase.from(`${table}_pulls`).insert([{
+            inventory_id: inventoryId,
+            name:         pull.name.trim(),
+            qty_pulled:   qtyPulled,
+            date_pulled:  pull.date_pulled || new Date().toISOString().slice(0, 10),
+            new_location: (pull.new_location || '').trim() || null,
+            where_used:   (pull.where_used   || '').trim() || null,
+        }]).select()
+    );
+}
+
+// fetchPullHistory — all pull log rows for one inventory item, newest first.
+// Input: table, inventoryId (uuid). Returns { data, error }.
+export async function fetchPullHistory(table, inventoryId) {
+    assertInventoryTable(table);
+    if (!inventoryId) return { data: [], error: null };
+    return withRetry(() =>
+        supabase.from(`${table}_pulls`)
+            .select('*')
+            .eq('inventory_id', inventoryId)
+            .order('created_at', { ascending: false })
+    );
+}
+
+// ── WO Request → work_orders routing ─────────────────────────
+//
+// insertWorkOrdersFromRequest — creates work_order rows from an approved WO request.
+// Routing rules (mirrors the GAS runWOProcessing script):
+//   fab=true  AND fab_print='yes'                     → dept 'Fab'
+//   weld area is set AND weld≠'Paint' AND weld_print='yes' → dept 'Weld'
+//     weld='Urgent' → priority 5, otherwise priority 0
+//   assy_wo='Trac Vac Assy'                           → dept 'Trac Vac Assy'
+//   assy_wo='Tru Cut Assy'                            → dept 'Tru Cut Assy'
+//   assy_wo='Non Assy WO' or null                     → no assy row
+//
+// Input: req (full wo_request row), woNumber (string already saved to req).
+// Returns { data, error }.
+export async function insertWorkOrdersFromRequest(req, woNumber) {
+    const inserts = [];
+    const base = {
+        wo_number:     (woNumber || req.alere_wo_number || '').trim().toUpperCase(),
+        part_number:   (req.part_number  || '').trim().toUpperCase(),
+        description:   (req.description  || ''),
+        qty_required:  parseInt(req.qty_to_make, 10) || 1,
+        wo_type:       'Unit',
+        status:        'not_started',
+        qty_completed: 0,
+        priority:      0,
+    };
+    if (req.sales_order_number) base.sales_order = req.sales_order_number.trim();
+
+    // Resolve weld area once — used by both Fab and Weld routing blocks
+    const weldArea = (req.weld || '').trim();
+
+    // Fab routing
+    // If weld area is set but weld_print is NOT 'yes', the area is a "bring-to" destination
+    // for Fab when done — store it in the Fab row's notes so the operator sees it.
+    if (req.fab === 'yes' && req.fab_print === 'yes') {
+        const fabRow = { ...base, department: 'Fab' };
+        if (weldArea && req.weld_print !== 'yes') {
+            fabRow.fab_bring_to = weldArea;
+        }
+        inserts.push(fabRow);
+    }
+
+    // Weld routing — weld column is now TEXT (area name); Paint skips weld dept
+    if (weldArea && weldArea !== 'Paint' && req.weld_print === 'yes') {
+        const weldRow = {
+            ...base,
+            department: 'Weld',
+            priority:   weldArea === 'Urgent' ? 5 : 0,
+        };
+        // Store area in notes so it's visible on the weld board
+        if (weldArea !== 'Urgent') weldRow.notes = `Weld Area: ${weldArea}`;
+        inserts.push(weldRow);
+    }
+
+    // Assy routing
+    if (req.assy_wo === 'Trac Vac Assy') {
+        inserts.push({ ...base, department: 'Trac Vac Assy' });
+    }
+    if (req.assy_wo === 'Tru Cut Assy') {
+        const tcMode = detectTcMode(req.part_number) || 'stock';
+        inserts.push({ ...base, department: 'Tru Cut Assy', tc_job_mode: tcMode });
+    }
+
+    if (inserts.length === 0) return { data: [], error: null };
+    return withRetry(() => supabase.from('work_orders').insert(inserts).select());
+}
+
+// ── WO Request queries ────────────────────────────────────────
+
+// fetchApprovedWoRequests — requests with status='approved', oldest first. Returns { data, error }.
+export async function fetchApprovedWoRequests() {
+    return withRetry(() =>
+        supabase.from('wo_requests')
+            .select('*')
+            .eq('status', 'approved')
+            .order('request_date', { ascending: true })
+            .order('created_at',   { ascending: true })
+    );
+}
+
+// confirmCreateWo — mark a request as 'in production' with Alere WO # and creator initials.
+// Input: id (uuid), woNumber (string), initials (string), date (YYYY-MM-DD string).
+// Returns { data, error }.
+export async function confirmCreateWo(id, woNumber, initials, date) {
+    if (!id)       return { data: null, error: new Error('Missing request ID') };
+    if (!woNumber) return { data: null, error: new Error('WO number is required') };
+    if (!initials) return { data: null, error: new Error('Initials are required') };
+    return withRetry(() =>
+        supabase.from('wo_requests')
+            .update({
+                alere_wo_number:     woNumber.trim().toUpperCase(),
+                created_by_initials: initials.trim().toUpperCase(),
+                created_date:        date,
+                status:              'in production'
+            })
+            .eq('id', id)
+            .select()
+    );
+}
+
+// fetchWoRequests — all requests, oldest first (request_date asc). Returns { data, error }.
+export async function fetchWoRequests() {
+    return withRetry(() =>
+        supabase.from('wo_requests')
+            .select('*')
+            .order('request_date', { ascending: true })
+            .order('created_at',   { ascending: true })
+    );
+}
+
+// submitWoRequest — insert a new WO request.
+// Input: form { part_number, description, sales_order_number, qty_on_order,
+//               qty_in_stock, qty_used_per_unit, submitted_by }.
+// Returns { data, error }.
+export async function submitWoRequest(form) {
+    if (!form?.part_number?.trim())  return { data: null, error: new Error('Part number is required') };
+    if (!form?.submitted_by?.trim()) return { data: null, error: new Error('Submitted by is required') };
+    return withRetry(() =>
+        supabase.from('wo_requests').insert([{
+            part_number:        form.part_number.trim().toUpperCase(),
+            description:        (form.description        || '').trim() || null,
+            sales_order_number: (form.sales_order_number || '').trim() || null,
+            qty_on_order:       form.qty_on_order       ? parseFloat(form.qty_on_order)       : null,
+            qty_in_stock:       form.qty_in_stock       ? parseFloat(form.qty_in_stock)       : null,
+            qty_used_per_unit:  form.qty_used_per_unit  ? parseFloat(form.qty_used_per_unit)  : null,
+            request_date:       new Date().toISOString().slice(0, 10),
+            submitted_by:       form.submitted_by.trim(),
+            status:             'pending'
+        }]).select()
+    );
+}
+
+// updateWoRequest — partial update on a request row (status changes, manager edits).
+// Input: id (uuid), updates (partial fields). Returns { data, error }.
+export async function updateWoRequest(id, updates) {
+    if (!id) return { data: null, error: new Error('Missing request ID') };
+    return withRetry(() =>
+        supabase.from('wo_requests').update(updates).eq('id', id).select()
+    );
+}
+
+// deleteWoRequest — hard delete a request row. Input: id (uuid). Returns { data, error }.
+export async function deleteWoRequest(id) {
+    if (!id) return { data: null, error: new Error('Missing request ID') };
+    return withRetry(() =>
+        supabase.from('wo_requests').delete().eq('id', id).select()
+    );
 }
 
 // ── Customer Service queries ──────────────────────────────────

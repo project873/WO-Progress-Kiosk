@@ -17,6 +17,12 @@ export const selectedDept  = ref('');
 export const loading       = ref(false);
 export const currentTime   = ref('');
 
+// Multi-level splash navigation
+// splashLevel: 0=root, 1=category sub-menu, 2=subcategory sub-menu
+export const splashLevel       = ref(0);
+export const splashCategory    = ref('');  // 'production'|'inventory'|'purchasing'
+export const splashSubCategory = ref(''); // 'active-wos'|'shipping'
+
 // ── Work order data ───────────────────────────────────────────
 export const orders        = ref([]);   // current dept orders (dashboard)
 export const dashSearch    = ref('');   // per-department search filter
@@ -261,6 +267,72 @@ export const tcAssyCompleteErrors = ref({ salesOrder: false, unitSerial: false, 
 // Inline-editable unit detail fields on the TC Unit workflow screen
 export const tcUnitInfoForm = ref({ salesOrder: '', unitSerial: '', engine: '', engineSerial: '', numBlades: '', notes: '' });
 
+// ── WO Requests ───────────────────────────────────────────────
+export const woRequestInlineState = ref({}); // { [id]: { alere_qty, alere_bin, qty_sold_used_12mo, where_used } }
+export const woRequests          = ref([]);
+export const woRequestsLoading   = ref(false);
+export const woRequestForm       = ref({
+    part_number: '', description: '', sales_order_number: '',
+    qty_on_order: '', qty_in_stock: '', qty_used_per_unit: '',
+    submitted_by: ''
+});
+export const woRequestFormErrors = ref({ part_number: false, submitted_by: false });
+export const woRequestSearch     = ref('');
+export const selectedWoRequest   = ref(null);
+export const woRequestDetailForm = ref({
+    alere_qty: '', qty_sold_used_12mo: '', where_used: '', qty_to_make: '',
+    fab: '', fab_print: '', weld: '', weld_print: '',
+    assy_wo: '', color: '', bent_rolled_part: '', set_up_time: '',
+    alere_bin: '', estimated_lead_time: '', sent_to_production: false, date_to_start: ''
+});
+export const filteredWoRequests = computed(() => {
+    // Only show pending requests — approved and in-production move to Create WO view
+    const pending = woRequests.value.filter(r => r.status === 'pending');
+    const q = woRequestSearch.value.trim().toLowerCase();
+    if (!q) return pending;
+    return pending.filter(r =>
+        (r.part_number        || '').toLowerCase().includes(q) ||
+        (r.description        || '').toLowerCase().includes(q) ||
+        (r.sales_order_number || '').toLowerCase().includes(q) ||
+        (r.submitted_by       || '').toLowerCase().includes(q)
+    );
+});
+
+// ── Create WO ─────────────────────────────────────────────────
+export const createWoItems       = ref([]);
+export const createWoLoading     = ref(false);
+// Per-row inline input state: { [id]: { wo_number: '', initials: '' } }
+export const createWoInlineState = ref({});
+
+// ── Inventory ─────────────────────────────────────────────────
+export const inventoryTab     = ref('chute');   // 'chute'|'hitch'|'engine'|'hardware'|'hoses'
+export const inventoryItems   = ref([]);
+export const inventoryLoading = ref(false);
+export const inventorySearch  = ref('');
+
+// Pull form
+export const pullFormOpen   = ref(false);
+export const pullFormTarget = ref(null);
+export const pullForm       = ref({ name: '', qty_pulled: '', new_location: '', where_used: '', date_pulled: '' });
+export const pullFormErrors = ref({ name: false, qty_pulled: false });
+
+// Add item form
+export const addItemFormOpen   = ref(false);
+export const addItemForm       = ref({ part_number: '', description: '', qty: 0, location: '', refill_location: '' });
+export const addItemFormErrors = ref({ part_number: false });
+
+// Edit item form
+export const editItemFormOpen   = ref(false);
+export const editItemFormTarget = ref(null);
+export const editItemForm       = ref({ part_number: '', description: '', qty: 0, location: '', refill_location: '' });
+export const editItemFormErrors = ref({ part_number: false });
+
+// Pull history
+export const pullHistoryOpen    = ref(false);
+export const pullHistoryTarget  = ref(null);
+export const pullHistoryItems   = ref([]);
+export const pullHistoryLoading = ref(false);
+
 export const toastMessage  = ref('');
 export const toastType     = ref('error');   // 'error' | 'success' | 'info'
 let toastTimer = null;
@@ -273,6 +345,16 @@ export function showToast(msg, type = 'error', durationMs = 4000) {
 }
 
 // ── Computed ──────────────────────────────────────────────────
+
+// filteredInventoryItems — items matching the search query (part # or description).
+export const filteredInventoryItems = computed(() => {
+    const q = inventorySearch.value.trim().toLowerCase();
+    if (!q) return inventoryItems.value;
+    return inventoryItems.value.filter(i =>
+        (i.part_number || '').toLowerCase().includes(q) ||
+        (i.description || '').toLowerCase().includes(q)
+    );
+});
 
 // Stage cumulative qty derived from notes history (no schema change needed)
 export const tvEngineCum = computed(() => {
@@ -297,10 +379,22 @@ export const tcFinCum = computed(() => {
 });
 
 export const appTitle = computed(() => {
-    if (currentView.value === 'splash')    return 'Shop Floor Kiosk';
+    if (currentView.value === 'splash') {
+        if (splashLevel.value === 0) return 'Midwest Mfg.';
+        const catLabels = { production: 'Production', inventory: 'Inventory', purchasing: 'Purchasing' };
+        if (splashLevel.value === 1) return catLabels[splashCategory.value] || 'Midwest Mfg.';
+        const subLabels = { 'active-wos': 'Active WOs', shipping: 'Shipping' };
+        return `${catLabels[splashCategory.value]} — ${subLabels[splashSubCategory.value] || ''}`;
+    }
     if (currentView.value === 'dashboard') return `${selectedDept.value} Dashboard`;
     if (currentView.value === 'wo_status') return 'Office / WO Status';
     if (currentView.value === 'cs')        return 'Customer Service Lookup';
+    if (currentView.value === 'wo_request') return 'Request WO';
+    if (currentView.value === 'create_wo')  return 'Create Work Orders';
+    if (currentView.value === 'inventory') {
+        const labels = { chute: 'Chutes', hitch: 'Hitches', engine: 'Engines', hardware: 'Hardware', hoses: 'Hoses' };
+        return `Inventory — ${labels[inventoryTab.value] || ''}`;
+    }
     if (currentView.value === 'manager') {
         if (managerSubView.value === 'kpi')        return 'Manager Hub — KPIs';
         if (managerSubView.value === 'priorities') return 'Manager Hub — Priorities';

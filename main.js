@@ -25,7 +25,22 @@ import { OPERATORS_BY_DEPT, HOLD_REASONS, SCRAP_REASONS } from './libs/config.js
 import { formatDateLocal, getStageCum, detectTcMode, sanitizePartKey } from './libs/utils.js';
 
 // ── Page controllers ──────────────────────────────────────────
-import { selectDept, promptPin, submitPin, goBack } from './pages/splash-view.js';
+import { selectDept, promptPin, submitPin, goBack,
+         selectCategory, selectSubCategory, splashBack,
+         enterInventoryView, enterWoRequestView, enterCreateWoView } from './pages/splash-view.js';
+import { loadWoRequests, submitWoRequestForm, deleteWoRequestItem,
+         openWoRequestDetail, closeWoRequestDetail,
+         saveWoRequestDetail, approveWoRequest,
+         saveWoRequestInlineFields } from './pages/wo-request-view.js';
+import { loadCreateWoItems, confirmCreateWoItem } from './pages/create-wo-view.js';
+import {
+    loadInventoryItems, switchInventoryTab,
+    openPullForm, closePullForm, submitPull,
+    openAddItemForm, closeAddItemForm, submitAddItem,
+    openEditItemForm, closeEditItemForm, submitEditItem,
+    confirmDeleteInventoryItem,
+    openPullHistory, closePullHistory
+} from './pages/inventory-view.js';
 import {
     openActionPanel, openTvAssyEntry, tvSelectMode,
     submitTvUnitStageFromUi, openTvAssyUnit, openTvAssyStock, submitTvStockActionFromUi,
@@ -64,7 +79,7 @@ import { searchCS, searchPastOrders, selectPastWo, clearPastOrders } from './pag
 async function loadPartials() {
     const names = [
         'header', 'main-open',
-        'view-splash', 'view-dashboard', 'view-office', 'view-manager', 'view-cs',
+        'view-splash', 'view-dashboard', 'view-office', 'view-manager', 'view-cs', 'view-inventory', 'view-wo-request', 'view-create-wo',
         'main-close',
         'modal-pin', 'modal-action-panel',
         'modal-tc-unit', 'modal-tc-stock',
@@ -107,8 +122,11 @@ try {
             // Load data on view entry; reset Close-Out auth when leaving wo_status
             watch(store.currentView, (v) => {
                 if (v !== 'wo_status') store.closeoutAuthorized.value = false;
-                if (v === 'wo_status') loadReceivingEligible();
-                if (v === 'manager')   loadManagerAlerts();
+                if (v === 'wo_status')  loadReceivingEligible();
+                if (v === 'manager')    loadManagerAlerts();
+                if (v === 'inventory')  loadInventoryItems();
+                if (v === 'wo_request') loadWoRequests();
+                if (v === 'create_wo')  loadCreateWoItems();
             });
             // Reload alerts when navigating back to Manager Hub home from any sub-section
             watch(store.managerSubView, (v) => {
@@ -133,11 +151,14 @@ try {
 
             return {
                 // Navigation state
-                currentView:   store.currentView,
-                selectedDept:  store.selectedDept,
-                loading:       store.loading,
-                currentTime:   store.currentTime,
-                appTitle:      store.appTitle,
+                currentView:      store.currentView,
+                selectedDept:     store.selectedDept,
+                loading:          store.loading,
+                currentTime:      store.currentTime,
+                appTitle:         store.appTitle,
+                splashLevel:      store.splashLevel,
+                splashCategory:   store.splashCategory,
+                splashSubCategory: store.splashSubCategory,
 
                 // Dashboard
                 orders:             store.orders,
@@ -338,6 +359,7 @@ try {
 
                 // Navigation
                 selectDept, promptPin, submitPin, goBack,
+                selectCategory, selectSubCategory, splashBack,
 
                 // Dashboard
                 openActionPanel, openTvAssyEntry, tvSelectMode,
@@ -371,6 +393,68 @@ try {
 
                 // CS
                 searchCS, searchPastOrders, selectPastWo, clearPastOrders,
+
+                // WO Requests
+                woRequests:             store.woRequests,
+                woRequestsLoading:      store.woRequestsLoading,
+                woRequestForm:          store.woRequestForm,
+                woRequestFormErrors:    store.woRequestFormErrors,
+                woRequestSearch:        store.woRequestSearch,
+                filteredWoRequests:     store.filteredWoRequests,
+                selectedWoRequest:      store.selectedWoRequest,
+                woRequestDetailForm:    store.woRequestDetailForm,
+                woRequestInlineState:   store.woRequestInlineState,
+                enterWoRequestView,
+                submitWoRequestForm,
+                deleteWoRequestItem,
+                openWoRequestDetail,
+                closeWoRequestDetail,
+                saveWoRequestDetail,
+                approveWoRequest,
+                saveWoRequestInlineFields,
+
+                // Create WO
+                createWoItems:          store.createWoItems,
+                createWoLoading:        store.createWoLoading,
+                createWoInlineState:    store.createWoInlineState,
+                enterCreateWoView,
+                loadCreateWoItems,
+                confirmCreateWoItem,
+
+                // Inventory
+                inventoryTab:              store.inventoryTab,
+                inventoryItems:            store.inventoryItems,
+                inventoryLoading:          store.inventoryLoading,
+                inventorySearch:           store.inventorySearch,
+                filteredInventoryItems:    store.filteredInventoryItems,
+                pullFormOpen:              store.pullFormOpen,
+                pullFormTarget:            store.pullFormTarget,
+                pullForm:                  store.pullForm,
+                pullFormErrors:            store.pullFormErrors,
+                addItemFormOpen:           store.addItemFormOpen,
+                addItemForm:               store.addItemForm,
+                addItemFormErrors:         store.addItemFormErrors,
+                editItemFormOpen:          store.editItemFormOpen,
+                editItemFormTarget:        store.editItemFormTarget,
+                editItemForm:              store.editItemForm,
+                editItemFormErrors:        store.editItemFormErrors,
+                pullHistoryOpen:           store.pullHistoryOpen,
+                pullHistoryTarget:         store.pullHistoryTarget,
+                pullHistoryItems:          store.pullHistoryItems,
+                pullHistoryLoading:        store.pullHistoryLoading,
+                inventoryTabs: [
+                    { key: 'chute',    label: 'Chutes'   },
+                    { key: 'hitch',    label: 'Hitches'  },
+                    { key: 'engine',   label: 'Engines'  },
+                    { key: 'hardware', label: 'Hardware' },
+                    { key: 'hoses',    label: 'Hoses'    },
+                ],
+                enterInventoryView, switchInventoryTab,
+                openPullForm, closePullForm, submitPull,
+                openAddItemForm, closeAddItemForm, submitAddItem,
+                openEditItemForm, closeEditItemForm, submitEditItem,
+                confirmDeleteInventoryItem,
+                openPullHistory, closePullHistory,
 
                 // Utilities available in templates
                 formatDateLocal, detectTcMode, sanitizePartKey

@@ -107,6 +107,18 @@
                                 </svg>
                                 START JOB
                             </button>
+                            <!-- Bring-to note for Fab orders routed to a weld area -->
+                            <div v-if="activeOrder.department === 'Fab' && activeOrder.fab_bring_to"
+                                class="mt-4 flex items-center gap-3 bg-blue-600 rounded-xl px-5 py-4">
+                                <svg class="w-6 h-6 text-white shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"/>
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"/>
+                                </svg>
+                                <div>
+                                    <div class="text-blue-200 text-xs font-bold uppercase tracking-wide mb-0.5">When Done — Bring To</div>
+                                    <div class="text-white font-bold text-xl">{{ activeOrder.fab_bring_to }}</div>
+                                </div>
+                            </div>
                         </div>
                         <!-- started / resumed: PAUSE + COMPLETE -->
                         <div v-else-if="activeOrder.status === 'started' || activeOrder.status === 'resumed'" class="grid grid-cols-2 gap-6">
