@@ -1,0 +1,6 @@
+name = "gemini-proxy"
+main = "gemini-proxy.js"
+compatibility_date = "2025-01-01"
+
+# Deploy: wrangler deploy
+# Set key: wrangler secret put GEMINI_API_KEY

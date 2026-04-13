@@ -15,7 +15,10 @@ export const supabase = createClient(SUPABASE_URL, SUPABASE_KEY);
 export const MANAGER_PIN  = "1234";
 export const CS_PIN       = "5678";
 export const CLOSEOUT_PIN = "1234";   // Close-Out view PIN
-export const GEMINI_API_KEY = "AIzaSyAhuz4bDGBGWhx3NpFOHo7YVnkGkibpoUU";
+
+// Gemini API calls go through a Cloudflare Worker so the key never touches the frontend.
+// After deploying workers/gemini-proxy.js, replace this with your Worker URL.
+export const GEMINI_WORKER_URL = 'https://gemini-proxy.YOUR_SUBDOMAIN.workers.dev';
 
 // ----- Operators per department -----
 export const OPERATORS_BY_DEPT = {

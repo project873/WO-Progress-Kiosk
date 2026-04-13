@@ -7,7 +7,7 @@
 
 import * as store from '../libs/store.js';
 import * as db    from '../libs/db.js';
-import { DELAY_THRESHOLDS, GEMINI_API_KEY } from '../libs/config.js';
+import { DELAY_THRESHOLDS, GEMINI_WORKER_URL } from '../libs/config.js';
 import { daysAgo, daysBetween, extractHoldReasons, getHistoricalAvgDays } from '../libs/utils.js';
 
 // ── openManagerSection ────────────────────────────────────────
@@ -376,18 +376,15 @@ export async function sendAiMessage() {
         }));
         const contents = [...history, { role: 'user', parts: [{ text }] }];
 
-        const res = await fetch(
-            `https://generativelanguage.googleapis.com/v1beta/models/gemma-4-26b-a4b-it:generateContent?key=${GEMINI_API_KEY}`,
-            {
-                method:  'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    system_instruction: { parts: [{ text: buildSystemPrompt(active, completed, todayStart) }] },
-                    contents,
-                    generationConfig: { maxOutputTokens: 600, temperature: 0.2 }
-                })
-            }
-        );
+        const res = await fetch(GEMINI_WORKER_URL, {
+            method:  'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                system_instruction: { parts: [{ text: buildSystemPrompt(active, completed, todayStart) }] },
+                contents,
+                generationConfig: { maxOutputTokens: 600, temperature: 0.2 }
+            })
+        });
 
         if (!res.ok) {
             const errBody = await res.json().catch(() => ({}));
