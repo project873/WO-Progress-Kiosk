@@ -1,0 +1,133 @@
+            <!-- ── EDIT ROW MODAL ─────────────────────────────── -->
+            <div v-if="openOrderEditModalOpen"
+                 class="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4">
+                <div class="bg-white rounded-2xl shadow-2xl w-full max-w-2xl flex flex-col max-h-[90vh]">
+
+                    <!-- Header -->
+                    <div class="flex items-center justify-between px-5 py-4 border-b border-slate-200 shrink-0">
+                        <h2 class="text-slate-800 font-bold text-lg">Edit Row</h2>
+                        <span class="text-slate-400 text-sm font-mono">{{ openOrderEditForm.part_number }}</span>
+                        <button @click="cancelEditModal()"
+                            class="text-slate-400 hover:text-slate-600 transition-colors ml-2">
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+                            </svg>
+                        </button>
+                    </div>
+
+                    <!-- Form -->
+                    <div class="overflow-y-auto p-5 space-y-4 flex-1">
+
+                        <!-- Part # -->
+                        <div>
+                            <label class="block text-xs font-semibold text-slate-600 mb-1">Part # <span class="text-red-500">*</span></label>
+                            <input v-model="openOrderEditForm.part_number"
+                                :class="openOrderEditFormErrors.part_number ? 'border-red-400 bg-red-50' : 'border-slate-300'"
+                                class="w-full border rounded-lg px-3 py-2 text-sm font-mono focus:outline-none focus:ring-2 focus:ring-indigo-400" />
+                            <p v-if="openOrderEditFormErrors.part_number" class="text-red-500 text-xs mt-0.5">Required</p>
+                        </div>
+
+                        <!-- Description -->
+                        <div>
+                            <label class="block text-xs font-semibold text-slate-600 mb-1">Description</label>
+                            <input v-model="openOrderEditForm.description"
+                                class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-400" />
+                        </div>
+
+                        <!-- To Ship + Qty Pulled -->
+                        <div class="grid grid-cols-2 gap-3">
+                            <div>
+                                <label class="block text-xs font-semibold text-slate-600 mb-1">To Ship Qty</label>
+                                <input v-model="openOrderEditForm.to_ship" type="number" min="0"
+                                    class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-400" />
+                            </div>
+                            <div>
+                                <label class="block text-xs font-semibold text-slate-600 mb-1">Qty Pulled</label>
+                                <input v-model="openOrderEditForm.qty_pulled" type="number" min="0"
+                                    class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-400" />
+                            </div>
+                        </div>
+
+                        <!-- Store Bin + Updated Bin -->
+                        <div class="grid grid-cols-2 gap-3">
+                            <div>
+                                <label class="block text-xs font-semibold text-slate-600 mb-1">STORE/BIN</label>
+                                <input v-model="openOrderEditForm.store_bin"
+                                    class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-400" />
+                            </div>
+                            <div>
+                                <label class="block text-xs font-semibold text-slate-600 mb-1">Update STORE/BIN</label>
+                                <input v-model="openOrderEditForm.update_store_bin"
+                                    class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-400" />
+                            </div>
+                        </div>
+
+                        <!-- Customer + Sales Order + WO/PO # -->
+                        <div class="grid grid-cols-3 gap-3">
+                            <div>
+                                <label class="block text-xs font-semibold text-slate-600 mb-1">Customer</label>
+                                <input v-model="openOrderEditForm.customer"
+                                    class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-400" />
+                            </div>
+                            <div>
+                                <label class="block text-xs font-semibold text-slate-600 mb-1">Sales Order</label>
+                                <input v-model="openOrderEditForm.sales_order"
+                                    class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-400" />
+                            </div>
+                            <div>
+                                <label class="block text-xs font-semibold text-slate-600 mb-1">WO / PO #</label>
+                                <input v-model="openOrderEditForm.wo_po_number"
+                                    class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-400" />
+                            </div>
+                        </div>
+
+                        <!-- Date Entered + Deadline + Status -->
+                        <div class="grid grid-cols-3 gap-3">
+                            <div>
+                                <label class="block text-xs font-semibold text-slate-600 mb-1">Date Entered</label>
+                                <input v-model="openOrderEditForm.date_entered" type="date"
+                                    class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-400" />
+                            </div>
+                            <div>
+                                <label class="block text-xs font-semibold text-slate-600 mb-1">Deadline</label>
+                                <input v-model="openOrderEditForm.deadline" type="date"
+                                    class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-400" />
+                            </div>
+                            <div>
+                                <label class="block text-xs font-semibold text-slate-600 mb-1">Status</label>
+                                <select v-model="openOrderEditForm.status"
+                                    class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-400">
+                                    <option v-for="s in openOrderStatuses" :key="s" :value="s">{{ s }}</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <!-- Notes -->
+                        <div>
+                            <label class="block text-xs font-semibold text-slate-600 mb-1">WO / VA Notes</label>
+                            <input v-model="openOrderEditForm.wo_va_notes"
+                                class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-400" />
+                        </div>
+
+                    </div>
+
+                    <!-- Footer -->
+                    <div class="shrink-0 border-t border-slate-200 px-5 py-3 flex items-center justify-between">
+                        <button @click="deleteOpenOrder()"
+                            class="px-4 py-2 rounded-lg text-sm font-semibold text-red-600 hover:bg-red-50 border border-red-200 transition-colors">
+                            Delete Row
+                        </button>
+                        <div class="flex items-center gap-3">
+                            <button @click="cancelEditModal()"
+                                class="px-4 py-2 rounded-lg text-sm font-semibold text-slate-600 hover:bg-slate-100 transition-colors">
+                                Cancel
+                            </button>
+                            <button @click="saveEditModal()"
+                                class="px-5 py-2 rounded-lg text-sm font-semibold text-white bg-indigo-600 hover:bg-indigo-500 active:bg-indigo-700 transition-colors">
+                                Save
+                            </button>
+                        </div>
+                    </div>
+
+                </div>
+            </div>

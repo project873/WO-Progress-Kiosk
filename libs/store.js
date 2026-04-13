@@ -348,9 +348,23 @@ export const openOrderAddPasteRows = ref([]);         // parsed preview rows bef
 export const openOrderAddForm      = ref({
     part_number: '', to_ship: '', qty_pulled: '', description: '',
     store_bin: '', update_store_bin: '', customer: '', sales_order: '',
-    date_entered: '', status: 'New/Picking', wo_va_notes: '', wo_po_number: '',
+    date_entered: '', deadline: '', status: 'New/Picking',
+    wo_va_notes: '', wo_po_number: '',
 });
 export const openOrderAddFormErrors = ref({});
+
+// Inline cell editing — tracks which row+field is being edited and its draft value
+export const openOrderEditingCell  = ref({ id: null, field: null });
+export const openOrderEditingValue = ref('');
+
+// Selected row IDs for multi-row drag (array of uuids)
+export const openOrderSelectedIds = ref([]);
+// Section type currently being hovered over during a drag ('emergency'|'freight'|'trac_vac'|'tru_cut'|'')
+export const openOrderDragOverSection = ref('');
+// Active reorder drop zone: 'sectionType:index', or '' when none
+export const openOrderDropZoneTarget = ref('');
+// Per-row expanded columns: { [id]: { quotes: bool, boxes: bool } }
+export const openOrderExpandedCols = ref({});
 
 // Per-section sort state: { field, dir }
 export const openOrdersSort = ref({
@@ -384,10 +398,10 @@ export const truCutOrders    = _openSectionSorted('tru_cut');
 // openOrderSections — reactive array of section configs for v-for in template.
 // Re-evaluates whenever any section's order list changes.
 export const openOrderSections = computed(() => [
-    { type: 'emergency', label: 'EMERGENCY ORDERS', orders: emergencyOrders.value, hdr: 'bg-red-700'     },
-    { type: 'freight',   label: 'FREIGHT ORDERS',   orders: freightOrders.value,   hdr: 'bg-amber-700'   },
-    { type: 'trac_vac',  label: 'TRAC VAC ORDERS',  orders: tracVacOrders.value,   hdr: 'bg-blue-700'    },
-    { type: 'tru_cut',   label: 'TRU CUT ORDERS',   orders: truCutOrders.value,    hdr: 'bg-emerald-700' },
+    { type: 'emergency', label: 'EMERGENCY ORDERS', orders: emergencyOrders.value, hdr: 'bg-green-700'  },
+    { type: 'freight',   label: 'FREIGHT ORDERS',   orders: freightOrders.value,   hdr: 'bg-amber-700'  },
+    { type: 'trac_vac',  label: 'TRAC VAC ORDERS',  orders: tracVacOrders.value,   hdr: 'bg-slate-900'  },
+    { type: 'tru_cut',   label: 'TRU CUT ORDERS',   orders: truCutOrders.value,    hdr: 'bg-red-700'    },
 ]);
 
 export const toastMessage  = ref('');

@@ -125,6 +125,15 @@ export function clamp(n, min, max) {
     return Math.min(Math.max(n, min), max);
 }
 
+// ── detectOpenOrderSection ────────────────────────────────────
+// Auto-routes an open order to a section based on part number prefix.
+// Part # starts with "TC" (case-insensitive) → 'tru_cut', else → 'trac_vac'.
+// Freight and Emergency are assigned manually after creation.
+export function detectOpenOrderSection(partNumber) {
+    if (typeof partNumber !== 'string') return 'trac_vac';
+    return partNumber.trim().toUpperCase().startsWith('TC') ? 'tru_cut' : 'trac_vac';
+}
+
 // ── detectTcMode ──────────────────────────────────────────────
 // Detects TC Assy job mode from a part number.
 // Normalises input (trim + uppercase) before checking.

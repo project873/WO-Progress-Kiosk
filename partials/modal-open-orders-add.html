@@ -1,0 +1,222 @@
+            <!-- ── ADD ROW(S) MODAL ──────────────────────────── -->
+            <div v-if="openOrderAddModalOpen"
+                 class="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4">
+                <div class="bg-white rounded-2xl shadow-2xl w-full max-w-2xl flex flex-col max-h-[90vh]">
+
+                    <!-- Header -->
+                    <div class="flex items-center justify-between px-5 py-4 border-b border-slate-200 shrink-0">
+                        <h2 class="text-slate-800 font-bold text-lg">Add Row(s)</h2>
+                        <!-- Mode tabs -->
+                        <div class="flex items-center gap-1 bg-slate-100 rounded-lg p-0.5 text-sm font-semibold">
+                            <button @click="openOrderAddMode = 'manual'"
+                                :class="openOrderAddMode === 'manual' ? 'bg-white text-slate-800 shadow-sm' : 'text-slate-500 hover:text-slate-700'"
+                                class="px-3 py-1 rounded-md transition-colors">
+                                Manual
+                            </button>
+                            <button @click="openOrderAddMode = 'paste'"
+                                :class="openOrderAddMode === 'paste' ? 'bg-white text-slate-800 shadow-sm' : 'text-slate-500 hover:text-slate-700'"
+                                class="px-3 py-1 rounded-md transition-colors">
+                                Paste
+                            </button>
+                        </div>
+                        <button @click="cancelAddModal()"
+                            class="text-slate-400 hover:text-slate-600 transition-colors ml-2">
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+                            </svg>
+                        </button>
+                    </div>
+
+                    <!-- ── MANUAL TAB ── -->
+                    <div v-if="openOrderAddMode === 'manual'" class="overflow-y-auto p-5 space-y-4 flex-1">
+
+                        <!-- Auto-route note -->
+                        <p class="text-xs text-slate-500 bg-slate-50 rounded-lg px-3 py-2 border border-slate-200">
+                            Section is auto-assigned: part #s starting with <span class="font-mono font-semibold">TC</span> go to Tru Cut; all others go to Trac Vac.
+                            You can move rows between sections after adding.
+                        </p>
+
+                        <!-- Row 1: Part # -->
+                        <div>
+                            <label class="block text-xs font-semibold text-slate-600 mb-1">Part # <span class="text-red-500">*</span></label>
+                            <input v-model="openOrderAddForm.part_number"
+                                :class="openOrderAddFormErrors.part_number ? 'border-red-400 bg-red-50' : 'border-slate-300'"
+                                class="w-full border rounded-lg px-3 py-2 text-sm font-mono focus:outline-none focus:ring-2 focus:ring-indigo-400"
+                                placeholder="e.g. TC-12345" />
+                            <p v-if="openOrderAddFormErrors.part_number" class="text-red-500 text-xs mt-0.5">Required</p>
+                        </div>
+
+                        <!-- Row 2: Description -->
+                        <div>
+                            <label class="block text-xs font-semibold text-slate-600 mb-1">Description</label>
+                            <input v-model="openOrderAddForm.description"
+                                class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-400"
+                                placeholder="Part description" />
+                        </div>
+
+                        <!-- Row 3: To Ship + Qty Pulled -->
+                        <div class="grid grid-cols-2 gap-3">
+                            <div>
+                                <label class="block text-xs font-semibold text-slate-600 mb-1">To Ship Qty</label>
+                                <input v-model="openOrderAddForm.to_ship" type="number" min="0"
+                                    class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-400"
+                                    placeholder="0" />
+                            </div>
+                            <div>
+                                <label class="block text-xs font-semibold text-slate-600 mb-1">Qty Pulled</label>
+                                <input v-model="openOrderAddForm.qty_pulled" type="number" min="0"
+                                    class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-400"
+                                    placeholder="0" />
+                            </div>
+                        </div>
+
+                        <!-- Row 4: Store Bin + Updated Bin -->
+                        <div class="grid grid-cols-2 gap-3">
+                            <div>
+                                <label class="block text-xs font-semibold text-slate-600 mb-1">STORE/BIN</label>
+                                <input v-model="openOrderAddForm.store_bin"
+                                    class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-400"
+                                    placeholder="Bin location" />
+                            </div>
+                            <div>
+                                <label class="block text-xs font-semibold text-slate-600 mb-1">Update STORE/BIN</label>
+                                <input v-model="openOrderAddForm.update_store_bin"
+                                    class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-400"
+                                    placeholder="Override bin" />
+                            </div>
+                        </div>
+
+                        <!-- Row 5: Customer + Sales Order + WO/PO # -->
+                        <div class="grid grid-cols-3 gap-3">
+                            <div>
+                                <label class="block text-xs font-semibold text-slate-600 mb-1">Customer</label>
+                                <input v-model="openOrderAddForm.customer"
+                                    class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-400"
+                                    placeholder="Customer name" />
+                            </div>
+                            <div>
+                                <label class="block text-xs font-semibold text-slate-600 mb-1">Sales Order</label>
+                                <input v-model="openOrderAddForm.sales_order"
+                                    class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-400"
+                                    placeholder="SO #" />
+                            </div>
+                            <div>
+                                <label class="block text-xs font-semibold text-slate-600 mb-1">WO / PO #</label>
+                                <input v-model="openOrderAddForm.wo_po_number"
+                                    class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-400"
+                                    placeholder="WO or PO #" />
+                            </div>
+                        </div>
+
+                        <!-- Row 6: Date Entered + Deadline + Status -->
+                        <div class="grid grid-cols-3 gap-3">
+                            <div>
+                                <label class="block text-xs font-semibold text-slate-600 mb-1">Date Entered</label>
+                                <input v-model="openOrderAddForm.date_entered" type="date"
+                                    class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-400" />
+                            </div>
+                            <div>
+                                <label class="block text-xs font-semibold text-slate-600 mb-1">Deadline</label>
+                                <input v-model="openOrderAddForm.deadline" type="date"
+                                    class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-400" />
+                            </div>
+                            <div>
+                                <label class="block text-xs font-semibold text-slate-600 mb-1">Status</label>
+                                <select v-model="openOrderAddForm.status"
+                                    class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-400">
+                                    <option v-for="s in openOrderStatuses" :key="s" :value="s">{{ s }}</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <!-- Row 7: WO / VA Notes -->
+                        <div>
+                            <label class="block text-xs font-semibold text-slate-600 mb-1">WO / VA Notes</label>
+                            <input v-model="openOrderAddForm.wo_va_notes"
+                                class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-400"
+                                placeholder="Part Order / WO# / VA notes" />
+                        </div>
+                    </div>
+
+                    <!-- ── PASTE TAB ── -->
+                    <div v-if="openOrderAddMode === 'paste'" class="overflow-y-auto p-5 space-y-4 flex-1">
+
+                        <!-- Instructions -->
+                        <p class="text-xs text-slate-500 bg-slate-50 rounded-lg px-3 py-2 border border-slate-200 leading-relaxed">
+                            Paste tab-separated rows from Excel. Expected columns:<br>
+                            <span class="font-mono text-slate-700">Part # · To Ship · Qty Pulled · Description · Store/Bin · Update Store/Bin · Customer · Sales Order # · Date Entered · Status · Notes</span><br>
+                            Section is auto-assigned by part # prefix (TC → Tru Cut, else → Trac Vac).
+                        </p>
+
+                        <!-- Textarea -->
+                        <div v-if="openOrderAddPasteRows.length === 0">
+                            <label class="block text-xs font-semibold text-slate-600 mb-1">Paste data here</label>
+                            <textarea v-model="openOrderAddPasteText" rows="8"
+                                @input="parsePasteRows()"
+                                class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm font-mono focus:outline-none focus:ring-2 focus:ring-indigo-400 resize-none"
+                                placeholder="Paste from Excel..."></textarea>
+                        </div>
+
+                        <!-- Preview table -->
+                        <div v-if="openOrderAddPasteRows.length > 0">
+                            <div class="flex items-center justify-between mb-2">
+                                <p class="text-xs font-semibold text-slate-600">
+                                    Preview — {{ openOrderAddPasteRows.length }} row(s)
+                                </p>
+                                <button @click="openOrderAddPasteText = ''; openOrderAddPasteRows = []"
+                                    class="text-xs text-slate-400 hover:text-slate-600 underline">
+                                    Clear &amp; re-paste
+                                </button>
+                            </div>
+                            <div class="border border-slate-200 rounded-lg overflow-x-auto">
+                                <table class="w-full text-xs">
+                                    <thead class="bg-slate-50 text-slate-500 uppercase tracking-wider">
+                                        <tr>
+                                            <th class="px-2 py-1.5 text-left">Section</th>
+                                            <th class="px-2 py-1.5 text-left">Part #</th>
+                                            <th class="px-2 py-1.5 text-left">Ship</th>
+                                            <th class="px-2 py-1.5 text-left">Pulled</th>
+                                            <th class="px-2 py-1.5 text-left">Description</th>
+                                            <th class="px-2 py-1.5 text-left">Customer</th>
+                                            <th class="px-2 py-1.5 text-left">Sales Ord</th>
+                                            <th class="px-2 py-1.5 text-left">Status</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        <tr v-for="(row, i) in openOrderAddPasteRows" :key="i"
+                                            class="border-t border-slate-100 hover:bg-slate-50">
+                                            <td class="px-2 py-1.5">
+                                                <span :class="row.order_type === 'tru_cut' ? 'bg-red-100 text-red-700' : 'bg-slate-100 text-slate-600'"
+                                                      class="px-1.5 py-0.5 rounded text-xs font-semibold whitespace-nowrap">
+                                                    {{ row.order_type === 'tru_cut' ? 'Tru Cut' : 'Trac Vac' }}
+                                                </span>
+                                            </td>
+                                            <td class="px-2 py-1.5 font-mono font-medium text-slate-800">{{ row.part_number || '—' }}</td>
+                                            <td class="px-2 py-1.5 text-slate-600">{{ row.to_ship || '' }}</td>
+                                            <td class="px-2 py-1.5 text-slate-600">{{ row.qty_pulled || '' }}</td>
+                                            <td class="px-2 py-1.5 text-slate-600 max-w-[160px] truncate">{{ row.description || '' }}</td>
+                                            <td class="px-2 py-1.5 text-slate-600">{{ row.customer || '' }}</td>
+                                            <td class="px-2 py-1.5 text-slate-600">{{ row.sales_order || '' }}</td>
+                                            <td class="px-2 py-1.5 text-slate-600">{{ row.status || '' }}</td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Footer -->
+                    <div class="shrink-0 border-t border-slate-200 px-5 py-3 flex items-center justify-end gap-3">
+                        <button @click="cancelAddModal()"
+                            class="px-4 py-2 rounded-lg text-sm font-semibold text-slate-600 hover:bg-slate-100 transition-colors">
+                            Cancel
+                        </button>
+                        <button @click="saveOpenOrderRow()"
+                            :disabled="openOrderAddMode === 'paste' && openOrderAddPasteRows.length === 0"
+                            class="px-5 py-2 rounded-lg text-sm font-semibold text-white bg-indigo-600 hover:bg-indigo-500 active:bg-indigo-700 disabled:opacity-40 disabled:cursor-not-allowed transition-colors">
+                            {{ openOrderAddMode === 'paste' ? 'Add ' + openOrderAddPasteRows.length + ' Row(s)' : 'Add Row' }}
+                        </button>
+                    </div>
+
+                </div>
+            </div>

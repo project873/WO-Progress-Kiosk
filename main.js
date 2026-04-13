@@ -21,7 +21,7 @@ import {
 
 // ── State & computed ──────────────────────────────────────────
 import * as store from './libs/store.js';
-import { OPERATORS_BY_DEPT, HOLD_REASONS, SCRAP_REASONS } from './libs/config.js';
+import { OPERATORS_BY_DEPT, HOLD_REASONS, SCRAP_REASONS, OPEN_ORDER_STATUSES } from './libs/config.js';
 import { formatDateLocal, getStageCum, detectTcMode, sanitizePartKey } from './libs/utils.js';
 
 // ── Page controllers ──────────────────────────────────────────
@@ -76,7 +76,16 @@ import { searchCS, searchPastOrders, selectPastWo, clearPastOrders } from './pag
 import {
     loadOpenOrders, setSectionSort, openOrderSortIcon,
     setRowColor, openOrderRowClass, openOrderColorDotClass,
-    openOrderStatusClass, openOrderHasLine3
+    openOrderStatusClass, openOrderHasLine3,
+    cancelAddModal, parsePasteRows, saveOpenOrderRow,
+    moveToSection,
+    onRowMouseDown, onRowMouseEnter, onRowDragStart, onRowDragEnd,
+    onSectionDragOver, onSectionDragLeave, onSectionDrop, clearRowSelection,
+    onScrollAreaDragOver,
+    startCellEdit, saveCellEdit, cancelCellEdit, deleteOpenOrder,
+    onGripDragStart, onGripDragEnd,
+    onDropZoneDragOver, clearDropZone, reorderDrop,
+    toggleOpenOrderExpand
 } from './pages/open-orders-view.js';
 
 // ── Load HTML partials into #app before Vue mounts ───────────
@@ -90,7 +99,7 @@ async function loadPartials() {
         'modal-pin', 'modal-action-panel',
         'modal-tc-unit', 'modal-tc-stock',
         'modal-tv-unit', 'modal-tv-stock',
-        'modal-misc'
+        'modal-misc', 'modal-open-orders-add'
     ];
     const chunks = await Promise.all(
         names.map(n => fetch(`./partials/${n}.html`).then(r => r.text()))
@@ -469,7 +478,19 @@ try {
                 openOrdersSort:          store.openOrdersSort,
                 openOrderSections:       store.openOrderSections,
                 openOrderColorPickerRow: store.openOrderColorPickerRow,
-                openOrderAddModalOpen:   store.openOrderAddModalOpen,
+                openOrderEditingCell:     store.openOrderEditingCell,
+                openOrderEditingValue:    store.openOrderEditingValue,
+                openOrderSelectedIds:     store.openOrderSelectedIds,
+                openOrderDragOverSection: store.openOrderDragOverSection,
+                openOrderDropZoneTarget:  store.openOrderDropZoneTarget,
+                openOrderExpandedCols:    store.openOrderExpandedCols,
+                openOrderAddModalOpen:    store.openOrderAddModalOpen,
+                openOrderAddMode:         store.openOrderAddMode,
+                openOrderAddForm:         store.openOrderAddForm,
+                openOrderAddFormErrors:   store.openOrderAddFormErrors,
+                openOrderAddPasteText:    store.openOrderAddPasteText,
+                openOrderAddPasteRows:    store.openOrderAddPasteRows,
+                openOrderStatuses:        OPEN_ORDER_STATUSES,
                 openOrderSortFields: [
                     { field: 'part_number',        label: 'Part #'   },
                     { field: 'date_entered',        label: 'Date'     },
@@ -487,6 +508,17 @@ try {
                 openOrderColorDotClass,
                 openOrderStatusClass,
                 openOrderHasLine3,
+                cancelAddModal,
+                parsePasteRows,
+                saveOpenOrderRow,
+                moveToSection,
+                onRowMouseDown, onRowMouseEnter, onRowDragStart, onRowDragEnd,
+                onSectionDragOver, onSectionDragLeave, onSectionDrop, clearRowSelection,
+                onScrollAreaDragOver,
+                startCellEdit, saveCellEdit, cancelCellEdit, deleteOpenOrder,
+                onGripDragStart, onGripDragEnd,
+                onDropZoneDragOver, clearDropZone, reorderDrop,
+                toggleOpenOrderExpand,
 
                 // Utilities available in templates
                 formatDateLocal, detectTcMode, sanitizePartKey

@@ -1,7 +1,7 @@
             <!-- ── OPEN ORDERS ──────────────────────────────── -->
             <div v-if="currentView === 'open_orders'"
                  class="flex flex-col h-full bg-slate-100 absolute inset-0"
-                 @click.self="openOrderColorPickerRow = null">
+                 @click.self="openOrderColorPickerRow = null; clearRowSelection()">
 
                 <!-- ── Top bar ──────────────────────────────── -->
                 <div class="shrink-0 bg-slate-900 px-4 py-2 flex items-center gap-4 border-b border-slate-700">
@@ -44,7 +44,8 @@
                 </div>
 
                 <!-- ── Scrollable content ────────────────────── -->
-                <div class="flex-1 overflow-y-auto p-3 space-y-4">
+                <div class="flex-1 overflow-y-auto p-3 space-y-4"
+                     @dragover="onScrollAreaDragOver($event)">
 
                     <!-- Loading -->
                     <div v-if="openOrdersLoading" class="flex items-center justify-center py-24 text-slate-400">
@@ -59,11 +60,19 @@
                     <template v-else v-for="section in openOrderSections" :key="section.type">
                         <div class="rounded-xl overflow-hidden shadow-sm border border-slate-200">
 
-                            <!-- Section header + sort bar -->
-                            <div :class="section.hdr" class="px-3 py-2 flex items-center gap-3 flex-wrap">
-                                <h3 class="text-white font-bold text-sm tracking-wider">{{ section.label }}</h3>
+                            <!-- Section header + sort bar (also a drop zone for section moves) -->
+                            <div :class="[section.hdr, openOrderDragOverSection === section.type ? 'ring-4 ring-inset ring-white/60' : '']"
+                                 class="px-3 py-2 flex items-center gap-3 flex-wrap transition-all"
+                                 @dragover="onSectionDragOver($event, section.type)"
+                                 @dragleave="onSectionDragLeave($event, section.type)"
+                                 @drop="onSectionDrop($event, section.type)">
+                                <h3 class="text-white font-extrabold text-xl tracking-widest drop-shadow">{{ section.label }}</h3>
                                 <span class="bg-white/20 text-white text-xs font-bold px-2 py-0.5 rounded-full">
                                     {{ section.orders.length }}
+                                </span>
+                                <span v-if="openOrderDragOverSection === section.type"
+                                      class="text-white/80 text-sm font-semibold animate-pulse">
+                                    ↓ Drop here
                                 </span>
                                 <div class="flex-1"></div>
                                 <!-- Sort buttons -->
@@ -80,217 +89,617 @@
                                 </div>
                             </div>
 
-                            <!-- Column header row (aligns with line 1 grid) -->
-                            <div class="grid items-center gap-x-2 px-2 py-1 bg-slate-50 border-b border-slate-200 text-xs font-semibold text-slate-400 uppercase tracking-wider"
-                                 style="grid-template-columns: 22px 132px 1fr 132px 88px 80px 72px 74px 114px;">
-                                <div></div>
-                                <div>Part # / Qty</div>
-                                <div>Description</div>
-                                <div>Customer</div>
-                                <div>Sales Order</div>
-                                <div>WO / PO #</div>
-                                <div>Date In</div>
-                                <div>Deadline</div>
-                                <div>Status</div>
-                            </div>
+                            <!-- Horizontally scrollable grid container -->
+                            <div class="overflow-x-auto">
 
-                            <!-- Empty state -->
-                            <div v-if="section.orders.length === 0"
-                                 class="bg-white px-4 py-5 text-center text-slate-400 text-sm italic">
-                                No {{ section.label.toLowerCase() }}
-                            </div>
+                                <!-- Column header row -->
+                                <div class="grid items-center gap-x-2 px-2 py-1 bg-slate-50 border-b border-slate-200 text-xs font-semibold text-slate-400 uppercase tracking-wider w-full min-w-[1730px]"
+                                     style="grid-template-columns: 16px 22px 130px 200px 90px 100px 106px 120px 130px 70px 196px 1fr 62px 58px 72px 72px 76px 120px 28px;">
+                                    <div></div><!-- grip -->
+                                    <div></div><!-- color -->
+                                    <div>Part # / Qty</div>
+                                    <div>Description</div>
+                                    <div>Bin</div>
+                                    <div>Info By</div>
+                                    <div>DIMS / Wt</div>
+                                    <div>Boxer / Picker</div>
+                                    <div>Quotes</div>
+                                    <div>Boxes</div>
+                                    <div>Notes</div>
+                                    <div>Customer</div>
+                                    <div>Sales Order</div>
+                                    <div>WO / PO #</div>
+                                    <div>Date In</div>
+                                    <div>Deadline</div>
+                                    <div>Last Upd</div>
+                                    <div>Status</div>
+                                    <div></div>
+                                </div>
 
-                            <!-- Order rows -->
-                            <div v-else>
-                                <div v-for="order in section.orders" :key="order.id"
-                                     :class="openOrderRowClass(order.row_color)"
-                                     class="flex flex-col border-b border-slate-100 last:border-0">
+                                <!-- Empty state -->
+                                <div v-if="section.orders.length === 0"
+                                     class="bg-white px-4 py-5 text-center text-slate-400 text-sm italic">
+                                    No {{ section.label.toLowerCase() }}
+                                </div>
 
-                                    <!-- Line 1: Identity + Status -->
-                                    <div class="grid items-center gap-x-2 px-2 pt-1.5 pb-0.5 text-sm"
-                                         style="grid-template-columns: 22px 132px 1fr 132px 88px 80px 72px 74px 114px;">
+                                <!-- Order rows with reorder drop zones -->
+                                <div v-else class="relative">
 
-                                        <!-- Color picker trigger -->
-                                        <div class="relative">
-                                            <button
-                                                @click.stop="openOrderColorPickerRow = (openOrderColorPickerRow === order.id ? null : order.id)"
-                                                :class="openOrderColorDotClass(order.row_color)"
-                                                class="w-4 h-4 rounded-sm border border-slate-300 cursor-pointer hover:scale-110 transition-transform"
-                                                title="Set row color">
-                                            </button>
-                                            <!-- Color picker dropdown -->
-                                            <div v-if="openOrderColorPickerRow === order.id"
-                                                 class="absolute left-0 top-5 z-30 bg-white rounded-lg shadow-2xl border border-slate-200 p-2 flex items-center gap-2"
-                                                 @click.stop>
-                                                <button @click="setRowColor(order.id, null)"
-                                                    class="w-5 h-5 rounded-sm bg-slate-200 border-2 border-slate-400 hover:scale-125 transition-transform" title="Clear"></button>
-                                                <button @click="setRowColor(order.id, 'orange')"
-                                                    class="w-5 h-5 rounded-sm bg-orange-400 hover:scale-125 transition-transform" title="VA"></button>
-                                                <button @click="setRowColor(order.id, 'yellow')"
-                                                    class="w-5 h-5 rounded-sm bg-yellow-400 hover:scale-125 transition-transform" title="Shipping"></button>
-                                                <button @click="setRowColor(order.id, 'pink')"
-                                                    class="w-5 h-5 rounded-sm bg-pink-400 hover:scale-125 transition-transform" title="Office / Dan K"></button>
-                                                <button @click="setRowColor(order.id, 'blue')"
-                                                    class="w-5 h-5 rounded-sm bg-blue-400 hover:scale-125 transition-transform" title="Dan H"></button>
+                                    <!-- Drop zone: before first row -->
+                                    <div class="mx-2 rounded transition-all"
+                                         :class="openOrderDropZoneTarget === section.type+':0' ? 'h-1.5 bg-indigo-400 my-0.5' : 'h-0'"
+                                         @dragover="onDropZoneDragOver($event, section.type, 0)"
+                                         @dragleave="clearDropZone()"
+                                         @drop="reorderDrop($event, section.type, 0)">
+                                    </div>
+
+                                    <template v-for="(order, idx) in section.orders" :key="order.id">
+
+                                        <!-- Order row -->
+                                        <div :class="openOrderRowClass(order.row_color, openOrderSelectedIds.includes(order.id))"
+                                             :draggable="openOrderSelectedIds.includes(order.id)"
+                                             class="flex flex-col border-b border-slate-100 last:border-0 select-none"
+                                             @mousedown="onRowMouseDown($event, order.id)"
+                                             @mouseenter="onRowMouseEnter(order.id)"
+                                             @dragstart="onRowDragStart($event, order.id)"
+                                             @dragend="onRowDragEnd()">
+
+                                            <!-- Main grid row -->
+                                            <div class="grid items-start gap-x-2 px-2 pt-1.5 pb-1 w-full min-w-[1730px]"
+                                                 style="grid-template-columns: 16px 22px 130px 200px 90px 100px 106px 120px 130px 70px 196px 1fr 62px 58px 72px 72px 76px 120px 28px;">
+
+                                                <!-- Col 1: Grip handle (reorder within section) -->
+                                                <div class="flex items-center justify-center h-full pt-0.5"
+                                                     @mousedown.stop>
+                                                    <div draggable="true"
+                                                         @dragstart.stop="onGripDragStart($event, order.id)"
+                                                         @dragend="onGripDragEnd()"
+                                                         @mousedown.stop
+                                                         class="cursor-grab active:cursor-grabbing text-slate-300 hover:text-slate-500 transition-colors px-0.5 select-none"
+                                                         title="Drag to reorder within section">
+                                                        <svg class="w-3 h-4" viewBox="0 0 10 16" fill="currentColor">
+                                                            <circle cx="3" cy="2"  r="1.5"/>
+                                                            <circle cx="7" cy="2"  r="1.5"/>
+                                                            <circle cx="3" cy="6"  r="1.5"/>
+                                                            <circle cx="7" cy="6"  r="1.5"/>
+                                                            <circle cx="3" cy="10" r="1.5"/>
+                                                            <circle cx="7" cy="10" r="1.5"/>
+                                                            <circle cx="3" cy="14" r="1.5"/>
+                                                            <circle cx="7" cy="14" r="1.5"/>
+                                                        </svg>
+                                                    </div>
+                                                </div>
+
+                                                <!-- Col 2: Color picker trigger -->
+                                                <div class="relative pt-0.5">
+                                                    <button @click.stop="openOrderColorPickerRow = (openOrderColorPickerRow === order.id ? null : order.id)"
+                                                        @mousedown.stop
+                                                        :class="openOrderColorDotClass(order.row_color)"
+                                                        class="w-4 h-4 rounded-sm border border-slate-300 cursor-pointer hover:scale-110 transition-transform"
+                                                        title="Set row color">
+                                                    </button>
+                                                    <div v-if="openOrderColorPickerRow === order.id"
+                                                         class="absolute left-0 top-5 z-30 bg-white rounded-lg shadow-2xl border border-slate-200 p-2 flex items-center gap-2"
+                                                         @click.stop>
+                                                        <button @click="setRowColor(order.id, null)"     class="w-5 h-5 rounded-sm bg-slate-200 border-2 border-slate-400 hover:scale-125 transition-transform" title="Clear"></button>
+                                                        <button @click="setRowColor(order.id, 'orange')" class="w-5 h-5 rounded-sm bg-orange-400 hover:scale-125 transition-transform" title="VA"></button>
+                                                        <button @click="setRowColor(order.id, 'yellow')" class="w-5 h-5 rounded-sm bg-yellow-400 hover:scale-125 transition-transform" title="Shipping"></button>
+                                                        <button @click="setRowColor(order.id, 'pink')"   class="w-5 h-5 rounded-sm bg-pink-400 hover:scale-125 transition-transform" title="Office / Dan K"></button>
+                                                        <button @click="setRowColor(order.id, 'blue')"   class="w-5 h-5 rounded-sm bg-blue-400 hover:scale-125 transition-transform" title="Dan H"></button>
+                                                    </div>
+                                                </div>
+
+                                                <!-- Col 3: Part # + Qty Pulled / To Ship -->
+                                                <div class="overflow-hidden min-w-0">
+                                                    <input v-if="openOrderEditingCell.id===order.id && openOrderEditingCell.field==='part_number'"
+                                                           v-model="openOrderEditingValue"
+                                                           :ref="el=>{if(el)el.focus()}"
+                                                           @blur="saveCellEdit(order.id,'part_number')"
+                                                           @keydown.enter.prevent="saveCellEdit(order.id,'part_number')"
+                                                           @keydown.escape.prevent="cancelCellEdit()"
+                                                           @click.stop @mousedown.stop
+                                                           class="w-full border border-indigo-400 rounded px-1 text-sm font-mono font-bold focus:outline-none" />
+                                                    <span v-else
+                                                          @click.stop="startCellEdit(order.id,'part_number',order.part_number)"
+                                                          @mousedown.stop
+                                                          class="font-mono font-bold text-slate-900 text-sm cursor-text hover:bg-black/[0.04] rounded px-0.5 -mx-0.5 block truncate">
+                                                        {{ order.part_number || '—' }}
+                                                    </span>
+                                                    <!-- QTY (to_ship) -->
+                                                    <span v-if="openOrderEditingCell.id===order.id && openOrderEditingCell.field==='to_ship'"
+                                                          class="inline-flex items-center gap-1" @click.stop @mousedown.stop>
+                                                        <span class="text-xs text-slate-500 font-semibold">QTY</span>
+                                                        <input v-model="openOrderEditingValue" type="number" min="0"
+                                                               :ref="el=>{if(el)el.focus()}"
+                                                               @blur="saveCellEdit(order.id,'to_ship')"
+                                                               @keydown.enter.prevent="saveCellEdit(order.id,'to_ship')"
+                                                               @keydown.escape.prevent="cancelCellEdit()"
+                                                               class="w-12 border border-indigo-400 rounded px-1 text-xs focus:outline-none" />
+                                                    </span>
+                                                    <span v-else class="inline-flex items-center gap-1">
+                                                        <span class="text-xs text-slate-500 font-semibold">QTY</span>
+                                                        <span @click.stop="startCellEdit(order.id,'to_ship',order.to_ship)"
+                                                              @mousedown.stop
+                                                              class="text-xs text-slate-600 cursor-text hover:bg-black/[0.04] rounded px-0.5">
+                                                            {{ order.to_ship ?? 0 }}
+                                                        </span>
+                                                    </span>
+                                                </div>
+
+                                                <!-- Col 4: Description (wraps to 2 lines max) -->
+                                                <div class="min-w-0" @click.stop="startCellEdit(order.id,'description',order.description)" @mousedown.stop>
+                                                    <input v-if="openOrderEditingCell.id===order.id && openOrderEditingCell.field==='description'"
+                                                           v-model="openOrderEditingValue"
+                                                           :ref="el=>{if(el)el.focus()}"
+                                                           @blur="saveCellEdit(order.id,'description')"
+                                                           @keydown.enter.prevent="saveCellEdit(order.id,'description')"
+                                                           @keydown.escape.prevent="cancelCellEdit()"
+                                                           @click.stop @mousedown.stop
+                                                           class="w-full border border-indigo-400 rounded px-1 text-sm focus:outline-none" />
+                                                    <span v-else class="text-slate-700 text-sm leading-snug line-clamp-2 break-words cursor-text hover:bg-black/[0.04] rounded px-0.5 -mx-0.5">{{ order.description || '' }}</span>
+                                                </div>
+
+                                                <!-- Col 5: Bin / Updated Bin (stacked) -->
+                                                <div class="flex flex-col gap-1 text-sm min-w-0" @click.stop @mousedown.stop>
+                                                    <!-- Bin -->
+                                                    <div class="flex items-center gap-1">
+                                                        <span class="text-slate-400 shrink-0 text-xs w-7">Bin</span>
+                                                        <input v-if="openOrderEditingCell.id===order.id && openOrderEditingCell.field==='store_bin'"
+                                                               v-model="openOrderEditingValue"
+                                                               :ref="el=>{if(el)el.focus()}"
+                                                               @blur="saveCellEdit(order.id,'store_bin')"
+                                                               @keydown.enter.prevent="saveCellEdit(order.id,'store_bin')"
+                                                               @keydown.escape.prevent="cancelCellEdit()"
+                                                               @click.stop @mousedown.stop
+                                                               class="flex-1 min-w-0 border border-indigo-400 rounded px-1 text-sm focus:outline-none" />
+                                                        <span v-else
+                                                              @click.stop="startCellEdit(order.id,'store_bin',order.store_bin)"
+                                                              @mousedown.stop
+                                                              class="flex-1 min-w-0 truncate cursor-text hover:bg-black/[0.04] rounded px-0.5 -mx-0.5"
+                                                              :class="order.store_bin ? 'text-slate-700' : 'text-slate-300 italic'">
+                                                            {{ order.store_bin || '—' }}
+                                                        </span>
+                                                    </div>
+                                                    <!-- Updated Bin -->
+                                                    <div class="flex items-center gap-1">
+                                                        <span class="text-slate-400 shrink-0 text-xs w-7">Upd</span>
+                                                        <input v-if="openOrderEditingCell.id===order.id && openOrderEditingCell.field==='update_store_bin'"
+                                                               v-model="openOrderEditingValue"
+                                                               :ref="el=>{if(el)el.focus()}"
+                                                               @blur="saveCellEdit(order.id,'update_store_bin')"
+                                                               @keydown.enter.prevent="saveCellEdit(order.id,'update_store_bin')"
+                                                               @keydown.escape.prevent="cancelCellEdit()"
+                                                               @click.stop @mousedown.stop
+                                                               class="flex-1 min-w-0 border border-indigo-400 rounded px-1 text-sm focus:outline-none" />
+                                                        <span v-else
+                                                              @click.stop="startCellEdit(order.id,'update_store_bin',order.update_store_bin)"
+                                                              @mousedown.stop
+                                                              class="flex-1 min-w-0 truncate cursor-text hover:bg-black/[0.04] rounded px-0.5 -mx-0.5 font-semibold"
+                                                              :class="order.update_store_bin ? 'text-amber-700' : 'text-slate-300 italic'">
+                                                            {{ order.update_store_bin || '—' }}
+                                                        </span>
+                                                    </div>
+                                                </div>
+
+                                                <!-- Col 6: Info Enterer -->
+                                                <div class="min-w-0 text-xs" @click.stop="startCellEdit(order.id,'info_enterer',order.info_enterer)" @mousedown.stop>
+                                                    <input v-if="openOrderEditingCell.id===order.id && openOrderEditingCell.field==='info_enterer'"
+                                                           v-model="openOrderEditingValue"
+                                                           :ref="el=>{if(el)el.focus()}"
+                                                           @blur="saveCellEdit(order.id,'info_enterer')"
+                                                           @keydown.enter.prevent="saveCellEdit(order.id,'info_enterer')"
+                                                           @keydown.escape.prevent="cancelCellEdit()"
+                                                           @click.stop @mousedown.stop
+                                                           class="w-full border border-indigo-400 rounded px-1 text-xs focus:outline-none" />
+                                                    <span v-else
+                                                          class="cursor-text hover:bg-black/[0.04] rounded px-0.5 -mx-0.5 block truncate"
+                                                          :class="order.info_enterer ? 'text-slate-700' : 'text-slate-300 italic'">
+                                                        {{ order.info_enterer || '—' }}
+                                                    </span>
+                                                </div>
+
+                                                <!-- Col 6: DIMS + Weight (stacked) -->
+                                                <div class="flex flex-col gap-1 text-sm min-w-0" @click.stop @mousedown.stop>
+                                                    <!-- DIMS -->
+                                                    <div class="flex items-center gap-1">
+                                                        <span class="text-slate-400 shrink-0 text-xs w-7">DIMS</span>
+                                                        <input v-if="openOrderEditingCell.id===order.id && openOrderEditingCell.field==='dims'"
+                                                               v-model="openOrderEditingValue"
+                                                               :ref="el=>{if(el)el.focus()}"
+                                                               @blur="saveCellEdit(order.id,'dims')"
+                                                               @keydown.enter.prevent="saveCellEdit(order.id,'dims')"
+                                                               @keydown.escape.prevent="cancelCellEdit()"
+                                                               @click.stop @mousedown.stop
+                                                               class="flex-1 min-w-0 border border-indigo-400 rounded px-1 text-sm focus:outline-none" />
+                                                        <span v-else
+                                                              @click.stop="startCellEdit(order.id,'dims',order.dims)"
+                                                              @mousedown.stop
+                                                              class="flex-1 min-w-0 truncate cursor-text hover:bg-black/[0.04] rounded px-0.5 -mx-0.5"
+                                                              :class="order.dims ? 'text-slate-700' : 'text-slate-300 italic'">
+                                                            {{ order.dims || '—' }}
+                                                        </span>
+                                                    </div>
+                                                    <!-- Weight -->
+                                                    <div class="flex items-center gap-1">
+                                                        <span class="text-slate-400 shrink-0 text-xs w-7">Wt</span>
+                                                        <input v-if="openOrderEditingCell.id===order.id && openOrderEditingCell.field==='weight_lbs'"
+                                                               v-model="openOrderEditingValue"
+                                                               :ref="el=>{if(el)el.focus()}"
+                                                               @blur="saveCellEdit(order.id,'weight_lbs')"
+                                                               @keydown.enter.prevent="saveCellEdit(order.id,'weight_lbs')"
+                                                               @keydown.escape.prevent="cancelCellEdit()"
+                                                               @click.stop @mousedown.stop
+                                                               class="flex-1 min-w-0 border border-indigo-400 rounded px-1 text-sm focus:outline-none" />
+                                                        <span v-else
+                                                              @click.stop="startCellEdit(order.id,'weight_lbs',order.weight_lbs)"
+                                                              @mousedown.stop
+                                                              class="flex-1 min-w-0 truncate cursor-text hover:bg-black/[0.04] rounded px-0.5 -mx-0.5"
+                                                              :class="order.weight_lbs ? 'text-slate-700' : 'text-slate-300 italic'">
+                                                            {{ order.weight_lbs || '—' }}
+                                                        </span>
+                                                    </div>
+                                                </div>
+
+                                                <!-- Col 7: Boxer / Picker (stacked) -->
+                                                <div class="flex flex-col gap-1 text-sm min-w-0" @click.stop @mousedown.stop>
+                                                    <!-- Boxer -->
+                                                    <div class="flex items-center gap-1">
+                                                        <span class="text-slate-400 shrink-0 text-xs w-8">Boxr</span>
+                                                        <input v-if="openOrderEditingCell.id===order.id && openOrderEditingCell.field==='boxer'"
+                                                               v-model="openOrderEditingValue"
+                                                               :ref="el=>{if(el)el.focus()}"
+                                                               @blur="saveCellEdit(order.id,'boxer')"
+                                                               @keydown.enter.prevent="saveCellEdit(order.id,'boxer')"
+                                                               @keydown.escape.prevent="cancelCellEdit()"
+                                                               @click.stop @mousedown.stop
+                                                               class="flex-1 min-w-0 border border-indigo-400 rounded px-1 text-sm focus:outline-none" />
+                                                        <span v-else
+                                                              @click.stop="startCellEdit(order.id,'boxer',order.boxer)"
+                                                              @mousedown.stop
+                                                              class="flex-1 min-w-0 truncate cursor-text hover:bg-black/[0.04] rounded px-0.5 -mx-0.5"
+                                                              :class="order.boxer ? 'text-slate-700' : 'text-slate-300 italic'">
+                                                            {{ order.boxer || '—' }}
+                                                        </span>
+                                                    </div>
+                                                    <!-- Picker -->
+                                                    <div class="flex items-center gap-1">
+                                                        <span class="text-slate-400 shrink-0 text-xs w-8">Pkr</span>
+                                                        <input v-if="openOrderEditingCell.id===order.id && openOrderEditingCell.field==='picker'"
+                                                               v-model="openOrderEditingValue"
+                                                               :ref="el=>{if(el)el.focus()}"
+                                                               @blur="saveCellEdit(order.id,'picker')"
+                                                               @keydown.enter.prevent="saveCellEdit(order.id,'picker')"
+                                                               @keydown.escape.prevent="cancelCellEdit()"
+                                                               @click.stop @mousedown.stop
+                                                               class="flex-1 min-w-0 border border-indigo-400 rounded px-1 text-sm focus:outline-none" />
+                                                        <span v-else
+                                                              @click.stop="startCellEdit(order.id,'picker',order.picker)"
+                                                              @mousedown.stop
+                                                              class="flex-1 min-w-0 truncate cursor-text hover:bg-black/[0.04] rounded px-0.5 -mx-0.5"
+                                                              :class="order.picker ? 'text-slate-700' : 'text-slate-300 italic'">
+                                                            {{ order.picker || '—' }}
+                                                        </span>
+                                                    </div>
+                                                </div>
+
+                                                <!-- Col 8: Quotes — Q1 + Paid always; Q2 + Cost expandable -->
+                                                <div class="flex flex-col gap-1 text-sm min-w-0" @click.stop @mousedown.stop>
+                                                    <!-- Q1 (always) + inline +Q2 toggle -->
+                                                    <div class="flex items-center gap-1">
+                                                        <span class="text-slate-400 shrink-0 text-xs w-9">Q1</span>
+                                                        <input v-if="openOrderEditingCell.id===order.id && openOrderEditingCell.field==='ship_quote_1'"
+                                                               v-model="openOrderEditingValue"
+                                                               :ref="el=>{if(el)el.focus()}"
+                                                               @blur="saveCellEdit(order.id,'ship_quote_1')"
+                                                               @keydown.enter.prevent="saveCellEdit(order.id,'ship_quote_1')"
+                                                               @keydown.escape.prevent="cancelCellEdit()"
+                                                               @click.stop @mousedown.stop
+                                                               class="flex-1 min-w-0 border border-indigo-400 rounded px-1 text-sm focus:outline-none" />
+                                                        <span v-else
+                                                              @click.stop="startCellEdit(order.id,'ship_quote_1',order.ship_quote_1)"
+                                                              @mousedown.stop
+                                                              class="flex-1 min-w-0 truncate cursor-text hover:bg-black/[0.04] rounded px-0.5 -mx-0.5"
+                                                              :class="order.ship_quote_1 ? 'text-slate-700' : 'text-slate-300 italic'">
+                                                            {{ order.ship_quote_1 || '—' }}
+                                                        </span>
+                                                        <button @click.stop="toggleOpenOrderExpand(order.id,'quotes')" @mousedown.stop
+                                                                class="text-indigo-400 hover:text-indigo-600 text-xs shrink-0 leading-none transition-colors">
+                                                            {{ openOrderExpandedCols[order.id]?.quotes ? '−' : '+Q2' }}
+                                                        </button>
+                                                    </div>
+                                                    <!-- Q2 + Cost (expandable) -->
+                                                    <template v-if="openOrderExpandedCols[order.id]?.quotes">
+                                                        <div class="flex items-center gap-1">
+                                                            <span class="text-slate-400 shrink-0 text-xs w-9">Q2</span>
+                                                            <input v-if="openOrderEditingCell.id===order.id && openOrderEditingCell.field==='ship_quote_2'"
+                                                                   v-model="openOrderEditingValue"
+                                                                   :ref="el=>{if(el)el.focus()}"
+                                                                   @blur="saveCellEdit(order.id,'ship_quote_2')"
+                                                                   @keydown.enter.prevent="saveCellEdit(order.id,'ship_quote_2')"
+                                                                   @keydown.escape.prevent="cancelCellEdit()"
+                                                                   @click.stop @mousedown.stop
+                                                                   class="flex-1 min-w-0 border border-indigo-400 rounded px-1 text-sm focus:outline-none" />
+                                                            <span v-else
+                                                                  @click.stop="startCellEdit(order.id,'ship_quote_2',order.ship_quote_2)"
+                                                                  @mousedown.stop
+                                                                  class="flex-1 min-w-0 truncate cursor-text hover:bg-black/[0.04] rounded px-0.5 -mx-0.5"
+                                                                  :class="order.ship_quote_2 ? 'text-slate-700' : 'text-slate-300 italic'">
+                                                                {{ order.ship_quote_2 || '—' }}
+                                                            </span>
+                                                        </div>
+                                                        <div class="flex items-center gap-1">
+                                                            <span class="text-slate-400 shrink-0 text-xs w-9">Cost</span>
+                                                            <input v-if="openOrderEditingCell.id===order.id && openOrderEditingCell.field==='ship_cost_3'"
+                                                                   v-model="openOrderEditingValue"
+                                                                   :ref="el=>{if(el)el.focus()}"
+                                                                   @blur="saveCellEdit(order.id,'ship_cost_3')"
+                                                                   @keydown.enter.prevent="saveCellEdit(order.id,'ship_cost_3')"
+                                                                   @keydown.escape.prevent="cancelCellEdit()"
+                                                                   @click.stop @mousedown.stop
+                                                                   class="flex-1 min-w-0 border border-indigo-400 rounded px-1 text-sm focus:outline-none" />
+                                                            <span v-else
+                                                                  @click.stop="startCellEdit(order.id,'ship_cost_3',order.ship_cost_3)"
+                                                                  @mousedown.stop
+                                                                  class="flex-1 min-w-0 truncate cursor-text hover:bg-black/[0.04] rounded px-0.5 -mx-0.5"
+                                                                  :class="order.ship_cost_3 ? 'text-slate-700' : 'text-slate-300 italic'">
+                                                                {{ order.ship_cost_3 || '—' }}
+                                                            </span>
+                                                        </div>
+                                                    </template>
+                                                    <!-- Paid (always) -->
+                                                    <div class="flex items-center gap-1">
+                                                        <span class="text-xs w-9 shrink-0" :class="order.ship_paid_4 ? 'text-green-600 font-semibold' : 'text-slate-400'">Paid</span>
+                                                        <input v-if="openOrderEditingCell.id===order.id && openOrderEditingCell.field==='ship_paid_4'"
+                                                               v-model="openOrderEditingValue"
+                                                               :ref="el=>{if(el)el.focus()}"
+                                                               @blur="saveCellEdit(order.id,'ship_paid_4')"
+                                                               @keydown.enter.prevent="saveCellEdit(order.id,'ship_paid_4')"
+                                                               @keydown.escape.prevent="cancelCellEdit()"
+                                                               @click.stop @mousedown.stop
+                                                               class="flex-1 min-w-0 border border-indigo-400 rounded px-1 text-sm focus:outline-none" />
+                                                        <span v-else
+                                                              @click.stop="startCellEdit(order.id,'ship_paid_4',order.ship_paid_4)"
+                                                              @mousedown.stop
+                                                              class="flex-1 min-w-0 truncate cursor-text hover:bg-black/[0.04] rounded px-0.5 -mx-0.5"
+                                                              :class="order.ship_paid_4 ? 'text-green-700 font-bold' : 'text-slate-300 italic'">
+                                                            {{ order.ship_paid_4 || '—' }}
+                                                        </span>
+                                                    </div>
+                                                </div>
+
+                                                <!-- Col 9: Boxes — B1 always; B2–B4 expandable -->
+                                                <div class="flex flex-col gap-1 text-sm min-w-0" @click.stop @mousedown.stop>
+                                                    <!-- B1 (always) -->
+                                                    <div class="flex items-center gap-1">
+                                                        <span class="text-slate-400 shrink-0 text-xs w-6">B1</span>
+                                                        <input v-if="openOrderEditingCell.id===order.id && openOrderEditingCell.field==='box1'"
+                                                               v-model="openOrderEditingValue"
+                                                               :ref="el=>{if(el)el.focus()}"
+                                                               @blur="saveCellEdit(order.id,'box1')"
+                                                               @keydown.enter.prevent="saveCellEdit(order.id,'box1')"
+                                                               @keydown.escape.prevent="cancelCellEdit()"
+                                                               @click.stop @mousedown.stop
+                                                               class="flex-1 min-w-0 border border-indigo-400 rounded px-1 text-sm focus:outline-none" />
+                                                        <span v-else
+                                                              @click.stop="startCellEdit(order.id,'box1',order.box1)"
+                                                              @mousedown.stop
+                                                              class="flex-1 min-w-0 truncate cursor-text hover:bg-black/[0.04] rounded px-0.5 -mx-0.5"
+                                                              :class="order.box1 ? 'text-slate-700' : 'text-slate-300 italic'">
+                                                            {{ order.box1 || '—' }}
+                                                        </span>
+                                                    </div>
+                                                    <!-- B2–B4 (expandable) -->
+                                                    <template v-if="openOrderExpandedCols[order.id]?.boxes">
+                                                        <div v-for="(displayLabel, dbField) in {box2:'B2',box3:'B3',box4:'B4'}" :key="dbField" class="flex items-center gap-1">
+                                                            <span class="text-slate-400 shrink-0 text-xs w-6">{{ displayLabel }}</span>
+                                                            <input v-if="openOrderEditingCell.id===order.id && openOrderEditingCell.field===dbField"
+                                                                   v-model="openOrderEditingValue"
+                                                                   :ref="el=>{if(el)el.focus()}"
+                                                                   @blur="saveCellEdit(order.id, dbField)"
+                                                                   @keydown.enter.prevent="saveCellEdit(order.id, dbField)"
+                                                                   @keydown.escape.prevent="cancelCellEdit()"
+                                                                   @click.stop @mousedown.stop
+                                                                   class="flex-1 min-w-0 border border-indigo-400 rounded px-1 text-sm focus:outline-none" />
+                                                            <span v-else
+                                                                  @click.stop="startCellEdit(order.id, dbField, order[dbField])"
+                                                                  @mousedown.stop
+                                                                  class="flex-1 min-w-0 truncate cursor-text hover:bg-black/[0.04] rounded px-0.5 -mx-0.5"
+                                                                  :class="order[dbField] ? 'text-slate-700' : 'text-slate-300 italic'">
+                                                                {{ order[dbField] || '—' }}
+                                                            </span>
+                                                        </div>
+                                                    </template>
+                                                    <!-- Expand / collapse toggle -->
+                                                    <button @click.stop="toggleOpenOrderExpand(order.id,'boxes')" @mousedown.stop
+                                                            class="text-indigo-400 hover:text-indigo-600 text-xs self-start leading-none mt-0.5 transition-colors">
+                                                        {{ openOrderExpandedCols[order.id]?.boxes ? '− less' : '+ B2–B4' }}
+                                                    </button>
+                                                </div>
+
+                                                <!-- Col 10: Notes -->
+                                                <div class="min-w-0 text-sm" @click.stop="startCellEdit(order.id,'wo_va_notes',order.wo_va_notes)" @mousedown.stop>
+                                                    <input v-if="openOrderEditingCell.id===order.id && openOrderEditingCell.field==='wo_va_notes'"
+                                                           v-model="openOrderEditingValue"
+                                                           :ref="el=>{if(el)el.focus()}"
+                                                           @blur="saveCellEdit(order.id,'wo_va_notes')"
+                                                           @keydown.enter.prevent="saveCellEdit(order.id,'wo_va_notes')"
+                                                           @keydown.escape.prevent="cancelCellEdit()"
+                                                           @click.stop @mousedown.stop
+                                                           class="w-full border border-indigo-400 rounded px-1 text-sm focus:outline-none" />
+                                                    <span v-else
+                                                          class="cursor-text hover:bg-black/[0.04] rounded px-0.5 -mx-0.5 block leading-snug"
+                                                          :class="order.wo_va_notes ? 'text-slate-700' : 'text-slate-300 italic'">
+                                                        {{ order.wo_va_notes || 'add note…' }}
+                                                    </span>
+                                                </div>
+
+                                                <!-- Col 11: Customer -->
+                                                <div class="min-w-0 text-sm" @click.stop="startCellEdit(order.id,'customer',order.customer)" @mousedown.stop>
+                                                    <input v-if="openOrderEditingCell.id===order.id && openOrderEditingCell.field==='customer'"
+                                                           v-model="openOrderEditingValue"
+                                                           :ref="el=>{if(el)el.focus()}"
+                                                           @blur="saveCellEdit(order.id,'customer')"
+                                                           @keydown.enter.prevent="saveCellEdit(order.id,'customer')"
+                                                           @keydown.escape.prevent="cancelCellEdit()"
+                                                           @click.stop @mousedown.stop
+                                                           class="w-full border border-indigo-400 rounded px-1 text-sm focus:outline-none" />
+                                                    <span v-else
+                                                          class="break-words line-clamp-2 leading-snug cursor-text hover:bg-black/[0.04] rounded px-0.5 -mx-0.5"
+                                                          :class="order.customer ? 'text-slate-700' : 'text-slate-300 italic'">
+                                                        {{ order.customer || '—' }}
+                                                    </span>
+                                                </div>
+
+                                                <!-- Col 12: Sales Order -->
+                                                <div class="min-w-0 text-sm" @click.stop="startCellEdit(order.id,'sales_order',order.sales_order)" @mousedown.stop>
+                                                    <input v-if="openOrderEditingCell.id===order.id && openOrderEditingCell.field==='sales_order'"
+                                                           v-model="openOrderEditingValue"
+                                                           :ref="el=>{if(el)el.focus()}"
+                                                           @blur="saveCellEdit(order.id,'sales_order')"
+                                                           @keydown.enter.prevent="saveCellEdit(order.id,'sales_order')"
+                                                           @keydown.escape.prevent="cancelCellEdit()"
+                                                           @click.stop @mousedown.stop
+                                                           class="w-full border border-indigo-400 rounded px-1 text-sm focus:outline-none" />
+                                                    <span v-else
+                                                          class="truncate block cursor-text hover:bg-black/[0.04] rounded px-0.5 -mx-0.5"
+                                                          :class="order.sales_order ? 'text-slate-700' : 'text-slate-300 italic'">
+                                                        {{ order.sales_order || '—' }}
+                                                    </span>
+                                                </div>
+
+                                                <!-- Col 13: WO / PO # -->
+                                                <div class="min-w-0 text-sm" @click.stop="startCellEdit(order.id,'wo_po_number',order.wo_po_number)" @mousedown.stop>
+                                                    <input v-if="openOrderEditingCell.id===order.id && openOrderEditingCell.field==='wo_po_number'"
+                                                           v-model="openOrderEditingValue"
+                                                           :ref="el=>{if(el)el.focus()}"
+                                                           @blur="saveCellEdit(order.id,'wo_po_number')"
+                                                           @keydown.enter.prevent="saveCellEdit(order.id,'wo_po_number')"
+                                                           @keydown.escape.prevent="cancelCellEdit()"
+                                                           @click.stop @mousedown.stop
+                                                           class="w-full border border-indigo-400 rounded px-1 text-sm focus:outline-none" />
+                                                    <span v-else
+                                                          class="truncate block cursor-text hover:bg-black/[0.04] rounded px-0.5 -mx-0.5"
+                                                          :class="order.wo_po_number ? 'text-slate-700' : 'text-slate-300 italic'">
+                                                        {{ order.wo_po_number || '—' }}
+                                                    </span>
+                                                </div>
+
+                                                <!-- Col 14: Date Entered -->
+                                                <div class="min-w-0 text-sm" @click.stop="startCellEdit(order.id,'date_entered',order.date_entered)" @mousedown.stop>
+                                                    <input v-if="openOrderEditingCell.id===order.id && openOrderEditingCell.field==='date_entered'"
+                                                           v-model="openOrderEditingValue" type="date"
+                                                           :ref="el=>{if(el)el.focus()}"
+                                                           @blur="saveCellEdit(order.id,'date_entered')"
+                                                           @keydown.enter.prevent="saveCellEdit(order.id,'date_entered')"
+                                                           @keydown.escape.prevent="cancelCellEdit()"
+                                                           @click.stop @mousedown.stop
+                                                           class="w-full border border-indigo-400 rounded px-1 text-sm focus:outline-none" />
+                                                    <span v-else class="cursor-text hover:bg-black/[0.04] rounded px-0.5 -mx-0.5 text-slate-500">{{ order.date_entered || '—' }}</span>
+                                                </div>
+
+                                                <!-- Col 15: Deadline -->
+                                                <div class="min-w-0 text-sm" @click.stop="startCellEdit(order.id,'deadline',order.deadline)" @mousedown.stop
+                                                     :class="order.deadline ? 'text-red-600 font-medium' : 'text-slate-400'">
+                                                    <input v-if="openOrderEditingCell.id===order.id && openOrderEditingCell.field==='deadline'"
+                                                           v-model="openOrderEditingValue" type="date"
+                                                           :ref="el=>{if(el)el.focus()}"
+                                                           @blur="saveCellEdit(order.id,'deadline')"
+                                                           @keydown.enter.prevent="saveCellEdit(order.id,'deadline')"
+                                                           @keydown.escape.prevent="cancelCellEdit()"
+                                                           @click.stop @mousedown.stop
+                                                           class="w-full border border-indigo-400 rounded px-1 text-sm focus:outline-none text-slate-700" />
+                                                    <span v-else class="cursor-text hover:bg-black/[0.04] rounded px-0.5 -mx-0.5">{{ order.deadline || '—' }}</span>
+                                                </div>
+
+                                                <!-- Col 16: Last Status Update -->
+                                                <div class="min-w-0 text-xs text-slate-500 tabular-nums" @click.stop @mousedown.stop>
+                                                    {{ order.last_status_update ? order.last_status_update.slice(0,10) : '—' }}
+                                                </div>
+
+                                                <!-- Col 17: Status -->
+                                                <div class="min-w-0" @click.stop="startCellEdit(order.id,'status',order.status)" @mousedown.stop>
+                                                    <select v-if="openOrderEditingCell.id===order.id && openOrderEditingCell.field==='status'"
+                                                            v-model="openOrderEditingValue"
+                                                            :ref="el=>{if(el)el.focus()}"
+                                                            @change="saveCellEdit(order.id,'status')"
+                                                            @blur="saveCellEdit(order.id,'status')"
+                                                            @keydown.escape.prevent="cancelCellEdit()"
+                                                            @click.stop @mousedown.stop
+                                                            class="w-full border border-indigo-400 rounded px-1 py-0.5 text-xs focus:outline-none">
+                                                        <option v-for="s in openOrderStatuses" :key="s" :value="s">{{ s }}</option>
+                                                    </select>
+                                                    <span v-else
+                                                          :class="openOrderStatusClass(order.status)"
+                                                          class="inline-block px-1.5 py-0.5 rounded text-xs font-semibold whitespace-nowrap cursor-pointer">
+                                                        {{ order.status || 'New/Picking' }}
+                                                    </span>
+                                                </div>
+
+                                                <!-- Col 18: Delete -->
+                                                <div class="flex items-start justify-center pt-0.5" @click.stop @mousedown.stop>
+                                                    <button @click="deleteOpenOrder(order.id, order.part_number)"
+                                                            title="Delete row"
+                                                            class="text-slate-300 hover:text-red-500 transition-colors">
+                                                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+                                                        </svg>
+                                                    </button>
+                                                </div>
+
+                                            </div><!-- end main grid row -->
+
+                                            <!-- Line 2: Last status update (only shown when populated) -->
+                                            <div v-if="order.last_status_update"
+                                                 class="flex items-center px-2 pb-1 text-xs ml-10 text-slate-500">
+                                                <span class="text-slate-400 mr-1">Last:</span>{{ order.last_status_update }}
                                             </div>
+
+                                            <!-- Line 3: Weight, chute, bracket, holding bin, override (conditional) -->
+                                            <div v-if="openOrderHasLine3(order)"
+                                                 class="flex items-center flex-wrap gap-x-4 gap-y-0 px-2 pb-1.5 text-xs ml-10 text-slate-500 bg-black/[0.02]">
+                                                <span v-if="order.weight_lbs"><span class="text-slate-400">Wt:</span> {{ order.weight_lbs }} lbs</span>
+                                                <span v-if="order.chute_status"><span class="text-slate-400">Chute:</span> {{ order.chute_status }}<span v-if="order.chute_date" class="text-slate-400 ml-0.5">{{ order.chute_date }}</span></span>
+                                                <span v-if="order.bracket_adapter_status"><span class="text-slate-400">Bracket:</span> {{ order.bracket_adapter_status }}<span v-if="order.bracket_adapter_date" class="text-slate-400 ml-0.5">{{ order.bracket_adapter_date }}</span></span>
+                                                <span v-if="order.holding_bin_chute || order.holding_bin_status || order.holding_bin_part">
+                                                    <span class="text-slate-400">Holding Bin:</span>
+                                                    {{ [order.holding_bin_chute, order.holding_bin_status, order.holding_bin_part, order.holding_bin_date].filter(Boolean).join(' · ') }}
+                                                </span>
+                                                <span v-if="order.override"><span class="text-amber-600 font-semibold">Override:</span> <span class="text-amber-700">{{ order.override }}</span></span>
+                                            </div>
+
+                                        </div><!-- end order row -->
+
+                                        <!-- Drop zone: after this row -->
+                                        <div class="mx-2 rounded transition-all"
+                                             :class="openOrderDropZoneTarget === section.type+':'+(idx+1) ? 'h-1.5 bg-indigo-400 my-0.5' : 'h-0'"
+                                             @dragover="onDropZoneDragOver($event, section.type, idx+1)"
+                                             @dragleave="clearDropZone()"
+                                             @drop="reorderDrop($event, section.type, idx+1)">
                                         </div>
 
-                                        <!-- Part # + To Ship / Qty Pulled -->
-                                        <div class="overflow-hidden">
-                                            <span class="font-mono font-bold text-slate-900 text-sm">{{ order.part_number || '—' }}</span>
-                                            <span v-if="order.to_ship || order.qty_pulled"
-                                                  class="ml-1.5 text-xs text-slate-400 whitespace-nowrap">
-                                                {{ order.qty_pulled || 0 }}/{{ order.to_ship || 0 }}
-                                            </span>
-                                        </div>
+                                    </template><!-- end row + drop zone template -->
 
-                                        <!-- Description -->
-                                        <div class="truncate text-slate-700 text-sm">{{ order.description || '' }}</div>
+                                </div><!-- end rows container -->
 
-                                        <!-- Customer -->
-                                        <div class="truncate text-slate-600 text-sm">{{ order.customer || '' }}</div>
-
-                                        <!-- Sales Order -->
-                                        <div class="truncate text-slate-600 text-sm">{{ order.sales_order || '' }}</div>
-
-                                        <!-- WO / PO # -->
-                                        <div class="truncate text-slate-600 text-sm">{{ order.wo_po_number || '' }}</div>
-
-                                        <!-- Date Entered -->
-                                        <div class="text-slate-500 text-xs">{{ order.date_entered || '' }}</div>
-
-                                        <!-- Deadline -->
-                                        <div class="text-xs font-medium"
-                                             :class="order.deadline ? 'text-red-600' : 'text-slate-300'">
-                                            {{ order.deadline || '' }}
-                                        </div>
-
-                                        <!-- Status badge -->
-                                        <div>
-                                            <span :class="openOrderStatusClass(order.status)"
-                                                  class="inline-block px-1.5 py-0.5 rounded text-xs font-semibold whitespace-nowrap">
-                                                {{ order.status || 'New/Picking' }}
-                                            </span>
-                                        </div>
-                                    </div>
-
-                                    <!-- Line 2: Operational fields (only if any have values) -->
-                                    <div v-if="order.wo_va_notes || order.store_bin || order.update_store_bin || order.boxer || order.picker || order.info_enterer || order.last_status_update"
-                                         class="flex items-center flex-wrap gap-x-4 gap-y-0 px-2 pb-1 text-xs text-slate-500 ml-6">
-                                        <span v-if="order.wo_va_notes" class="flex-1 min-w-0 truncate max-w-sm">
-                                            <span class="text-slate-400">Notes:</span>
-                                            <span class="text-slate-600 ml-0.5">{{ order.wo_va_notes }}</span>
-                                        </span>
-                                        <span v-if="order.store_bin">
-                                            <span class="text-slate-400">Bin:</span>
-                                            <span class="text-slate-600 ml-0.5">{{ order.store_bin }}</span>
-                                        </span>
-                                        <span v-if="order.update_store_bin">
-                                            <span class="text-slate-400">Updated Bin:</span>
-                                            <span class="font-semibold text-amber-700 ml-0.5">{{ order.update_store_bin }}</span>
-                                        </span>
-                                        <span v-if="order.boxer">
-                                            <span class="text-slate-400">Boxer:</span>
-                                            <span class="text-slate-600 ml-0.5">{{ order.boxer }}</span>
-                                        </span>
-                                        <span v-if="order.picker">
-                                            <span class="text-slate-400">Picker:</span>
-                                            <span class="text-slate-600 ml-0.5">{{ order.picker }}</span>
-                                        </span>
-                                        <span v-if="order.info_enterer">
-                                            <span class="text-slate-400">By:</span>
-                                            <span class="text-slate-600 ml-0.5">{{ order.info_enterer }}</span>
-                                        </span>
-                                        <span v-if="order.last_status_update" class="truncate max-w-xs">
-                                            <span class="text-slate-400">Last:</span>
-                                            <span class="text-slate-600 ml-0.5">{{ order.last_status_update }}</span>
-                                        </span>
-                                    </div>
-
-                                    <!-- Line 3: Boxes, dims, shipping quotes, chute/bracket/holding (only if any data) -->
-                                    <div v-if="openOrderHasLine3(order)"
-                                         class="flex items-center flex-wrap gap-x-4 gap-y-0 px-2 pb-1.5 text-xs ml-6 text-slate-500 bg-black/[0.02]">
-
-                                        <!-- Boxes (progressive — only show filled) -->
-                                        <span v-if="order.box1">
-                                            <span class="text-slate-400">Box 1:</span>
-                                            <span class="text-slate-600 font-medium ml-0.5">{{ order.box1 }}</span>
-                                        </span>
-                                        <span v-if="order.box2">
-                                            <span class="text-slate-400">Box 2:</span>
-                                            <span class="text-slate-600 font-medium ml-0.5">{{ order.box2 }}</span>
-                                        </span>
-                                        <span v-if="order.box3">
-                                            <span class="text-slate-400">Box 3:</span>
-                                            <span class="text-slate-600 font-medium ml-0.5">{{ order.box3 }}</span>
-                                        </span>
-                                        <span v-if="order.box4">
-                                            <span class="text-slate-400">Box 4:</span>
-                                            <span class="text-slate-600 font-medium ml-0.5">{{ order.box4 }}</span>
-                                        </span>
-
-                                        <!-- DIMS + Weight -->
-                                        <span v-if="order.dims">
-                                            <span class="text-slate-400">DIMS:</span>
-                                            <span class="text-slate-600 ml-0.5">{{ order.dims }}</span>
-                                        </span>
-                                        <span v-if="order.weight_lbs">
-                                            <span class="text-slate-400">Wt:</span>
-                                            <span class="text-slate-600 ml-0.5">{{ order.weight_lbs }} lbs</span>
-                                        </span>
-
-                                        <!-- Shipping quotes (progressive) -->
-                                        <span v-if="order.ship_quote_1">
-                                            <span class="text-slate-400">Quote 1:</span>
-                                            <span class="text-slate-600 font-medium ml-0.5">{{ order.ship_quote_1 }}</span>
-                                        </span>
-                                        <span v-if="order.ship_quote_2">
-                                            <span class="text-slate-400">Quote 2:</span>
-                                            <span class="text-slate-600 font-medium ml-0.5">{{ order.ship_quote_2 }}</span>
-                                        </span>
-                                        <span v-if="order.ship_cost_3">
-                                            <span class="text-slate-400">Ship Cost:</span>
-                                            <span class="text-slate-600 font-medium ml-0.5">{{ order.ship_cost_3 }}</span>
-                                        </span>
-                                        <span v-if="order.ship_paid_4">
-                                            <span class="text-slate-400">Paid:</span>
-                                            <span class="text-green-700 font-bold ml-0.5">{{ order.ship_paid_4 }}</span>
-                                        </span>
-
-                                        <!-- Chute status -->
-                                        <span v-if="order.chute_status">
-                                            <span class="text-slate-400">Chute:</span>
-                                            <span class="text-slate-600 ml-0.5">{{ order.chute_status }}</span>
-                                            <span v-if="order.chute_date" class="text-slate-400 ml-0.5">{{ order.chute_date }}</span>
-                                        </span>
-
-                                        <!-- Bracket/Adapter status -->
-                                        <span v-if="order.bracket_adapter_status">
-                                            <span class="text-slate-400">Bracket:</span>
-                                            <span class="text-slate-600 ml-0.5">{{ order.bracket_adapter_status }}</span>
-                                            <span v-if="order.bracket_adapter_date" class="text-slate-400 ml-0.5">{{ order.bracket_adapter_date }}</span>
-                                        </span>
-
-                                        <!-- Holding Bin -->
-                                        <span v-if="order.holding_bin_chute || order.holding_bin_status || order.holding_bin_part">
-                                            <span class="text-slate-400">Holding Bin:</span>
-                                            <span class="text-slate-600 ml-0.5">
-                                                {{ [order.holding_bin_chute, order.holding_bin_status, order.holding_bin_part, order.holding_bin_date].filter(Boolean).join(' · ') }}
-                                            </span>
-                                        </span>
-
-                                        <!-- Override -->
-                                        <span v-if="order.override">
-                                            <span class="text-amber-600 font-semibold">Override:</span>
-                                            <span class="text-amber-700 ml-0.5">{{ order.override }}</span>
-                                        </span>
-                                    </div>
-
-                                </div><!-- end order row -->
-                            </div><!-- end rows container -->
+                            </div><!-- end horizontal scroll container -->
 
                         </div><!-- end section card -->
                     </template><!-- end sections v-for -->
 
                 </div><!-- end scrollable content -->
+
+                <!-- ── Selection indicator pill ───────────────── -->
+                <div v-if="openOrderSelectedIds.length > 0"
+                     class="absolute bottom-5 left-1/2 -translate-x-1/2 z-40 bg-indigo-700 text-white px-5 py-2.5 rounded-full shadow-2xl text-sm font-semibold flex items-center gap-3 pointer-events-auto">
+                    <svg class="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"/>
+                    </svg>
+                    {{ openOrderSelectedIds.length }} row{{ openOrderSelectedIds.length > 1 ? 's' : '' }} selected — drag to a section header to move
+                    <button @click="clearRowSelection()"
+                        class="text-white/60 hover:text-white transition-colors ml-1">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+                        </svg>
+                    </button>
+                </div>
             </div><!-- end open orders view -->

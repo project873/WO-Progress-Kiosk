@@ -984,6 +984,14 @@ export async function insertOpenOrders(rows) {
     );
 }
 
+// deleteOpenOrder — delete a single row by id. Returns { error }.
+export async function deleteOpenOrder(id) {
+    if (!id) return { error: new Error('Missing order ID') };
+    return withRetry(() =>
+        supabase.from('open_orders').delete().eq('id', id)
+    );
+}
+
 // ── Customer Service queries ──────────────────────────────────
 
 export async function searchCsOrders(term) {
