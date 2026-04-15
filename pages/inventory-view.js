@@ -8,6 +8,7 @@
 
 import * as store from '../libs/store.js';
 import * as db    from '../libs/db.js';
+import { logError } from '../libs/db-shared.js';
 
 // loadInventoryItems — fetch all rows for the current tab and update store.
 // Called on tab entry and after every mutation.
@@ -19,6 +20,7 @@ export async function loadInventoryItems() {
         store.inventoryItems.value = data || [];
     } catch (err) {
         store.showToast('Failed to load inventory: ' + err.message);
+        logError('loadInventoryItems', err, { tab: store.inventoryTab.value });
         store.inventoryItems.value = [];
     } finally {
         store.inventoryLoading.value = false;
@@ -76,6 +78,7 @@ export async function submitPull() {
         await loadInventoryItems();
     } catch (err) {
         store.showToast('Failed to record pull: ' + err.message, 'error');
+        logError('submitPull', err, { id: store.pullFormTarget.value?.id });
     } finally {
         store.loading.value = false;
     }
@@ -109,6 +112,7 @@ export async function submitAddItem() {
         await loadInventoryItems();
     } catch (err) {
         store.showToast('Failed to add part: ' + err.message, 'error');
+        logError('submitAddItem', err, { tab: store.inventoryTab.value });
     } finally {
         store.loading.value = false;
     }
@@ -155,6 +159,7 @@ export async function submitEditItem() {
         await loadInventoryItems();
     } catch (err) {
         store.showToast('Failed to update part: ' + err.message, 'error');
+        logError('submitEditItem', err, { id: store.editItemFormTarget.value?.id });
     } finally {
         store.loading.value = false;
     }
@@ -173,6 +178,7 @@ export async function confirmDeleteInventoryItem(item) {
         await loadInventoryItems();
     } catch (err) {
         store.showToast('Failed to delete part: ' + err.message, 'error');
+        logError('confirmDeleteInventoryItem', err, { id: item.id });
     } finally {
         store.loading.value = false;
     }
@@ -192,6 +198,7 @@ export async function openPullHistory(item) {
         store.pullHistoryItems.value = data || [];
     } catch (err) {
         store.showToast('Failed to load pull history: ' + err.message, 'error');
+        logError('openPullHistory', err, { id: item.id });
     } finally {
         store.pullHistoryLoading.value = false;
     }

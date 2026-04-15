@@ -125,6 +125,15 @@ export function clamp(n, min, max) {
     return Math.min(Math.max(n, min), max);
 }
 
+// ── detectReelWeld ────────────────────────────────────────────
+// Returns true if a part number is a Weld reel part.
+// Normalises input (trim + uppercase) before checking.
+// reelList is passed as an argument so this function stays pure (no imports).
+export function detectReelWeld(partNumber, reelList) {
+    if (typeof partNumber !== 'string' || !Array.isArray(reelList)) return false;
+    return reelList.includes(partNumber.trim().toUpperCase());
+}
+
 // ── detectOpenOrderSection ────────────────────────────────────
 // Auto-routes an open order to a section based on part number prefix.
 // Part # starts with "TC" (case-insensitive) → 'tru_cut', else → 'trac_vac'.

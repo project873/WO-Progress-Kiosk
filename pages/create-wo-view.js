@@ -8,6 +8,7 @@
 
 import * as store from '../libs/store.js';
 import * as db    from '../libs/db.js';
+import { logError } from '../libs/db-shared.js';
 
 // loadCreateWoItems — fetch all 'approved' requests and populate store + inline state.
 export async function loadCreateWoItems() {
@@ -26,6 +27,7 @@ export async function loadCreateWoItems() {
         store.createWoInlineState.value = state;
     } catch (err) {
         store.showToast('Failed to load approved WOs: ' + err.message);
+        logError('loadCreateWoItems', err);
         store.createWoItems.value = [];
     } finally {
         store.createWoLoading.value = false;
@@ -67,6 +69,7 @@ export async function confirmCreateWoItem(id) {
         await loadCreateWoItems();
     } catch (err) {
         store.showToast('Failed to confirm WO: ' + err.message, 'error');
+        logError('confirmCreateWoItem', err, { id });
     } finally {
         store.loading.value = false;
     }

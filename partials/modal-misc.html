@@ -46,7 +46,7 @@
                     <!-- Part # -->
                     <div>
                         <label class="block font-bold text-slate-400 text-sm mb-1">Part # <span class="text-red-400">*</span></label>
-                        <input v-model="newWoForm.part" type="text"
+                        <input v-model="newWoForm.part" type="text" maxlength="30"
                             class="w-full bg-slate-900 p-3 rounded-lg font-bold font-mono uppercase border focus:outline-none focus:border-teal-500 transition-colors"
                             :class="newWoFormErrors.part ? 'border-red-500' : 'border-slate-700'"
                             placeholder="e.g. TC-1234-A">
@@ -74,7 +74,7 @@
                     <!-- WO # (optional) -->
                     <div>
                         <label class="block font-bold text-slate-400 text-sm mb-1">WO # <span class="text-slate-500 font-normal text-xs">(optional &mdash; leave blank to auto-generate)</span></label>
-                        <input v-model="newWoForm.woNumber" type="text"
+                        <input v-model="newWoForm.woNumber" type="text" maxlength="30"
                             class="w-full bg-slate-900 p-3 rounded-lg font-mono border border-slate-600 focus:outline-none focus:border-teal-500 transition-colors uppercase"
                             placeholder="e.g. 12345 (optional)">
                     </div>
@@ -82,7 +82,7 @@
                     <!-- Description -->
                     <div>
                         <label class="block font-bold text-slate-400 text-sm mb-1">Description <span class="text-red-400">*</span></label>
-                        <input v-model="newWoForm.desc" type="text"
+                        <input v-model="newWoForm.desc" type="text" maxlength="150"
                             class="w-full bg-slate-900 p-3 rounded-lg border focus:outline-none focus:border-teal-500 transition-colors"
                             :class="newWoFormErrors.desc ? 'border-red-500' : 'border-slate-700'"
                             placeholder="e.g. TC Unit Assembly">
@@ -100,7 +100,7 @@
                         <!-- Sales Order -->
                         <div>
                             <label class="block font-bold text-slate-400 text-sm mb-1">Sales Order # <span class="text-slate-500 font-normal text-xs">(if applicable)</span></label>
-                            <input v-model="newWoForm.salesOrder" type="text"
+                            <input v-model="newWoForm.salesOrder" type="text" maxlength="30"
                                 class="w-full bg-slate-900 p-3 rounded-lg border border-slate-600 focus:outline-none focus:border-teal-500 transition-colors"
                                 placeholder="e.g. SO-5001 (leave blank if N/A)">
                         </div>
@@ -109,28 +109,28 @@
                             <!-- Unit Serial # -->
                             <div>
                                 <label class="block font-bold text-slate-400 text-sm mb-1">Unit Serial #</label>
-                                <input v-model="newWoForm.unitSerial" type="text"
+                                <input v-model="newWoForm.unitSerial" type="text" maxlength="40"
                                     class="w-full bg-slate-900 p-3 rounded-lg border border-slate-600 focus:outline-none focus:border-teal-500 transition-colors font-mono"
                                     placeholder="Optional">
                             </div>
                             <!-- Engine -->
                             <div>
                                 <label class="block font-bold text-slate-400 text-sm mb-1">Engine</label>
-                                <input v-model="newWoForm.engine" type="text"
+                                <input v-model="newWoForm.engine" type="text" maxlength="40"
                                     class="w-full bg-slate-900 p-3 rounded-lg border border-slate-600 focus:outline-none focus:border-teal-500 transition-colors"
                                     placeholder="Optional">
                             </div>
                             <!-- Engine Serial # -->
                             <div>
                                 <label class="block font-bold text-slate-400 text-sm mb-1">Engine Serial #</label>
-                                <input v-model="newWoForm.engineSerial" type="text"
+                                <input v-model="newWoForm.engineSerial" type="text" maxlength="40"
                                     class="w-full bg-slate-900 p-3 rounded-lg border border-slate-600 focus:outline-none focus:border-teal-500 transition-colors font-mono"
                                     placeholder="Optional">
                             </div>
                             <!-- # of Blades -->
                             <div>
                                 <label class="block font-bold text-slate-400 text-sm mb-1"># of Blades</label>
-                                <input v-model="newWoForm.numBlades" type="text"
+                                <input v-model="newWoForm.numBlades" type="text" maxlength="5"
                                     class="w-full bg-slate-900 p-3 rounded-lg border border-slate-600 focus:outline-none focus:border-teal-500 transition-colors"
                                     placeholder="Optional">
                             </div>
@@ -154,11 +154,11 @@
                 <div class="space-y-4">
                     <div>
                         <label class="block font-bold text-slate-400 text-sm">Part Number <span class="text-red-400">*</span></label>
-                        <input v-model="newWoForm.part" type="text" class="w-full bg-slate-900 p-3 rounded font-bold uppercase border border-slate-700 mt-1 focus:outline-none focus:border-emerald-500">
+                        <input v-model="newWoForm.part" type="text" maxlength="30" class="w-full bg-slate-900 p-3 rounded font-bold uppercase border border-slate-700 mt-1 focus:outline-none focus:border-emerald-500">
                     </div>
                     <div>
                         <label class="block font-bold text-slate-400 text-sm">Description</label>
-                        <input v-model="newWoForm.desc" type="text" class="w-full bg-slate-900 p-3 rounded border border-slate-700 mt-1 focus:outline-none focus:border-emerald-500">
+                        <input v-model="newWoForm.desc" type="text" maxlength="150" class="w-full bg-slate-900 p-3 rounded border border-slate-700 mt-1 focus:outline-none focus:border-emerald-500">
                     </div>
                     <p class="text-slate-500 text-xs">Unit/Subassy type and qty will be set when the WO is opened.</p>
                 </div>
@@ -187,14 +187,14 @@
                     </div>
                     <div>
                         <label class="block text-slate-400 text-sm font-bold mb-1 uppercase tracking-wide">Your Name <span class="text-red-400">*</span></label>
-                        <input v-model="noteAuthor" type="text" placeholder="Enter your name..."
+                        <input v-model="noteAuthor" type="text" placeholder="Enter your name..." maxlength="50"
                             class="w-full p-3 bg-slate-900 border rounded-lg text-white focus:outline-none focus:border-yellow-500"
                             :class="noteAuthorError ? 'border-red-500' : 'border-slate-700'">
                         <div v-if="noteAuthorError" class="text-red-400 text-xs mt-1">Name is required</div>
                     </div>
                     <div>
                         <label class="block text-slate-400 text-sm font-bold mb-1 uppercase tracking-wide">Note <span class="text-red-400">*</span></label>
-                        <textarea v-model="noteText" rows="3" placeholder="e.g. Material ordered, waiting on delivery..."
+                        <textarea v-model="noteText" rows="3" maxlength="2000" placeholder="e.g. Material ordered, waiting on delivery..."
                             class="w-full p-3 bg-slate-900 border rounded-lg text-white focus:outline-none focus:border-yellow-500 resize-none"
                             :class="noteTextError ? 'border-red-500' : 'border-slate-700'"></textarea>
                         <div v-if="noteTextError" class="text-red-400 text-xs mt-1">Note text is required</div>
@@ -245,7 +245,7 @@
                 <div class="p-6 space-y-4">
                     <div>
                         <label class="block text-slate-400 text-sm font-bold mb-1 uppercase tracking-wide">Receiver Name <span class="text-red-400">*</span></label>
-                        <input v-model="receiverName" type="text" placeholder="Your name..."
+                        <input v-model="receiverName" type="text" placeholder="Your name..." maxlength="50"
                             class="w-full p-3 bg-slate-900 border rounded-lg text-white focus:outline-none focus:border-blue-500"
                             :class="receiverNameError ? 'border-red-500' : 'border-slate-700'">
                         <div v-if="receiverNameError" class="text-red-400 text-xs mt-1">Name is required</div>
@@ -258,7 +258,7 @@
                     </div>
                     <div>
                         <label class="block text-slate-400 text-sm font-bold mb-1 uppercase tracking-wide">Correct Bin Location <span class="text-slate-600 text-xs normal-case">(optional)</span></label>
-                        <input v-model="receiverBinLocation" type="text" placeholder="e.g. A-12-3"
+                        <input v-model="receiverBinLocation" type="text" placeholder="e.g. A-12-3" maxlength="50"
                             class="w-full p-3 bg-slate-900 border border-slate-700 rounded-lg text-white focus:outline-none focus:border-blue-500">
                         <div class="text-slate-500 text-xs mt-1">Leave blank if no update to Alere is needed</div>
                     </div>
@@ -280,7 +280,7 @@
                 <div class="p-6 space-y-4">
                     <div>
                         <label class="block text-slate-400 text-sm font-bold mb-1 uppercase tracking-wide">Your Name <span class="text-red-400">*</span></label>
-                        <input v-model="closeoutName" type="text" placeholder="Your name..."
+                        <input v-model="closeoutName" type="text" placeholder="Your name..." maxlength="50"
                             class="w-full p-3 bg-slate-900 border rounded-lg text-white focus:outline-none focus:border-violet-500"
                             :class="closeoutNameError ? 'border-red-500' : 'border-slate-700'">
                         <div v-if="closeoutNameError" class="text-red-400 text-xs mt-1">Name is required</div>

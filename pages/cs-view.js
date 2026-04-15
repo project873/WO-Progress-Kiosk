@@ -9,6 +9,7 @@ import * as store from '../libs/store.js';
 import * as db    from '../libs/db.js';
 import { CS_LEAD_TIME_DEFAULTS } from '../libs/config.js';
 import { getHistoricalAvgDays } from '../libs/utils.js';
+import { logError } from '../libs/db-shared.js';
 
 // ── searchPastOrders ───────────────────────────────────────────
 // Search completed assembly WOs using the csPastSearch term.
@@ -24,6 +25,7 @@ export async function searchPastOrders() {
         store.csPastResults.value = rows;
     } catch (err) {
         store.showToast('Past WO search failed: ' + err.message);
+        logError('searchPastOrders', err, { term: store.csPastSearch.value });
         store.csPastResults.value = [];
     } finally {
         store.loading.value = false;
@@ -160,6 +162,7 @@ export async function searchCS() {
 
     } catch (err) {
         store.showToast('Search failed: ' + err.message);
+        logError('searchCS', err, { term: store.csSearchTerm.value });
         store.csResultInfo.value = { notFound: true };
     } finally {
         store.loading.value = false;

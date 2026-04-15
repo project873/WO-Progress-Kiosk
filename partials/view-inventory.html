@@ -99,7 +99,7 @@
                         <div class="p-6 space-y-4">
                             <div>
                                 <label class="block text-xs font-semibold text-slate-400 uppercase mb-1">Your Name *</label>
-                                <input v-model="pullForm.name" type="text"
+                                <input v-model="pullForm.name" type="text" maxlength="50"
                                     :class="pullFormErrors.name ? 'border-red-500' : 'border-slate-600'"
                                     class="w-full px-3 py-2 bg-slate-900 border rounded-lg text-white focus:outline-none focus:border-green-500">
                                 <p v-if="pullFormErrors.name" class="text-red-400 text-xs mt-1">Name is required</p>
@@ -118,12 +118,12 @@
                             </div>
                             <div>
                                 <label class="block text-xs font-semibold text-slate-400 uppercase mb-1">New Location</label>
-                                <input v-model="pullForm.new_location" type="text" placeholder="Where is it going?"
+                                <input v-model="pullForm.new_location" type="text" placeholder="Where is it going?" maxlength="50"
                                     class="w-full px-3 py-2 bg-slate-900 border border-slate-600 rounded-lg text-white placeholder-slate-600 focus:outline-none focus:border-green-500">
                             </div>
                             <div>
                                 <label class="block text-xs font-semibold text-slate-400 uppercase mb-1">Where Used</label>
-                                <input v-model="pullForm.where_used" type="text" placeholder="WO #, assembly, etc."
+                                <input v-model="pullForm.where_used" type="text" placeholder="WO #, assembly, etc." maxlength="50"
                                     class="w-full px-3 py-2 bg-slate-900 border border-slate-600 rounded-lg text-white placeholder-slate-600 focus:outline-none focus:border-green-500">
                             </div>
                         </div>
@@ -150,14 +150,14 @@
                         <div class="p-6 space-y-4">
                             <div>
                                 <label class="block text-xs font-semibold text-slate-400 uppercase mb-1">Part # *</label>
-                                <input v-model="addItemForm.part_number" type="text"
+                                <input v-model="addItemForm.part_number" type="text" maxlength="30"
                                     :class="addItemFormErrors.part_number ? 'border-red-500' : 'border-slate-600'"
                                     class="w-full px-3 py-2 bg-slate-900 border rounded-lg text-white focus:outline-none focus:border-green-500">
                                 <p v-if="addItemFormErrors.part_number" class="text-red-400 text-xs mt-1">Part number is required</p>
                             </div>
                             <div>
                                 <label class="block text-xs font-semibold text-slate-400 uppercase mb-1">Description</label>
-                                <input v-model="addItemForm.description" type="text"
+                                <input v-model="addItemForm.description" type="text" maxlength="150"
                                     class="w-full px-3 py-2 bg-slate-900 border border-slate-600 rounded-lg text-white focus:outline-none focus:border-green-500">
                             </div>
                             <div>
@@ -167,12 +167,12 @@
                             </div>
                             <div>
                                 <label class="block text-xs font-semibold text-slate-400 uppercase mb-1">Location</label>
-                                <input v-model="addItemForm.location" type="text"
+                                <input v-model="addItemForm.location" type="text" maxlength="50"
                                     class="w-full px-3 py-2 bg-slate-900 border border-slate-600 rounded-lg text-white focus:outline-none focus:border-green-500">
                             </div>
                             <div>
                                 <label class="block text-xs font-semibold text-slate-400 uppercase mb-1">Refill Location</label>
-                                <input v-model="addItemForm.refill_location" type="text"
+                                <input v-model="addItemForm.refill_location" type="text" maxlength="50"
                                     class="w-full px-3 py-2 bg-slate-900 border border-slate-600 rounded-lg text-white focus:outline-none focus:border-green-500">
                             </div>
                         </div>
@@ -200,14 +200,14 @@
                         <div class="p-6 space-y-4">
                             <div>
                                 <label class="block text-xs font-semibold text-slate-400 uppercase mb-1">Part # *</label>
-                                <input v-model="editItemForm.part_number" type="text"
+                                <input v-model="editItemForm.part_number" type="text" maxlength="30"
                                     :class="editItemFormErrors.part_number ? 'border-red-500' : 'border-slate-600'"
                                     class="w-full px-3 py-2 bg-slate-900 border rounded-lg text-white focus:outline-none focus:border-green-500">
                                 <p v-if="editItemFormErrors.part_number" class="text-red-400 text-xs mt-1">Part number is required</p>
                             </div>
                             <div>
                                 <label class="block text-xs font-semibold text-slate-400 uppercase mb-1">Description</label>
-                                <input v-model="editItemForm.description" type="text"
+                                <input v-model="editItemForm.description" type="text" maxlength="150"
                                     class="w-full px-3 py-2 bg-slate-900 border border-slate-600 rounded-lg text-white focus:outline-none focus:border-green-500">
                             </div>
                             <div>
@@ -217,12 +217,12 @@
                             </div>
                             <div>
                                 <label class="block text-xs font-semibold text-slate-400 uppercase mb-1">Location</label>
-                                <input v-model="editItemForm.location" type="text"
+                                <input v-model="editItemForm.location" type="text" maxlength="50"
                                     class="w-full px-3 py-2 bg-slate-900 border border-slate-600 rounded-lg text-white focus:outline-none focus:border-green-500">
                             </div>
                             <div>
                                 <label class="block text-xs font-semibold text-slate-400 uppercase mb-1">Refill Location</label>
-                                <input v-model="editItemForm.refill_location" type="text"
+                                <input v-model="editItemForm.refill_location" type="text" maxlength="50"
                                     class="w-full px-3 py-2 bg-slate-900 border border-slate-600 rounded-lg text-white focus:outline-none focus:border-green-500">
                             </div>
                         </div>

@@ -157,13 +157,13 @@
                                         <!-- Inline confirm form -->
                                         <div v-else class="space-y-2">
                                             <div class="text-amber-300 text-xs font-semibold">Confirm update for WO #{{ row.wo_number }} — bin <span class="font-bold">{{ row.location }}</span></div>
-                                            <input v-model="alereUpdaterName" type="text" placeholder="Your name..."
+                                            <input v-model="alereUpdaterName" type="text" placeholder="Your name..." maxlength="50"
                                                 class="w-full p-2 bg-slate-900 border rounded-lg text-white text-sm focus:outline-none focus:border-amber-500"
                                                 :class="alereUpdaterNameError ? 'border-red-500' : 'border-slate-600'">
                                             <div v-if="alereUpdaterNameError" class="text-red-400 text-xs">Name is required</div>
                                             <div class="flex gap-2">
-                                                <button @click="submitAlereUpdated()"
-                                                    class="flex-1 py-2 bg-emerald-600 hover:bg-emerald-500 text-white text-sm font-bold rounded-lg active:scale-95 transition-all">&#10003; Confirm</button>
+                                                <button @click="submitAlereUpdated()" :disabled="loading"
+                                                    class="flex-1 py-2 bg-emerald-600 hover:bg-emerald-500 text-white text-sm font-bold rounded-lg active:scale-95 transition-all disabled:opacity-40 disabled:cursor-not-allowed">&#10003; Confirm</button>
                                                 <button @click="cancelAlereConfirm()"
                                                     class="px-3 py-2 bg-slate-700 hover:bg-slate-600 text-slate-300 text-sm font-bold rounded-lg">Cancel</button>
                                             </div>

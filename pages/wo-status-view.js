@@ -8,6 +8,7 @@
 import * as store  from '../libs/store.js';
 import * as db     from '../libs/db.js';
 import { isNonEmpty, sanitizeText } from '../libs/utils.js';
+import { logError } from '../libs/db-shared.js';
 
 // ── searchOfficeReceive ───────────────────────────────────────
 export async function loadReceivingEligible() {
@@ -18,6 +19,7 @@ export async function loadReceivingEligible() {
         store.receiveEligibleList.value = data || [];
     } catch (err) {
         store.showToast('Failed to load receiving list: ' + err.message);
+        logError('loadReceivingEligible', err);
     } finally {
         store.loading.value = false;
     }
@@ -96,6 +98,7 @@ export async function submitReceive() {
         setTimeout(() => { store.officeSuccessMsg.value = ''; }, 5000);
     } catch (err) {
         store.showToast('Failed to receive: ' + err.message);
+        logError('submitReceive', err, { id: store.receiveTarget.value?.id });
     } finally {
         store.loading.value = false;
     }
@@ -127,6 +130,7 @@ export async function submitCloseout() {
         await _refreshWoStatusData();
     } catch (err) {
         store.showToast('Failed to close out: ' + err.message);
+        logError('submitCloseout', err, { id: store.closeoutTarget.value?.id });
     } finally {
         store.loading.value = false;
     }
@@ -167,6 +171,7 @@ export async function submitAlereUpdated() {
         await _refreshWoStatusData();
     } catch (err) {
         store.showToast('Failed to mark Alere updated: ' + err.message);
+        logError('submitAlereUpdated', err, { id: store.alereConfirmId.value });
     } finally {
         store.loading.value = false;
     }
@@ -182,6 +187,7 @@ async function _refreshWoStatusData() {
         store.closeoutOrders.value = closeout;
     } catch (err) {
         store.showToast('Failed to refresh WO status data: ' + err.message);
+        logError('_refreshWoStatusData', err);
     }
 }
 

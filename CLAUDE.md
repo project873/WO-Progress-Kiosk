@@ -286,3 +286,11 @@ No active series.
 - Patch 1: Schema — `wo_time_sessions` table (id, wo_id, wo_number, department, operator, started_at, ended_at, duration_minutes, qty_this_session, end_status). RLS disabled.
 - Patch 2: DB layer — `updateOrderStatus` opens a session row on started/resumed, closes it on paused/on_hold/completed (fire-and-forget, no work_orders change)
 - Patch 3: Manager KPI section — Time Report panel: By WO tab (per-WO breakdown, expandable to operator sessions) and By Part # tab (avg hrs/WO baseline per part). Date range filter.
+
+### Reel Weld dual-operation tracking
+- Patch 1: Schema (6 new columns: weld/grind_reel_status, _operator, _qty); detectReelWeld() in utils.js; REEL_PART_NUMBERS in config.js; dual-ops panel in modal-action-panel.html (light cards, qty input, cumulative counter, per-op buttons, WO summary section); updateReelOperation() in db.js; startReelOperation/pause/complete in dashboard-view.js.
+- Patch 2A: Split print summary block out of modal-action-panel.html into modal-action-panel-print.html (line-cap fix).
+- Patch 2B: Reel ops wired to isReel computed; hold-button operator picker for reel WOs; operator select hidden for reel.
+
+### wo_time_sessions stage wiring
+- Patch 1: Schema — `ALTER TABLE wo_time_sessions ADD COLUMN IF NOT EXISTS stage TEXT`. Added `openTimeSession`, `closeTimeSession`, `closeAllOpenSessions` helpers to db.js. Refactored Fab/Weld inline session code to use helpers (stage=null). Wired reel ops (stage='weld'|'grind'), TV Assy stages (stage=stageKey or 'stock'), TC Assy stages (stage=stageKey or 'stock'), and manual TC WO complete (closeAllOpenSessions) in db-assy.js.

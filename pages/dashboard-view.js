@@ -13,6 +13,7 @@ import * as store  from '../libs/store.js';
 import * as db     from '../libs/db.js';
 import { deepClone, sanitizeText, isNonEmpty, isValidQty } from '../libs/utils.js';
 import { fetchDeptOrders } from '../libs/db.js';
+import { logError } from '../libs/db-shared.js';
 
 // ── openActionPanel ───────────────────────────────────────────
 export function openActionPanel(order) {
@@ -26,9 +27,14 @@ export function openActionPanel(order) {
         qtyScrap:     0,
         scrapReason:  '',
         notes:        '',
-        holdReason:   '',
-        weldGrind:    ''
+        holdReason:   ''
     };
+    store.reelWeldOperator.value  = '';
+    store.reelGrindOperator.value = '';
+    store.reelWeldOtherOp.value   = '';
+    store.reelGrindOtherOp.value  = '';
+    store.reelWeldQty.value       = 0;
+    store.reelGrindQty.value      = 0;
     loadWoFiles(order.part_number);
 }
 
@@ -88,10 +94,6 @@ export async function updateOrderStatus(newStatus, stageKey = null) {
         store.showToast('Select or enter your operator name first.', 'error');
         return;
     }
-    if (store.isReel.value && !store.actionForm.value.weldGrind && newStatus === 'started') {
-        store.showToast('Select Weld or Grind for this reel part.', 'error');
-        return;
-    }
     if (newStatus === 'on_hold' && !store.actionForm.value.holdReason.trim()) {
         store.showToast('Select a hold reason first.', 'error');
         return;
@@ -104,7 +106,7 @@ export async function updateOrderStatus(newStatus, stageKey = null) {
     const undoDesc = `${opName}: ${newStatus}${stageKey ? ' (' + stageKey + ')' : ''} on WO ${store.activeOrder.value.wo_number}`;
 
     try {
-        const { data, error } = await db.updateOrderStatus({
+        const { data, error, conflict } = await db.updateOrderStatus({
             id:           store.activeOrder.value.id,
             currentOrder: store.activeOrder.value,
             newStatus,
@@ -112,6 +114,17 @@ export async function updateOrderStatus(newStatus, stageKey = null) {
             opName,
             actionForm:   store.actionForm.value
         });
+
+        if (conflict) {
+            store.showToast(
+                'This WO was just updated by someone else. Refreshing — please review and try again.',
+                'error', 6000
+            );
+            await _refreshDeptOrders();
+            const fresh = store.orders.value.find(o => o.id === store.activeOrder.value.id);
+            if (fresh) store.activeOrder.value = fresh;
+            return;
+        }
         if (error) throw error;
 
         // Store undo info after confirmed success
@@ -134,6 +147,7 @@ export async function updateOrderStatus(newStatus, stageKey = null) {
         await _refreshDeptOrders();
     } catch (err) {
         store.showToast('Failed to update status: ' + err.message);
+        logError('updateOrderStatus', err, { id: store.activeOrder.value?.id, newStatus });
     } finally {
         store.loading.value = false;
     }
@@ -160,6 +174,7 @@ export async function undoLastAction() {
         }
     } catch (err) {
         store.showToast('Failed to undo. Please update manually. ' + err.message);
+        logError('undoLastAction', err, { id: store.lastUndoAction.value?.id });
     } finally {
         store.loading.value = false;
     }
@@ -205,6 +220,7 @@ export async function submitNewWo() {
             store.showToast('Work order added to board.', 'success');
         } catch (err) {
             store.showToast('Failed to add work order: ' + err.message);
+            logError('submitNewWo_tc', err, { dept, part: form.part });
         } finally {
             store.loading.value = false;
         }
@@ -233,6 +249,7 @@ export async function submitNewWo() {
         store.showToast('Work order added to board.', 'success');
     } catch (err) {
         store.showToast('Failed to add work order: ' + err.message);
+        logError('submitNewWo', err, { dept });
     } finally {
         store.loading.value = false;
     }
@@ -275,6 +292,7 @@ export async function submitNote() {
         store.showToast('Note saved.', 'success');
     } catch (err) {
         store.showToast('Failed to save note: ' + err.message);
+        logError('submitNote', err, { id: store.activeOrder.value?.id });
     } finally {
         store.loading.value = false;
     }
@@ -320,6 +338,7 @@ export async function submitWoProblemFromUi() {
         store.showToast('Problem logged.', 'success');
     } catch (err) {
         store.showToast('Failed to save problem: ' + err.message);
+        logError('submitWoProblemFromUi', err, { id: store.activeOrder.value?.id });
     }
 }
 
@@ -334,6 +353,7 @@ async function _refreshDeptOrders() {
         store.orders.value = data || [];
     } catch (err) {
         store.showToast('Failed to refresh orders: ' + err.message);
+        logError('_refreshDeptOrders', err, { dept: store.selectedDept.value });
     }
 }
 
@@ -349,6 +369,119 @@ export function getFabWeldOperatorName() {
         }
     }
     return base.join(' & ');
+}
+
+// ── _getReelOpName ────────────────────────────────────────────
+// Resolves the operator name for a reel operation.
+// op: 'weld' | 'grind'. Returns '' if none selected.
+function _getReelOpName(op) {
+    const base = op === 'weld' ? store.reelWeldOperator.value : store.reelGrindOperator.value;
+    if (base === 'Other') {
+        return (op === 'weld' ? store.reelWeldOtherOp.value : store.reelGrindOtherOp.value).trim();
+    }
+    return base;
+}
+
+// ── _updateReelOp ─────────────────────────────────────────────
+// Internal: validates, writes, and refreshes a single reel operation.
+// op: 'weld' | 'grind', newStatus: 'started' | 'paused' | 'completed'
+async function _updateReelOp(op, newStatus) {
+    const opName = _getReelOpName(op);
+    if (!opName) {
+        store.showToast(`Select the ${op} operator first.`, 'error');
+        return;
+    }
+    const sessionQty = parseFloat(op === 'weld' ? store.reelWeldQty.value : store.reelGrindQty.value) || 0;
+    store.loading.value = true;
+    const previousSnapshot = deepClone(store.activeOrder.value);
+    try {
+        const { data, error, conflict } = await db.updateReelOperation({
+            id:           store.activeOrder.value.id,
+            currentOrder: store.activeOrder.value,
+            op, newStatus, opName, sessionQty
+        });
+        if (conflict) {
+            store.showToast('This WO was just updated by someone else. Refreshing — please try again.', 'error', 6000);
+            await _refreshDeptOrders();
+            const fresh = store.orders.value.find(o => o.id === store.activeOrder.value.id);
+            if (fresh) store.activeOrder.value = fresh;
+            return;
+        }
+        if (error) throw error;
+        store.lastUndoAction.value = {
+            id:           store.activeOrder.value.id,
+            previousData: previousSnapshot,
+            description:  `${opName}: ${op} ${newStatus} on WO ${store.activeOrder.value.wo_number}`,
+            dept:         store.selectedDept.value
+        };
+        // Reset session qty for this op after successful write
+        if (op === 'weld') store.reelWeldQty.value = 0;
+        else               store.reelGrindQty.value = 0;
+        if (data && data[0]) store.activeOrder.value = data[0];
+        await _refreshDeptOrders();
+        store.showToast(`${op.charAt(0).toUpperCase() + op.slice(1)} ${newStatus}.`, 'success');
+    } catch (err) {
+        store.showToast('Failed: ' + err.message);
+        logError('_updateReelOp', err, { id: store.activeOrder.value?.id, op, newStatus });
+    } finally {
+        store.loading.value = false;
+    }
+}
+
+// Reel operation shortcuts
+export function startReelOperation(op)    { return _updateReelOp(op, 'started');   }
+export function pauseReelOperation(op)    { return _updateReelOp(op, 'paused');    }
+export function completeReelOperation(op) { return _updateReelOp(op, 'completed'); }
+// Revise a completed reel op — falls back to the stored operator, no fresh selection needed.
+export async function reviseReelOperation(op) {
+    const stored = op === 'weld' ? store.activeOrder.value?.weld_reel_operator : store.activeOrder.value?.grind_reel_operator;
+    const opName = _getReelOpName(op) || stored || store.activeOrder.value?.operator || '';
+    if (!opName) { store.showToast(`Select the ${op} operator first.`, 'error'); return; }
+    if (op === 'weld') store.reelWeldOperator.value = opName;
+    else               store.reelGrindOperator.value = opName;
+    return _updateReelOp(op, 'paused');
+}
+
+// completeReelWo — explicitly completes the whole reel WO regardless of op statuses.
+// Uses whichever reel operator is set, falling back to the current WO operator.
+export async function completeReelWo() {
+    const opName = store.reelWeldOperator.value || store.reelGrindOperator.value
+        || store.activeOrder.value?.operator || '';
+    if (!opName) {
+        store.showToast('Select an operator before completing.', 'error');
+        return;
+    }
+    store.loading.value = true;
+    const previousSnapshot = deepClone(store.activeOrder.value);
+    try {
+        const { data, error, conflict } = await db.completeReelWo({
+            id:           store.activeOrder.value.id,
+            currentOrder: store.activeOrder.value,
+            opName,
+        });
+        if (conflict) {
+            store.showToast('This WO was just updated by someone else. Refreshing — please try again.', 'error', 6000);
+            await _refreshDeptOrders();
+            const fresh = store.orders.value.find(o => o.id === store.activeOrder.value.id);
+            if (fresh) store.activeOrder.value = fresh;
+            return;
+        }
+        if (error) throw error;
+        store.lastUndoAction.value = {
+            id:           store.activeOrder.value.id,
+            previousData: previousSnapshot,
+            description:  `${opName}: completed reel WO ${store.activeOrder.value.wo_number}`,
+            dept:         store.selectedDept.value
+        };
+        await _refreshDeptOrders();
+        store.actionPanelOpen.value = false;
+        store.showToast('Work order completed.', 'success');
+    } catch (err) {
+        store.showToast('Failed: ' + err.message);
+        logError('completeReelWo', err, { id: store.activeOrder.value?.id });
+    } finally {
+        store.loading.value = false;
+    }
 }
 
 // ── holdSince ─────────────────────────────────────────────────

@@ -9,6 +9,7 @@ import * as store  from '../libs/store.js';
 import * as db     from '../libs/db.js';
 import * as dbAssy from '../libs/db-assy.js';
 import { isNonEmpty, detectTcMode } from '../libs/utils.js';
+import { logError } from '../libs/db-shared.js';
 
 // ── loadWoFiles ───────────────────────────────────────────────
 // Local copy — page files may not import from other page files.
@@ -127,6 +128,7 @@ export async function saveTcUnitDetails() {
         store.showToast('Details saved.', 'success');
     } catch (err) {
         store.showToast('Failed to save details: ' + err.message);
+        logError('saveTcUnitDetails', err, { id: store.activeOrder.value?.id });
     } finally {
         store.loading.value = false;
     }
@@ -207,6 +209,7 @@ export async function submitTcStockActionFromUi() {
         if (updated.status === 'completed') await db.autoReceiveAssyWo(updated, operator);
     } catch (err) {
         store.showToast('Failed: ' + err.message);
+        logError('submitTcStockActionFromUi', err, { id: store.activeOrder.value?.id, pending });
     } finally {
         store.loading.value = false;
     }
@@ -227,6 +230,7 @@ export async function saveTcStockNotes() {
         store.showToast('Notes saved.', 'success');
     } catch (err) {
         store.showToast('Failed to save notes: ' + err.message);
+        logError('saveTcStockNotes', err, { id: store.activeOrder.value?.id });
     } finally {
         store.loading.value = false;
     }
@@ -282,6 +286,7 @@ export async function submitTcUnitStageFromUi(stageName) {
         store.showToast('Stage action recorded', 'success');
     } catch (err) {
         store.showToast('Failed: ' + err.message);
+        logError('submitTcUnitStageFromUi', err, { id: store.activeOrder.value?.id, stageName });
     } finally {
         store.loading.value = false;
     }
@@ -369,6 +374,7 @@ export async function confirmTcWoComplete() {
         await db.autoReceiveAssyWo(updated, operator);
     } catch (err) {
         store.showToast('Failed: ' + err.message);
+        logError('confirmTcWoComplete', err, { id: store.activeOrder.value?.id });
     } finally {
         store.loading.value = false;
     }

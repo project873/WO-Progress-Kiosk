@@ -15,6 +15,11 @@
                         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/></svg>
                         ADD NOTE
                     </button>
+                    <button onclick="window.print()"
+                        class="shrink-0 bg-slate-600 hover:bg-slate-500 px-3 py-1.5 rounded font-bold text-sm flex items-center gap-2">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"/></svg>
+                        PRINT
+                    </button>
                 </div>
 
                 <!-- ── 3-zone body ─────────────────────────────────────── -->
@@ -34,6 +39,7 @@
                             </select>
                             <input v-if="selectedOperator === 'Other'" v-model="otherOperator" type="text"
                                 placeholder="Type your name..."
+                                maxlength="50"
                                 class="mt-2 w-full bg-slate-700 border p-4 text-xl rounded">
                         </div>
                         <div class="w-32 text-center bg-slate-900 rounded-lg p-3">
@@ -49,29 +55,29 @@
                             <div>
                                 <h4 class="font-bold text-blue-300">Engine/Subassy</h4>
                                 <div class="text-slate-400 text-sm mb-2">{{ activeOrder.tv_engine_status || 'Not Started' }}</div>
-                                <button @click="updateOrderStatus('completed', 'tv_engine')" class="w-full bg-emerald-600 py-2 rounded text-sm font-bold">Mark Completed</button>
+                                <button @click="updateOrderStatus('completed', 'tv_engine')" :disabled="loading" class="w-full bg-emerald-600 py-2 rounded text-sm font-bold disabled:opacity-40 disabled:cursor-not-allowed">Mark Completed</button>
                             </div>
                             <div>
                                 <h4 class="font-bold text-amber-300">Cart</h4>
                                 <div class="text-slate-400 text-sm mb-2">{{ activeOrder.tv_cart_status || 'Not Started' }}</div>
-                                <button @click="updateOrderStatus('completed', 'tv_cart')" class="w-full bg-emerald-600 py-2 rounded text-sm font-bold">Mark Completed</button>
+                                <button @click="updateOrderStatus('completed', 'tv_cart')" :disabled="loading" class="w-full bg-emerald-600 py-2 rounded text-sm font-bold disabled:opacity-40 disabled:cursor-not-allowed">Mark Completed</button>
                             </div>
                             <div>
                                 <h4 class="font-bold text-emerald-300">Final Unit</h4>
                                 <div class="text-slate-400 text-sm mb-2">{{ activeOrder.tv_final_status || 'Not Started' }}</div>
-                                <button @click="updateOrderStatus('completed', 'tv_final')" class="w-full bg-emerald-600 py-2 rounded text-sm font-bold">Mark Completed</button>
+                                <button @click="updateOrderStatus('completed', 'tv_final')" :disabled="loading" class="w-full bg-emerald-600 py-2 rounded text-sm font-bold disabled:opacity-40 disabled:cursor-not-allowed">Mark Completed</button>
                             </div>
                         </div>
                         <div class="mt-8">
-                            <button @click="updateOrderStatus('started')" class="bg-blue-600 px-6 py-2 rounded font-bold mr-2">START WHOLE WO</button>
-                            <button @click="updateOrderStatus('on_hold')" class="bg-red-600 px-6 py-2 rounded font-bold">HOLD WO</button>
+                            <button @click="updateOrderStatus('started')" :disabled="loading" class="bg-blue-600 px-6 py-2 rounded font-bold mr-2 disabled:opacity-40 disabled:cursor-not-allowed">START WHOLE WO</button>
+                            <button @click="updateOrderStatus('on_hold')" :disabled="loading" class="bg-red-600 px-6 py-2 rounded font-bold disabled:opacity-40 disabled:cursor-not-allowed">HOLD WO</button>
                         </div>
                     </div>
 
                     <!-- Fab / Weld standard controls -->
                     <div v-else>
-                        <!-- Fab/Weld: Mandatory operator multi-select -->
-                        <div class="mb-6 border-b border-slate-700 pb-6">
+                        <!-- Fab/Weld: Mandatory operator multi-select (hidden for reel WOs — op selected per operation) -->
+                        <div v-if="!(isReel && activeOrder?.department === 'Weld')" class="mb-6 border-b border-slate-700 pb-6">
                             <label class="block text-slate-400 font-bold mb-3 uppercase text-sm">Who is doing this? <span class="text-red-400">*</span></label>
                             <div class="flex flex-wrap gap-3">
                                 <label v-for="op in OPERATORS_BY_DEPT[activeOrder?.department] || []" :key="op"
@@ -86,20 +92,17 @@
                             </div>
                             <input v-if="selectedOperators.includes('Other')" v-model="otherOperator" type="text"
                                 placeholder="Type name(s), comma-separated..."
+                                maxlength="50"
                                 class="mt-3 w-full bg-slate-700 border border-slate-600 rounded p-3 text-lg placeholder:text-slate-500">
                             <p v-if="!fabWeldOperatorReady" class="text-red-400 text-xs mt-2 font-semibold">&#9888; Select at least one operator to enable actions.</p>
                         </div>
 
-                        <div v-if="isReel" class="bg-yellow-900/50 p-4 rounded border border-yellow-700 mb-6 flex items-center justify-between">
-                            <span class="font-bold text-yellow-500 uppercase tracking-widest text-sm">Reel Detected - Require Tool:</span>
-                            <div class="flex gap-4">
-                                <label class="font-bold flex items-center gap-2"><input type="radio" v-model="actionForm.weldGrind" value="weld" class="w-6 h-6"> WELD</label>
-                                <label class="font-bold flex items-center gap-2"><input type="radio" v-model="actionForm.weldGrind" value="grind" class="w-6 h-6"> GRIND</label>
-                            </div>
-                        </div>
+                        <!-- not_started / started / paused action buttons — hidden for reel Weld WOs
+                             (those are driven by per-operation controls in the center zone) -->
+                        <div v-if="!(isReel && activeOrder?.department === 'Weld')">
                         <!-- not_started: START only -->
                         <div v-if="!activeOrder?.status || activeOrder.status === 'not_started'">
-                            <button @click="updateOrderStatus('started')" :disabled="!fabWeldOperatorReady"
+                            <button @click="updateOrderStatus('started')" :disabled="!fabWeldOperatorReady || loading"
                                 class="w-full bg-blue-600 hover:bg-blue-500 rounded-xl p-6 font-bold text-2xl active:scale-95 transition-transform flex items-center justify-center gap-4 border border-blue-400/50 disabled:opacity-40 disabled:cursor-not-allowed">
                                 <svg class="w-12 h-12" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z"/>
@@ -125,17 +128,17 @@
                             <div class="bg-slate-700 p-4 rounded-xl border border-slate-600 flex flex-col items-center">
                                 <div class="text-slate-400 text-xs mb-1">Done so far: {{ activeOrder.qty_completed }} / {{ activeOrder.qty_required }}</div>
                                 <input type="number" v-model="actionForm.qtyCompleted" class="w-full bg-slate-900 p-2 text-center text-xl font-bold rounded mb-2" placeholder="Qty this session" min="0">
-                                <button @click="updateOrderStatus('paused')" :disabled="!fabWeldOperatorReady" class="bg-amber-500 hover:bg-amber-400 text-slate-900 w-full rounded py-3 font-extrabold disabled:opacity-40 disabled:cursor-not-allowed">PAUSE DAY</button>
+                                <button @click="updateOrderStatus('paused')" :disabled="!fabWeldOperatorReady || loading" class="bg-amber-500 hover:bg-amber-400 text-slate-900 w-full rounded py-3 font-extrabold disabled:opacity-40 disabled:cursor-not-allowed">PAUSE DAY</button>
                             </div>
                             <div class="bg-slate-700 p-4 rounded-xl border border-slate-600 flex flex-col items-center">
                                 <div class="text-slate-400 text-xs mb-1">Done so far: {{ activeOrder.qty_completed }} / {{ activeOrder.qty_required }}</div>
                                 <input type="number" v-model="actionForm.qtyCompleted" class="w-full bg-slate-900 p-2 text-center text-xl font-bold rounded mb-2" placeholder="Qty this session" min="0">
-                                <button @click="updateOrderStatus('completed')" :disabled="!fabWeldOperatorReady" class="bg-emerald-600 hover:bg-emerald-500 w-full rounded py-3 font-extrabold text-white disabled:opacity-40 disabled:cursor-not-allowed">COMPLETE WO</button>
+                                <button @click="updateOrderStatus('completed')" :disabled="!fabWeldOperatorReady || loading" class="bg-emerald-600 hover:bg-emerald-500 w-full rounded py-3 font-extrabold text-white disabled:opacity-40 disabled:cursor-not-allowed">COMPLETE WO</button>
                             </div>
                         </div>
                         <!-- paused / on_hold: RESUME + COMPLETE -->
                         <div v-else class="grid grid-cols-2 gap-6">
-                            <button @click="updateOrderStatus('started')" :disabled="!fabWeldOperatorReady"
+                            <button @click="updateOrderStatus('started')" :disabled="!fabWeldOperatorReady || loading"
                                 class="bg-emerald-700 hover:bg-emerald-600 rounded-xl p-6 font-bold text-2xl active:scale-95 transition-transform flex flex-col items-center justify-center border border-emerald-500/50 disabled:opacity-40 disabled:cursor-not-allowed">
                                 <svg class="w-12 h-12 mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z"/>
@@ -146,11 +149,24 @@
                             <div class="bg-slate-700 p-4 rounded-xl border border-slate-600 flex flex-col items-center">
                                 <div class="text-slate-400 text-xs mb-1">Done so far: {{ activeOrder.qty_completed }} / {{ activeOrder.qty_required }}</div>
                                 <input type="number" v-model="actionForm.qtyCompleted" class="w-full bg-slate-900 p-2 text-center text-xl font-bold rounded mb-2" placeholder="Qty this session" min="0">
-                                <button @click="updateOrderStatus('completed')" :disabled="!fabWeldOperatorReady" class="bg-emerald-600 hover:bg-emerald-500 w-full rounded py-3 font-extrabold text-white disabled:opacity-40 disabled:cursor-not-allowed">COMPLETE WO</button>
+                                <button @click="updateOrderStatus('completed')" :disabled="!fabWeldOperatorReady || loading" class="bg-emerald-600 hover:bg-emerald-500 w-full rounded py-3 font-extrabold text-white disabled:opacity-40 disabled:cursor-not-allowed">COMPLETE WO</button>
                             </div>
                         </div>
 
+                        </div><!-- /reel action-button suppression wrapper -->
+
                         <div class="mt-8 border-t border-slate-700 pt-6 flex flex-col gap-5">
+                            <!-- Reel WO: compact operator picker for hold/scrap attribution -->
+                            <div v-if="isReel && activeOrder?.department === 'Weld'" class="border-b border-slate-700 pb-5">
+                                <label class="block text-slate-400 text-xs font-bold mb-2 uppercase">Who is logging this action?</label>
+                                <div class="flex flex-wrap gap-2">
+                                    <label v-for="op in OPERATORS_BY_DEPT['Weld'] || []" :key="op"
+                                        class="flex items-center gap-1.5 px-3 py-2 rounded-lg cursor-pointer border-2 transition-colors select-none text-sm font-bold"
+                                        :class="selectedOperators.includes(op) ? 'border-blue-400 bg-blue-900/40 text-white' : 'border-slate-600 bg-slate-700 text-slate-300'">
+                                        <input type="checkbox" :value="op" v-model="selectedOperators" class="sr-only"> {{ op }}
+                                    </label>
+                                </div>
+                            </div>
                             <div>
                                 <label class="block text-slate-400 font-bold mb-2">Put on Hold / Delay</label>
                                 <div class="flex gap-2">
@@ -158,8 +174,8 @@
                                         <option value="">Select Reason...</option>
                                         <option v-for="r in HOLD_REASONS[activeOrder?.department]" :key="r" :value="r">{{ r }}</option>
                                     </select>
-                                    <input v-else v-model="actionForm.holdReason" type="text" class="w-full bg-slate-700 p-3 rounded" placeholder="Reason...">
-                                    <button @click="updateOrderStatus('on_hold')" :disabled="!fabWeldOperatorReady || !actionForm.holdReason.trim()" class="bg-red-600 font-bold px-4 rounded hover:bg-red-500 disabled:opacity-40 disabled:cursor-not-allowed">HOLD</button>
+                                    <input v-else v-model="actionForm.holdReason" type="text" maxlength="200" class="w-full bg-slate-700 p-3 rounded" placeholder="Reason...">
+                                    <button @click="updateOrderStatus('on_hold')" :disabled="!fabWeldOperatorReady || !actionForm.holdReason.trim() || loading" class="bg-red-600 font-bold px-4 rounded hover:bg-red-500 disabled:opacity-40 disabled:cursor-not-allowed">HOLD</button>
                                 </div>
                             </div>
                             <div>
@@ -171,7 +187,7 @@
                                         <option v-for="r in SCRAP_REASONS" :key="r" :value="r">{{ r }}</option>
                                     </select>
                                 </div>
-                                <input v-model="actionForm.notes" type="text" :disabled="!fabWeldOperatorReady" placeholder="Add specific notes here" class="w-full bg-slate-700 p-3 rounded text-sm placeholder:text-slate-500 disabled:opacity-40 disabled:cursor-not-allowed">
+                                <input v-model="actionForm.notes" type="text" maxlength="200" :disabled="!fabWeldOperatorReady" placeholder="Add specific notes here" class="w-full bg-slate-700 p-3 rounded text-sm placeholder:text-slate-500 disabled:opacity-40 disabled:cursor-not-allowed">
                             </div>
                         </div>
                         <!-- Action history log -->
@@ -216,8 +232,107 @@
                             </label>
                         </div>
 
-                        <!-- PDF viewer — fills remaining height -->
-                        <div class="flex-1 min-h-0 overflow-hidden">
+                        <!-- Reel Weld WOs: dual Weld / Grind operations panel (no PDF viewer) -->
+                        <div v-if="isReel && activeOrder?.department === 'Weld'"
+                             class="flex-1 min-h-0 overflow-y-auto bg-gray-50 p-5 flex flex-col gap-4">
+
+                            <!-- WELD operation (done first) -->
+                            <div class="bg-white border border-blue-200 rounded-2xl p-5 shadow-sm">
+                                <div class="flex items-center gap-2 mb-4">
+                                    <h3 class="text-sm font-extrabold text-blue-700 uppercase tracking-widest">Weld</h3>
+                                    <span v-if="activeOrder.weld_reel_status === 'completed'" class="px-2 py-0.5 bg-emerald-100 text-emerald-700 text-xs font-bold rounded-full uppercase">Complete</span>
+                                    <span v-else-if="activeOrder.weld_reel_status === 'started'" class="px-2 py-0.5 bg-blue-100 text-blue-700 text-xs font-bold rounded-full uppercase">In Progress</span>
+                                    <span v-else-if="activeOrder.weld_reel_status === 'paused'" class="px-2 py-0.5 bg-amber-100 text-amber-700 text-xs font-bold rounded-full uppercase">Paused</span>
+                                    <span v-else class="px-2 py-0.5 bg-gray-100 text-gray-500 text-xs font-bold rounded-full uppercase">Not Started</span>
+                                    <span v-if="activeOrder.weld_reel_operator" class="ml-auto text-gray-400 text-xs">By: <span class="text-gray-700 font-semibold">{{ activeOrder.weld_reel_operator }}</span></span>
+                                </div>
+                                <div v-if="activeOrder.weld_reel_status !== 'completed'" class="mb-3">
+                                    <select v-model="reelWeldOperator" class="w-full bg-gray-50 border border-gray-300 rounded-lg p-2.5 text-base text-gray-800">
+                                        <option value="">-- Weld operator --</option>
+                                        <option v-for="op in OPERATORS_BY_DEPT['Weld'] || []" :key="op" :value="op">{{ op }}</option>
+                                        <option value="Other">Other...</option>
+                                    </select>
+                                    <input v-if="reelWeldOperator === 'Other'" v-model="reelWeldOtherOp" type="text" maxlength="50" placeholder="Type name..." class="mt-2 w-full bg-gray-50 border border-gray-300 rounded-lg p-2.5 text-base">
+                                </div>
+                                <div v-if="activeOrder.weld_reel_status === 'started' || activeOrder.weld_reel_status === 'paused'" class="mb-3 flex items-center gap-3">
+                                    <label class="text-gray-500 text-xs font-bold uppercase whitespace-nowrap">Qty this session</label>
+                                    <input type="number" v-model="reelWeldQty" min="0" class="flex-1 border border-gray-300 rounded-lg p-2 text-center text-xl font-bold text-gray-800 bg-white">
+                                    <span class="text-gray-400 text-xs whitespace-nowrap">Cum: {{ activeOrder.weld_reel_qty || 0 }} / {{ activeOrder.qty_required }}</span>
+                                </div>
+                                <button v-if="!activeOrder.weld_reel_status || activeOrder.weld_reel_status === 'not_started'" @click="startReelOperation('weld')" :disabled="loading" class="w-full bg-blue-600 hover:bg-blue-500 text-white rounded-xl py-3 font-extrabold text-lg disabled:opacity-40 disabled:cursor-not-allowed">START WELD</button>
+                                <div v-else-if="activeOrder.weld_reel_status === 'started'" class="flex gap-3">
+                                    <button @click="pauseReelOperation('weld')" :disabled="loading" class="flex-1 bg-amber-400 hover:bg-amber-300 text-gray-900 rounded-xl py-3 font-extrabold text-lg disabled:opacity-40 disabled:cursor-not-allowed">PAUSE</button>
+                                    <button @click="completeReelOperation('weld')" :disabled="loading" class="flex-1 bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl py-3 font-extrabold text-lg disabled:opacity-40 disabled:cursor-not-allowed">COMPLETE</button>
+                                </div>
+                                <div v-else-if="activeOrder.weld_reel_status === 'paused'" class="flex gap-3">
+                                    <button @click="startReelOperation('weld')" :disabled="loading" class="flex-1 bg-blue-600 hover:bg-blue-500 text-white rounded-xl py-3 font-extrabold text-lg disabled:opacity-40 disabled:cursor-not-allowed">RESUME</button>
+                                    <button @click="completeReelOperation('weld')" :disabled="loading" class="flex-1 bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl py-3 font-extrabold text-lg disabled:opacity-40 disabled:cursor-not-allowed">COMPLETE</button>
+                                </div>
+                                <div v-else class="bg-emerald-50 border border-emerald-200 rounded-xl py-3 px-4 flex items-center justify-between">
+                                    <span class="text-emerald-700 font-bold">&#10003; Weld Complete — {{ activeOrder.weld_reel_qty || 0 }} pcs</span>
+                                    <button @click="reviseReelOperation('weld')" :disabled="loading" class="text-xs text-blue-600 hover:text-blue-500 font-bold underline disabled:opacity-40 disabled:cursor-not-allowed">Revise</button>
+                                </div>
+                            </div>
+
+                            <!-- GRIND operation -->
+                            <div class="bg-white border border-amber-200 rounded-2xl p-5 shadow-sm">
+                                <div class="flex items-center gap-2 mb-4">
+                                    <h3 class="text-sm font-extrabold text-amber-700 uppercase tracking-widest">Grind</h3>
+                                    <span v-if="activeOrder.grind_reel_status === 'completed'" class="px-2 py-0.5 bg-emerald-100 text-emerald-700 text-xs font-bold rounded-full uppercase">Complete</span>
+                                    <span v-else-if="activeOrder.grind_reel_status === 'started'" class="px-2 py-0.5 bg-amber-100 text-amber-700 text-xs font-bold rounded-full uppercase">In Progress</span>
+                                    <span v-else-if="activeOrder.grind_reel_status === 'paused'" class="px-2 py-0.5 bg-orange-100 text-orange-700 text-xs font-bold rounded-full uppercase">Paused</span>
+                                    <span v-else class="px-2 py-0.5 bg-gray-100 text-gray-500 text-xs font-bold rounded-full uppercase">Not Started</span>
+                                    <span v-if="activeOrder.grind_reel_operator" class="ml-auto text-gray-400 text-xs">By: <span class="text-gray-700 font-semibold">{{ activeOrder.grind_reel_operator }}</span></span>
+                                </div>
+                                <div v-if="activeOrder.grind_reel_status !== 'completed'" class="mb-3">
+                                    <select v-model="reelGrindOperator" class="w-full bg-gray-50 border border-gray-300 rounded-lg p-2.5 text-base text-gray-800">
+                                        <option value="">-- Grind operator --</option>
+                                        <option v-for="op in OPERATORS_BY_DEPT['Weld'] || []" :key="op" :value="op">{{ op }}</option>
+                                        <option value="Other">Other...</option>
+                                    </select>
+                                    <input v-if="reelGrindOperator === 'Other'" v-model="reelGrindOtherOp" type="text" maxlength="50" placeholder="Type name..." class="mt-2 w-full bg-gray-50 border border-gray-300 rounded-lg p-2.5 text-base">
+                                </div>
+                                <div v-if="activeOrder.grind_reel_status === 'started' || activeOrder.grind_reel_status === 'paused'" class="mb-3 flex items-center gap-3">
+                                    <label class="text-gray-500 text-xs font-bold uppercase whitespace-nowrap">Qty this session</label>
+                                    <input type="number" v-model="reelGrindQty" min="0" class="flex-1 border border-gray-300 rounded-lg p-2 text-center text-xl font-bold text-gray-800 bg-white">
+                                    <span class="text-gray-400 text-xs whitespace-nowrap">Cum: {{ activeOrder.grind_reel_qty || 0 }} / {{ activeOrder.qty_required }}</span>
+                                </div>
+                                <button v-if="!activeOrder.grind_reel_status || activeOrder.grind_reel_status === 'not_started'" @click="startReelOperation('grind')" :disabled="loading" class="w-full bg-amber-500 hover:bg-amber-400 text-white rounded-xl py-3 font-extrabold text-lg disabled:opacity-40 disabled:cursor-not-allowed">START GRIND</button>
+                                <div v-else-if="activeOrder.grind_reel_status === 'started'" class="flex gap-3">
+                                    <button @click="pauseReelOperation('grind')" :disabled="loading" class="flex-1 bg-amber-400 hover:bg-amber-300 text-gray-900 rounded-xl py-3 font-extrabold text-lg disabled:opacity-40 disabled:cursor-not-allowed">PAUSE</button>
+                                    <button @click="completeReelOperation('grind')" :disabled="loading" class="flex-1 bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl py-3 font-extrabold text-lg disabled:opacity-40 disabled:cursor-not-allowed">COMPLETE</button>
+                                </div>
+                                <div v-else-if="activeOrder.grind_reel_status === 'paused'" class="flex gap-3">
+                                    <button @click="startReelOperation('grind')" :disabled="loading" class="flex-1 bg-amber-500 hover:bg-amber-400 text-white rounded-xl py-3 font-extrabold text-lg disabled:opacity-40 disabled:cursor-not-allowed">RESUME</button>
+                                    <button @click="completeReelOperation('grind')" :disabled="loading" class="flex-1 bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl py-3 font-extrabold text-lg disabled:opacity-40 disabled:cursor-not-allowed">COMPLETE</button>
+                                </div>
+                                <div v-else class="bg-emerald-50 border border-emerald-200 rounded-xl py-3 px-4 flex items-center justify-between">
+                                    <span class="text-emerald-700 font-bold">&#10003; Grind Complete — {{ activeOrder.grind_reel_qty || 0 }} pcs</span>
+                                    <button @click="reviseReelOperation('grind')" :disabled="loading" class="text-xs text-blue-600 hover:text-blue-500 font-bold underline disabled:opacity-40 disabled:cursor-not-allowed">Revise</button>
+                                </div>
+                            </div>
+
+                            <!-- WO Summary -->
+                            <div class="bg-white border border-gray-200 rounded-2xl p-4 shadow-sm">
+                                <div class="text-gray-400 text-xs font-bold uppercase tracking-wider mb-3">WO Summary</div>
+                                <div class="grid grid-cols-3 gap-3 text-center mb-3">
+                                    <div class="bg-gray-50 rounded-xl p-3 border border-gray-100"><div class="text-gray-400 text-xs mb-1">Qty Required</div><div class="font-extrabold text-2xl text-gray-800">{{ activeOrder?.qty_required }}</div></div>
+                                    <div class="bg-blue-50 rounded-xl p-3 border border-blue-100"><div class="text-blue-400 text-xs mb-1">Weld Qty</div><div class="font-extrabold text-2xl text-blue-700">{{ activeOrder?.weld_reel_qty || 0 }}</div><div class="text-blue-400 text-xs mt-0.5">{{ activeOrder?.weld_reel_operator || '—' }}</div></div>
+                                    <div class="bg-amber-50 rounded-xl p-3 border border-amber-100"><div class="text-amber-500 text-xs mb-1">Grind Qty</div><div class="font-extrabold text-2xl text-amber-700">{{ activeOrder?.grind_reel_qty || 0 }}</div><div class="text-amber-500 text-xs mt-0.5">{{ activeOrder?.grind_reel_operator || '—' }}</div></div>
+                                </div>
+                                <button @click="completeReelWo()" :disabled="loading"
+                                    class="w-full mt-3 bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl py-3 font-extrabold text-lg disabled:opacity-40 disabled:cursor-not-allowed">
+                                    &#10003; COMPLETE WORK ORDER
+                                </button>
+                                <div v-if="activeOrder?.notes" class="mt-3 border-t border-gray-100 pt-3">
+                                    <div class="text-gray-400 text-xs font-bold uppercase tracking-wider mb-2">Action History</div>
+                                    <pre class="text-gray-500 text-xs whitespace-pre-wrap font-mono leading-relaxed max-h-28 overflow-y-auto">{{ activeOrder.notes }}</pre>
+                                </div>
+                            </div>
+
+                        </div>
+                        <!-- Normal PDF viewer for non-reel WOs -->
+                        <div v-else class="flex-1 min-h-0 overflow-hidden">
                             <!-- No PDF attached: empty state -->
                             <div v-if="woFiles.filter(f => f.name.toLowerCase().endsWith('.pdf')).length === 0 && !woFilesLoading"
                                 class="h-full flex flex-col items-center justify-center">
@@ -292,19 +407,19 @@
                                 </div>
                                 <input v-model="woProblemDraftName"
                                     @input="woProblemDraftNameError = false"
-                                    type="text" placeholder="Your name"
+                                    type="text" placeholder="Your name" maxlength="50"
                                     class="w-full p-2.5 text-sm border rounded-lg focus:outline-none focus:border-red-400 transition-colors"
                                     :class="woProblemDraftNameError ? 'border-red-500 bg-red-50' : 'border-gray-300'">
                                 <p v-if="woProblemDraftNameError" class="text-red-500 text-xs -mt-1">Name is required</p>
                                 <textarea v-model="woProblemDraftText"
                                     @input="woProblemDraftError = false"
-                                    rows="2"
+                                    rows="2" maxlength="1000"
                                     placeholder="Describe the problem (e.g. die problem, machine issue)…"
                                     class="w-full p-2.5 text-sm border rounded-lg resize-none focus:outline-none focus:border-red-400 transition-colors"
                                     :class="woProblemDraftError ? 'border-red-500 bg-red-50' : 'border-gray-300'"></textarea>
                                 <p v-if="woProblemDraftError" class="text-red-500 text-xs -mt-1">Problem description is required</p>
-                                <button @click="submitWoProblemFromUi()"
-                                    class="w-full bg-red-600 hover:bg-red-500 text-white px-3 py-2.5 rounded-lg font-bold text-sm transition-colors active:scale-95">
+                                <button @click="submitWoProblemFromUi()" :disabled="loading"
+                                    class="w-full bg-red-600 hover:bg-red-500 text-white px-3 py-2.5 rounded-lg font-bold text-sm transition-colors active:scale-95 disabled:opacity-40 disabled:cursor-not-allowed">
                                     Log Problem with WO
                                 </button>
                             </div>
@@ -316,8 +431,8 @@
 
                         <!-- ── COMPLETE tab ────────────────────────── -->
                         <div v-if="woActionTab === 'complete'" class="flex-1 overflow-y-auto p-4 flex flex-col gap-4">
-                            <!-- Fab / Weld completion -->
-                            <template v-if="activeOrder?.department === 'Fab' || activeOrder?.department === 'Weld'">
+                            <!-- Fab / Weld completion (not shown for reel Weld WOs — ops drive completion) -->
+                            <template v-if="activeOrder?.department === 'Fab' || (activeOrder?.department === 'Weld' && !isReel)">
                                 <div>
                                     <div class="text-gray-500 text-xs font-bold uppercase tracking-wide mb-1">Qty this session</div>
                                     <input type="number" v-model="actionForm.qtyCompleted" min="0"
@@ -326,7 +441,7 @@
                                         Done so far: {{ activeOrder.qty_completed }} / {{ activeOrder.qty_required }}
                                     </div>
                                 </div>
-                                <button @click="updateOrderStatus('completed')" :disabled="!fabWeldOperatorReady"
+                                <button @click="updateOrderStatus('completed')" :disabled="!fabWeldOperatorReady || loading"
                                     class="w-full bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl py-5 font-extrabold text-xl transition-colors disabled:opacity-40 disabled:cursor-not-allowed">
                                     ✓ COMPLETE WO
                                 </button>
@@ -334,6 +449,10 @@
                                     &#9888; Select an operator in the left panel first
                                 </p>
                             </template>
+                            <!-- Reel Weld WOs: completion via per-op controls -->
+                            <div v-else-if="isReel && activeOrder?.department === 'Weld'" class="text-gray-400 text-xs text-center italic py-6">
+                                WO completes automatically when both Weld and Grind are done
+                            </div>
                             <!-- Other depts -->
                             <div v-else class="text-gray-400 text-xs text-center italic py-6">
                                 Completion is handled in the left panel for this department
@@ -344,4 +463,6 @@
 
                 </div><!-- /3-zone body -->
             </div><!-- /h-screen -->
+
+
         </div><!-- /ACTION PANEL -->

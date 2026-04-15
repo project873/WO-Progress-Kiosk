@@ -104,6 +104,51 @@
     <style>
         [v-cloak] { display: none; }
     </style>
+
+    <style>
+        /* ── Print: WO Traveler Summary ──────────────────────────── */
+        .wo-print-summary { display: none; }
+
+        @media print {
+            /* visibility:hidden on everything — unlike display:none, descendants
+               can override this with visibility:visible */
+            body * { visibility: hidden !important; }
+
+            /* Reveal the summary and all its children */
+            .wo-print-summary,
+            .wo-print-summary * { visibility: visible !important; }
+
+            /* Anchor to top of page regardless of DOM nesting depth */
+            .wo-print-summary {
+                position: absolute !important;
+                top: 0 !important; left: 0 !important;
+                width: 100% !important;
+                background: white !important;
+                display: block !important;
+            }
+
+            /* Remove screen constraints */
+            body { overflow: visible !important; height: auto !important;
+                   background: white !important; color: black !important;
+                   font-family: system-ui, sans-serif; font-size: 11pt; }
+
+            /* Page margins */
+            @page { margin: 1.5cm; }
+
+            /* Summary typography */
+            .wo-print-summary h1  { font-size: 16pt; font-weight: bold; margin: 0 0 4pt; }
+            .wo-print-summary h2  { font-size: 11pt; font-weight: bold; margin: 14pt 0 4pt;
+                                    border-bottom: 1pt solid #000; padding-bottom: 2pt; }
+            .wo-print-summary hr  { border: none; border-top: 1pt solid #000; margin: 8pt 0; }
+            .wo-print-summary table { width: 100%; border-collapse: collapse; margin: 6pt 0; }
+            .wo-print-summary th  { text-align: left; font-size: 8pt; font-weight: bold;
+                                    text-transform: uppercase; color: #555; padding-bottom: 2pt; }
+            .wo-print-summary td  { font-size: 11pt; font-weight: bold; padding: 2pt 0; }
+            .wo-print-summary pre { font-size: 8.5pt; white-space: pre-wrap; font-family: monospace;
+                                    line-height: 1.4; margin: 0; }
+            .wo-print-summary footer { margin-top: 16pt; font-size: 8pt; color: #888; }
+        }
+    </style>
 </head>
 
 <body class="bg-slate-900 text-white select-none overflow-hidden h-screen w-screen font-sans">

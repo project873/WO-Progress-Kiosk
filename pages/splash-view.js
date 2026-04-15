@@ -8,6 +8,7 @@
 import * as store  from '../libs/store.js';
 import * as db     from '../libs/db.js';
 import { MANAGER_PIN, CS_PIN, CLOSEOUT_PIN } from '../libs/config.js';
+import { logError } from '../libs/db-shared.js';
 
 // ── selectCategory ────────────────────────────────────────────
 // Navigate to a top-level category sub-menu (level 1).
@@ -62,6 +63,7 @@ export async function submitPin() {
             store.allOrders.value = data || [];
         } catch (err) {
             store.showToast('Failed to load manager data: ' + err.message);
+            logError('submitPin_manager', err);
         } finally {
             store.loading.value = false;
         }
@@ -195,6 +197,7 @@ async function _loadDeptOrders(dept) {
         store.partsWithFiles.value = partsSet;
     } catch (err) {
         store.showToast('Failed to load orders: ' + err.message);
+        logError('_loadDeptOrders', err, { dept });
         store.orders.value = [];
     } finally {
         store.loading.value = false;
@@ -210,6 +213,7 @@ async function _loadWoStatusData() {
         store.closeoutOrders.value = closeout;
     } catch (err) {
         store.showToast('Failed to load WO status data: ' + err.message);
+        logError('_loadWoStatusData', err);
     } finally {
         store.loading.value = false;
     }

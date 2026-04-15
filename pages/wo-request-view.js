@@ -8,6 +8,7 @@
 
 import * as store from '../libs/store.js';
 import * as db    from '../libs/db.js';
+import { logError } from '../libs/db-shared.js';
 
 // loadWoRequests — fetch all requests (oldest first) and populate store + inline state.
 export async function loadWoRequests() {
@@ -31,6 +32,7 @@ export async function loadWoRequests() {
         store.woRequestInlineState.value = state;
     } catch (err) {
         store.showToast('Failed to load WO requests: ' + err.message);
+        logError('loadWoRequests', err);
         store.woRequests.value = [];
     } finally {
         store.woRequestsLoading.value = false;
@@ -44,17 +46,19 @@ export function resetWoRequestForm() {
         qty_on_order: '', qty_in_stock: '', qty_used_per_unit: '',
         submitted_by: ''
     };
-    store.woRequestFormErrors.value = { part_number: false, submitted_by: false };
+    store.woRequestFormErrors.value = { part_number: false, qty_in_stock: false, qty_used_per_unit: false, submitted_by: false };
 }
 
 // submitWoRequestForm — validate, insert new request, reload list.
 export async function submitWoRequestForm() {
     const form   = store.woRequestForm.value;
-    const errors = { part_number: false, submitted_by: false };
-    if (!form.part_number.trim())  errors.part_number  = true;
-    if (!form.submitted_by.trim()) errors.submitted_by = true;
+    const errors = { part_number: false, qty_in_stock: false, qty_used_per_unit: false, submitted_by: false };
+    if (!form.part_number.trim())                                      errors.part_number      = true;
+    if (form.qty_in_stock === ''     || form.qty_in_stock     == null) errors.qty_in_stock     = true;
+    if (form.qty_used_per_unit === '' || form.qty_used_per_unit == null) errors.qty_used_per_unit = true;
+    if (!form.submitted_by.trim())                                     errors.submitted_by     = true;
     store.woRequestFormErrors.value = errors;
-    if (errors.part_number || errors.submitted_by) return;
+    if (errors.part_number || errors.qty_in_stock || errors.qty_used_per_unit || errors.submitted_by) return;
 
     store.loading.value = true;
     try {
@@ -65,6 +69,7 @@ export async function submitWoRequestForm() {
         await loadWoRequests();
     } catch (err) {
         store.showToast('Failed to submit request: ' + err.message, 'error');
+        logError('submitWoRequestForm', err);
     } finally {
         store.loading.value = false;
     }
@@ -92,6 +97,7 @@ export async function saveWoRequestInlineFields(id) {
         }
     } catch (err) {
         store.showToast('Failed to save: ' + err.message, 'error');
+        logError('saveWoRequestInlineFields', err, { id });
     }
 }
 
@@ -174,6 +180,7 @@ export async function saveWoRequestDetail() {
         await _syncAfterSave(id);
     } catch (err) {
         store.showToast('Failed to save: ' + err.message, 'error');
+        logError('saveWoRequestDetail', err, { id });
     } finally {
         store.loading.value = false;
     }
@@ -213,6 +220,7 @@ export async function approveWoRequest() {
         await _syncAfterSave(id);
     } catch (err) {
         store.showToast('Failed to approve: ' + err.message, 'error');
+        logError('approveWoRequest', err, { id });
     } finally {
         store.loading.value = false;
     }
@@ -230,6 +238,7 @@ export async function deleteWoRequestItem(id) {
         await loadWoRequests();
     } catch (err) {
         store.showToast('Failed to delete request: ' + err.message, 'error');
+        logError('deleteWoRequestItem', err, { id });
     } finally {
         store.loading.value = false;
     }

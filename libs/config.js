@@ -5,8 +5,8 @@
 
 import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm';
 
-const SUPABASE_URL = "https://jxxumifkxhfoxgfsduns.supabase.co";
-const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imp4eHVtaWZreGhmb3hnZnNkdW5zIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzU1OTE0OTMsImV4cCI6MjA5MTE2NzQ5M30.bq-7ETLp1w1rBVM22LR8BamEfNyLRLrVYsxR8KHqkFE";
+const SUPABASE_URL = "https://eqbybduwgzmbkbjyywgk.supabase.co";
+const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImVxYnliZHV3Z3ptYmtianl5d2drIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzIyMDMwNzksImV4cCI6MjA4Nzc3OTA3OX0.j77BJ8LlRzCinGOSHuiCRX1M7KO1A687o9yQGwNXh8M";
 
 export const supabase = createClient(SUPABASE_URL, SUPABASE_KEY);
 
@@ -18,7 +18,7 @@ export const CLOSEOUT_PIN = "1234";   // Close-Out view PIN
 
 // Gemini API calls go through a Cloudflare Worker so the key never touches the frontend.
 // After deploying workers/gemini-proxy.js, replace this with your Worker URL.
-export const GEMINI_WORKER_URL = 'https://gemini-proxy.YOUR_SUBDOMAIN.workers.dev';
+export const GEMINI_WORKER_URL = 'https://gemini-proxy.project-85a.workers.dev';
 
 // ----- Operators per department -----
 export const OPERATORS_BY_DEPT = {
@@ -43,10 +43,10 @@ export const SCRAP_REASONS = [
     "Wrong Part / Setup Error", "Other"
 ];
 
-// ----- Reel part numbers (trigger Weld/Grind selection) -----
+// ----- Reel part numbers (dual Weld/Grind flow in Weld dept) -----
 export const REEL_PART_NUMBERS = [
     "TC27261", "TC27265", "TC27291", "TC27292", "TC27311",
-    "TC42077", "TC42127", "TC44120", "TC44125", "TC44127",
+    "TC44120", "TC44125", "TC44127",
     "TC47446", "TC51070", "TC51077"
 ];
 

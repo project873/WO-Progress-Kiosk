@@ -13,7 +13,7 @@
 
 import { ref, computed } from 'https://cdn.jsdelivr.net/npm/vue@3.4.21/dist/vue.esm-browser.prod.js';
 import { REEL_PART_NUMBERS } from './config.js';
-import { detectTcMode } from './utils.js';
+import { detectTcMode, detectReelWeld } from './utils.js';
 
 // Bring inventoryTab into scope for appTitle computed (one-way, no circular dep)
 import { inventoryTab } from './store-inventory.js';
@@ -55,9 +55,16 @@ export const actionForm = ref({
     qtyScrap:     0,
     scrapReason:  '',
     notes:        '',
-    holdReason:   '',
-    weldGrind:    ''
+    holdReason:   ''
 });
+
+// ── Reel Weld per-operation state ─────────────────────────────
+export const reelWeldOperator  = ref('');
+export const reelGrindOperator = ref('');
+export const reelWeldOtherOp   = ref('');
+export const reelGrindOtherOp  = ref('');
+export const reelWeldQty       = ref(0);
+export const reelGrindQty      = ref(0);
 
 // ── New manual WO modal ───────────────────────────────────────
 export const newWoModalOpen = ref(false);
@@ -115,6 +122,9 @@ export const tcEntryModeOverride = ref(null);
 export const tcEntryMode = computed(() =>
     tcEntryModeOverride.value ?? detectTcMode(activeOrder.value?.part_number)
 );
+
+// ── Connectivity ──────────────────────────────────────────────
+export const isOffline = ref(false);
 
 // ── Toast ─────────────────────────────────────────────────────
 export const toastMessage = ref('');
@@ -266,7 +276,7 @@ export const alerePendingOrders = computed(() =>
 );
 
 export const isReel = computed(() =>
-    activeOrder.value ? REEL_PART_NUMBERS.includes(activeOrder.value.part_number) : false
+    activeOrder.value ? detectReelWeld(activeOrder.value.part_number, REEL_PART_NUMBERS) : false
 );
 
 // managerSubView is re-exported from store-manager.js but appTitle references it.

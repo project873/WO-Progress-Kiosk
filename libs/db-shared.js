@@ -37,6 +37,18 @@ export async function withRetry(operation, maxRetries = 2) {
     return { data: null, error: lastError };
 }
 
+// ── Error logger ──────────────────────────────────────────────
+// Fire-and-forget. Inserts one row into wo_errors.
+// Never throws — swallows its own errors so callers stay clean.
+// source: function name string. err: caught Error. ctx: optional plain object.
+export function logError(source, err, ctx = {}) {
+    supabase.from('wo_errors').insert({
+        source,
+        message: (err && err.message) ? err.message : String(err),
+        context: ctx,
+    }).then(() => {}).catch(() => {});
+}
+
 // ── Dept normalization ────────────────────────────────────────
 // Department aliases: Google Sheets sends "TC. Assy" / "TV. Assy" with a dot.
 // DEPT_ALIASES maps canonical name → all accepted DB variants (for querying).

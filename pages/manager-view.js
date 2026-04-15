@@ -9,6 +9,7 @@ import * as store from '../libs/store.js';
 import * as db    from '../libs/db.js';
 import { DELAY_THRESHOLDS, GEMINI_WORKER_URL } from '../libs/config.js';
 import { daysAgo, daysBetween, extractHoldReasons, getHistoricalAvgDays } from '../libs/utils.js';
+import { logError } from '../libs/db-shared.js';
 
 // ── openManagerSection ────────────────────────────────────────
 // Navigate to a sub-section and auto-load its data
@@ -45,6 +46,7 @@ export async function loadManagerAlerts() {
             .sort((a, b) => b.daysIn - a.daysIn);
     } catch (err) {
         store.showToast('Failed to load manager alerts: ' + err.message);
+        logError('loadManagerAlerts', err);
     }
     // Refresh WO problems badge count alongside alerts
     loadWoProblems();
@@ -135,6 +137,7 @@ export async function loadKpiData() {
 
     } catch (err) {
         store.showToast('Failed to load KPI data: ' + err.message);
+        logError('loadKpiData', err);
     } finally {
         store.loading.value = false;
     }
@@ -158,6 +161,7 @@ export async function loadDelayedOrders() {
             .sort((a, b) => b.daysIn - a.daysIn);
     } catch (err) {
         store.showToast('Failed to load delayed orders: ' + err.message);
+        logError('loadDelayedOrders', err);
         store.delayedOrders.value = [];
     } finally {
         store.loading.value = false;
@@ -174,6 +178,7 @@ export async function fetchPriorityOrders(dept) {
         store.priorityOrders.value = data || [];
     } catch (err) {
         store.showToast('Failed to load priority orders: ' + err.message);
+        logError('fetchPriorityOrders', err, { dept });
         store.priorityOrders.value = [];
     } finally {
         store.loading.value = false;
@@ -203,6 +208,7 @@ export async function updatePriority(id, val) {
             store.priorityOrders.value[idx].priority = prevPriority;
         }
         store.showToast('Failed to update priority: ' + err.message);
+        logError('updatePriority', err, { id, val });
     }
 }
 
@@ -247,6 +253,7 @@ export async function updateAssignedOperator(id, operatorName) {
     } catch (err) {
         if (idx !== -1) store.priorityOrders.value[idx].assigned_operator = prev;
         store.showToast('Failed to assign operator: ' + err.message);
+        logError('updateAssignedOperator', err, { id, operatorName });
     }
 }
 
@@ -281,6 +288,7 @@ export async function loadWoProblems() {
         store.woProblems.value = data || [];
     } catch (err) {
         store.showToast('Failed to load WO problems: ' + err.message);
+        logError('loadWoProblems', err);
     }
 }
 
@@ -328,6 +336,7 @@ export async function confirmResolveWoProblem() {
         store.showToast('WO problem marked resolved.', 'success');
     } catch (err) {
         store.showToast('Failed to resolve problem: ' + err.message);
+        logError('confirmResolveWoProblem', err, { id: store.woProblemTarget.value?.id });
     }
 }
 
@@ -351,6 +360,7 @@ export async function loadTimeReport() {
         store.timeReportSessions.value = data || [];
     } catch (err) {
         store.showToast('Failed to load time report: ' + err.message);
+        logError('loadTimeReport', err);
     }
 }
 
@@ -403,6 +413,7 @@ export async function sendAiMessage() {
         store.aiChatMessages.value = [...store.aiChatMessages.value, { role: 'assistant', text: responseText }];
     } catch (err) {
         store.aiChatMessages.value = [...store.aiChatMessages.value, { role: 'assistant', text: `Sorry, something went wrong: ${err.message}` }];
+        logError('sendAiMessage', err);
     } finally {
         store.aiChatLoading.value = false;
     }
@@ -447,9 +458,22 @@ ${fmtActive || 'None'}
 COMPLETED THIS WEEK:
 ${fmtCompleted || 'None'}
 
+Response format — always reply in HTML using these patterns:
+
+Plain text / short answers:
+<p class="mb-1">Your answer here.</p>
+
+Bullet list (use for multiple WOs or operators):
+<ul class="space-y-1 mt-1 ml-1"><li>• <strong>WO 32061</strong> — TC Assy, started by Art, 2/5 complete</li></ul>
+
+Bar chart (use when showing counts or quantities by category — e.g. WOs per dept, completed per operator):
+<div class="space-y-1.5 my-2"><p class="text-xs font-semibold text-gray-500 uppercase mb-1">Chart Title</p><div class="flex items-center gap-2"><span class="w-24 text-xs text-right text-gray-600 shrink-0">Label</span><div class="h-3 bg-blue-500 rounded-full" style="width:60%"></div><span class="text-xs text-gray-700 ml-1">value</span></div></div>
+Set width% proportional to the largest value (largest = 90%). Use bg-blue-500 for active, bg-green-500 for completed.
+
 Rules:
-- Be brief and direct — this is a kiosk display
-- Use line breaks to separate list items
+- ONLY output HTML — never raw pipe-separated text
+- Bold key values: <strong>WO 32061</strong>, <strong>38 orders</strong>
+- Keep responses concise — a manager should skim it in seconds
 - Only answer production-related questions
 - If asked about something outside this data, say so clearly`;
 }

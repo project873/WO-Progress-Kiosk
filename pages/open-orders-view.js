@@ -9,6 +9,7 @@
 import * as store from '../libs/store.js';
 import * as db    from '../libs/db.js';
 import { detectOpenOrderSection } from '../libs/utils.js';
+import { logError } from '../libs/db-shared.js';
 
 // loadOpenOrders — fetch all open_orders rows into store.
 export async function loadOpenOrders() {
@@ -19,6 +20,7 @@ export async function loadOpenOrders() {
         store.openOrders.value = data || [];
     } catch (err) {
         store.showToast('Failed to load open orders: ' + err.message);
+        logError('loadOpenOrders', err);
     } finally {
         store.openOrdersLoading.value = false;
     }

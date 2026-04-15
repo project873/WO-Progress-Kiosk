@@ -13,7 +13,7 @@
                             <button @click="tcAssyOpEditing = true" class="text-slate-500 hover:text-teal-400 underline text-xs transition-colors">Change</button>
                         </template>
                         <template v-else>
-                            <input v-model="tcAssyEntryName" type="text" placeholder="Operator name"
+                            <input v-model="tcAssyEntryName" type="text" placeholder="Operator name" maxlength="50"
                                 class="px-2 py-0.5 text-xs bg-slate-900 border border-teal-500 rounded text-white w-32 focus:outline-none">
                             <button @click="tcAssyOpEditing = false" class="text-teal-400 text-xs font-bold px-2 py-0.5 bg-slate-700 rounded">&#10003;</button>
                         </template>
@@ -116,7 +116,7 @@
                                     </div>
                                     <div v-if="tcStockPending === 'cant_start' || tcStockPending === 'hold'">
                                         <label class="block text-gray-500 text-sm font-bold mb-1">Reason <span class="text-red-500">*</span></label>
-                                        <input type="text" v-model="tcStockReason" placeholder="Enter reason..."
+                                        <input type="text" v-model="tcStockReason" placeholder="Enter reason..." maxlength="200"
                                             class="w-full p-3 bg-white rounded-xl border focus:outline-none transition-colors"
                                             :class="tcStockReasonError ? 'border-red-500' : 'border-gray-300 focus:border-teal-500'">
                                         <div v-if="tcStockReasonError" class="text-red-500 text-sm mt-1">&#9888; Please enter a reason.</div>
@@ -140,7 +140,7 @@
                             <!-- Notes / Differences / Mods -->
                             <div class="bg-white border border-gray-200 rounded-xl p-4">
                                 <label class="block text-gray-500 text-xs font-bold uppercase tracking-wide mb-2">Notes / Differences / Modifications</label>
-                                <textarea v-model="tcStockNotes" rows="3"
+                                <textarea v-model="tcStockNotes" rows="3" maxlength="2000"
                                     class="w-full p-3 bg-gray-50 rounded-xl border border-gray-300 focus:outline-none focus:border-teal-500 transition-colors text-sm"
                                     placeholder="Any differences, modifications, or notes about this job..."></textarea>
                                 <button @click="saveTcStockNotes()"
@@ -183,12 +183,12 @@
                                     <div class="text-red-800 text-xs">{{ activeOrder.wo_problem_text }}</div>
                                 </div>
                                 <input v-model="woProblemDraftName" @input="woProblemDraftNameError = false"
-                                    type="text" placeholder="Your name"
+                                    type="text" placeholder="Your name" maxlength="50"
                                     class="w-full p-2.5 text-sm border rounded-lg focus:outline-none focus:border-red-400 transition-colors"
                                     :class="woProblemDraftNameError ? 'border-red-500 bg-red-50' : 'border-gray-300'">
                                 <p v-if="woProblemDraftNameError" class="text-red-500 text-xs -mt-2">Name is required</p>
                                 <textarea v-model="woProblemDraftText" @input="woProblemDraftError = false"
-                                    rows="3" placeholder="Describe the problem (e.g. die problem, machine issue)…"
+                                    rows="3" maxlength="1000" placeholder="Describe the problem (e.g. die problem, machine issue)…"
                                     class="w-full p-2.5 text-sm border rounded-lg resize-none focus:outline-none focus:border-red-400 transition-colors"
                                     :class="woProblemDraftError ? 'border-red-500 bg-red-50' : 'border-gray-300'"></textarea>
                                 <p v-if="woProblemDraftError" class="text-red-500 text-xs -mt-2">Problem description is required</p>

@@ -9,7 +9,7 @@
 // ============================================================
 
 import { supabase } from './config.js';
-import { withRetry, insertProgressEvent } from './db.js';
+import { withRetry, insertProgressEvent, openTimeSession, closeTimeSession, closeAllOpenSessions } from './db.js';
 
 // TV Assy: persist the job mode (unit|stock) for a WO so the user never has to re-select
 export async function saveTvJobMode(id, mode) {
@@ -88,6 +88,18 @@ export async function submitTvUnitStageAction({ id, currentOrder, stageKey, stag
         reason:              reason || ''
     });
 
+    // Time session tracking — only when a real status change happens
+    if (!keepStatus) {
+        if (newStatus === 'started') {
+            openTimeSession({
+                woId: id, woNumber: currentOrder.wo_number || '',
+                department: 'Trac Vac Assy', operator: opName, stage: stageKey,
+            });
+        } else if (newStatus === 'paused' || newStatus === 'on_hold' || newStatus === 'completed') {
+            closeTimeSession({ woId: id, stage: stageKey, endStatus: newStatus, sessionQty: session });
+        }
+    }
+
     return withRetry(() =>
         supabase.from('work_orders').update(updates).eq('id', id).select()
     );
@@ -136,6 +148,18 @@ export async function submitTvStockAction({ id, currentOrder, newStatus, opName,
         cumulativeQtyAfter:  keepStatus ? prevQty : newCum,
         reason:              reason || ''
     });
+
+    // Time session tracking
+    if (!keepStatus) {
+        if (newStatus === 'started') {
+            openTimeSession({
+                woId: id, woNumber: currentOrder.wo_number || '',
+                department: 'Trac Vac Assy', operator: opName, stage: 'stock',
+            });
+        } else if (newStatus === 'paused' || newStatus === 'on_hold' || newStatus === 'completed') {
+            closeTimeSession({ woId: id, stage: 'stock', endStatus: newStatus, sessionQty: session });
+        }
+    }
 
     return withRetry(() =>
         supabase.from('work_orders').update(updates).eq('id', id).select()
@@ -202,6 +226,18 @@ export async function submitTcUnitStageAction({ id, currentOrder, stageKey, stag
         reason:              reason || ''
     });
 
+    // Time session tracking
+    if (!keepStatus) {
+        if (newStatus === 'started') {
+            openTimeSession({
+                woId: id, woNumber: currentOrder.wo_number || '',
+                department: 'Tru Cut Assy', operator: opName, stage: stageKey,
+            });
+        } else if (newStatus === 'paused' || newStatus === 'on_hold' || newStatus === 'completed') {
+            closeTimeSession({ woId: id, stage: stageKey, endStatus: newStatus, sessionQty: session });
+        }
+    }
+
     return withRetry(() =>
         supabase.from('work_orders').update(updates).eq('id', id).select()
     );
@@ -234,6 +270,9 @@ export async function completeTcWo({ id, currentOrder, opName, unitFields, notes
         cumulativeQtyAfter:  currentOrder.qty_required || 0,
         reason:              ''
     });
+
+    // Close any open time sessions (manual complete may skip individual stage actions)
+    closeAllOpenSessions({ woId: id, endStatus: 'completed', sessionQty: 0 });
 
     const updateObj = {
         status:        'completed',
@@ -341,6 +380,18 @@ export async function submitTcStockAction({ id, currentOrder, newStatus, opName,
         cumulativeQtyAfter:  keepStatus ? prevQty : newCum,
         reason:              reason || ''
     });
+
+    // Time session tracking
+    if (!keepStatus) {
+        if (newStatus === 'started') {
+            openTimeSession({
+                woId: id, woNumber: currentOrder.wo_number || '',
+                department: 'Tru Cut Assy', operator: opName, stage: 'stock',
+            });
+        } else if (newStatus === 'paused' || newStatus === 'on_hold' || newStatus === 'completed') {
+            closeTimeSession({ woId: id, stage: 'stock', endStatus: newStatus, sessionQty: session });
+        }
+    }
 
     return withRetry(() =>
         supabase.from('work_orders').update(updates).eq('id', id).select()

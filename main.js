@@ -48,7 +48,8 @@ import {
     updateOrderStatus, undoLastAction,
     submitNewWo, submitNote, toggleTcNewWoMode,
     submitWoProblemFromUi,
-    loadWoFiles, handleWoFileUpload, handleWoFileDelete
+    loadWoFiles, handleWoFileUpload, handleWoFileDelete,
+    startReelOperation, pauseReelOperation, completeReelOperation, reviseReelOperation, completeReelWo
 } from './pages/dashboard-view.js';
 import {
     openTvAssyEntry, tvSelectMode,
@@ -62,7 +63,7 @@ import {
     submitTcUnitStageFromUi, tcStockDirectAction, tcUnitStageDirectAction,
     openTcAssyCompleteModal, confirmTcWoComplete, toggleTcEntryMode
 } from './pages/dashboard-tc.js';
-import { markAlereUpdated, signInAnonymously } from './libs/db.js';
+import { markAlereUpdated, signInAnonymously, checkConnectivity } from './libs/db.js';
 import {
     searchOfficeReceive, openReceiveModal, submitReceive,
     openCloseoutModal, submitCloseout, loadReceivingEligible,
@@ -108,7 +109,8 @@ async function loadPartials() {
         'modal-pin', 'modal-action-panel',
         'modal-tc-unit', 'modal-tc-stock',
         'modal-tv-unit', 'modal-tv-stock',
-        'modal-misc', 'modal-open-orders-add'
+        'modal-misc', 'modal-open-orders-add',
+        'modal-action-panel-print'
     ];
     const chunks = await Promise.all(
         names.map(n => fetch(`./partials/${n}.html`).then(r => r.text()))
@@ -136,11 +138,26 @@ try {
             }, 1000);
             onUnmounted(() => clearInterval(clockInterval));
 
+            // Offline detection: browser events + periodic Supabase probe
+            async function probeConnectivity() {
+                store.isOffline.value = !(await checkConnectivity());
+            }
+            const onOfflineEvent = () => { store.isOffline.value = true; };
+            window.addEventListener('offline', onOfflineEvent);
+            window.addEventListener('online',  probeConnectivity);
+            const connectivityInterval = setInterval(probeConnectivity, 30_000);
+            onUnmounted(() => {
+                clearInterval(connectivityInterval);
+                window.removeEventListener('offline', onOfflineEvent);
+                window.removeEventListener('online',  probeConnectivity);
+            });
+
             // Remove loading fallback once Vue successfully mounts
             // Also pre-load manager alerts so the splash badge is populated immediately
             onMounted(() => {
                 if (loadingEl) loadingEl.remove();
                 loadManagerAlerts();
+                probeConnectivity();
             });
 
             // Load data on view entry; reset Close-Out auth when leaving wo_status
@@ -191,6 +208,14 @@ try {
                 holdSince,
                 otherOperator:    store.otherOperator,
                 actionForm:       store.actionForm,
+
+                // Reel Weld per-operation state
+                reelWeldOperator:  store.reelWeldOperator,
+                reelGrindOperator: store.reelGrindOperator,
+                reelWeldOtherOp:   store.reelWeldOtherOp,
+                reelGrindOtherOp:  store.reelGrindOtherOp,
+                reelWeldQty:       store.reelWeldQty,
+                reelGrindQty:      store.reelGrindQty,
 
                 // New WO modal
                 newWoModalOpen:   store.newWoModalOpen,
@@ -358,6 +383,7 @@ try {
                 // Toast
                 toastMessage: store.toastMessage,
                 toastType:    store.toastType,
+                isOffline:    store.isOffline,
 
                 // ── Actions ────────────────────────────────────
                 getStageCum,
@@ -378,6 +404,7 @@ try {
                 updateOrderStatus, undoLastAction,
                 submitNewWo, submitNote, toggleTcNewWoMode, toggleTcEntryMode,
                 loadWoFiles, handleWoFileUpload, handleWoFileDelete,
+                startReelOperation, pauseReelOperation, completeReelOperation, reviseReelOperation, completeReelWo,
 
                 // Office
                 searchOfficeReceive, openReceiveModal, submitReceive,

@@ -1,0 +1,86 @@
+        <!-- ── WO Traveler: print-only summary ───────────────────── -->
+        <!-- Hidden on screen; revealed by @media print in index.html -->
+        <div class="wo-print-summary">
+            <h1>Midwest Mfg. &mdash; Work Order Traveler</h1>
+            <hr>
+            <table>
+                <tr>
+                    <td style="width:33%">
+                        <div style="font-size:8pt;font-weight:bold;text-transform:uppercase;color:#555;padding-bottom:2pt">WO #</div>
+                        <div style="font-size:18pt;font-weight:bold">{{ activeOrder?.wo_number }}</div>
+                    </td>
+                    <td style="width:33%">
+                        <div style="font-size:8pt;font-weight:bold;text-transform:uppercase;color:#555;padding-bottom:2pt">Part #</div>
+                        <div style="font-size:14pt;font-weight:bold;font-family:monospace">{{ activeOrder?.part_number }}</div>
+                    </td>
+                    <td>
+                        <div style="font-size:8pt;font-weight:bold;text-transform:uppercase;color:#555;padding-bottom:2pt">Description</div>
+                        <div>{{ activeOrder?.description }}</div>
+                    </td>
+                </tr>
+            </table>
+            <table style="margin-top:8pt">
+                <thead>
+                    <tr>
+                        <th>Department</th>
+                        <th>Status</th>
+                        <th>Priority</th>
+                        <th>Qty Required</th>
+                        <th>Qty Completed</th>
+                        <th>Operator</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>{{ activeOrder?.department }}</td>
+                        <td style="text-transform:uppercase">{{ activeOrder?.status }}</td>
+                        <td>{{ activeOrder?.priority || '—' }}</td>
+                        <td>{{ activeOrder?.qty_required }}</td>
+                        <td>{{ activeOrder?.qty_completed || 0 }}</td>
+                        <td>{{ activeOrder?.operator || '—' }}</td>
+                    </tr>
+                </tbody>
+            </table>
+            <table v-if="activeOrder?.sales_order || activeOrder?.due_date" style="margin-top:4pt">
+                <thead>
+                    <tr>
+                        <th v-if="activeOrder?.sales_order">Sales Order</th>
+                        <th v-if="activeOrder?.due_date">Due Date</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td v-if="activeOrder?.sales_order">{{ activeOrder.sales_order }}</td>
+                        <td v-if="activeOrder?.due_date">{{ activeOrder.due_date }}</td>
+                    </tr>
+                </tbody>
+            </table>
+            <!-- TC Unit details (only when tc_job_mode = unit) -->
+            <template v-if="activeOrder?.tc_job_mode === 'unit'">
+                <h2>Unit Details</h2>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Unit Serial #</th>
+                            <th>Engine</th>
+                            <th>Engine Serial #</th>
+                            <th># of Blades</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td>{{ activeOrder?.unit_serial_number || '—' }}</td>
+                            <td>{{ activeOrder?.engine || '—' }}</td>
+                            <td>{{ activeOrder?.engine_serial_number || '—' }}</td>
+                            <td>{{ activeOrder?.num_blades || '—' }}</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </template>
+            <!-- Action history -->
+            <template v-if="activeOrder?.notes">
+                <h2>Action History</h2>
+                <pre>{{ activeOrder.notes }}</pre>
+            </template>
+            <footer>Printed {{ new Date().toLocaleString() }} &mdash; Midwest Mfg. Kiosk</footer>
+        </div>
