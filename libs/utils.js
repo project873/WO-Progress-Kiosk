@@ -143,6 +143,15 @@ export function detectOpenOrderSection(partNumber) {
     return partNumber.trim().toUpperCase().startsWith('TC') ? 'tru_cut' : 'trac_vac';
 }
 
+// isChutePart — returns true if the part number is a chute part.
+// Chute parts are exactly 3 digits, a hyphen, then 6, 7, or 8.
+// Examples: 900-8, 123-6, 045-7. Non-examples: 900-9, TEST-001, 1234-7.
+// Input: raw part number string. Trims and uppercases before checking.
+export function isChutePart(partNumber) {
+    if (typeof partNumber !== 'string') return false;
+    return /^\d{3}-[678]$/.test(partNumber.trim());
+}
+
 // ── detectTcMode ──────────────────────────────────────────────
 // Detects TC Assy job mode from a part number.
 // Normalises input (trim + uppercase) before checking.

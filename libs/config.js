@@ -76,6 +76,10 @@ export const OPEN_ORDER_STATUSES = [
     'WO Created', 'PO Created', 'Boxed', 'Shipped', 'On Hold'
 ];
 
+export const CHUTE_PART_STATUSES = [
+    'Ordered', 'In Stock', 'Ready', 'Complete', 'N/A'
+];
+
 // ----- Inventory tabs -----
 export const INVENTORY_TABS = [
     { key: 'chute',    label: 'Chutes'   },

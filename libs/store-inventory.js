@@ -27,6 +27,7 @@ export const partsWithFiles = ref(new Set());
 export const woRequestInlineState = ref({});
 export const woRequests           = ref([]);
 export const woRequestsLoading    = ref(false);
+export const woRequestSoHint      = ref(null); // { salesOrder, qty, partNumber } or null
 export const woRequestForm        = ref({
     part_number: '', description: '', sales_order_number: '',
     qty_on_order: '', qty_in_stock: '', qty_used_per_unit: '',
@@ -92,6 +93,10 @@ export const filteredInventoryItems = computed(() => {
     );
 });
 
+// ── Completed Orders ──────────────────────────────────────────
+export const completedOrders        = ref([]);
+export const completedOrdersLoading = ref(false);
+
 // ── Open Orders ───────────────────────────────────────────────
 export const openOrders        = ref([]);
 export const openOrdersLoading = ref(false);
@@ -104,7 +109,7 @@ export const openOrderAddPasteRows = ref([]);
 export const openOrderAddForm      = ref({
     part_number: '', to_ship: '', qty_pulled: '', description: '',
     store_bin: '', update_store_bin: '', customer: '', sales_order: '',
-    date_entered: '', deadline: '', status: 'New/Picking',
+    date_entered: new Date().toISOString().split('T')[0], deadline: '', status: 'New/Picking',
     wo_va_notes: '', wo_po_number: '',
 });
 export const openOrderAddFormErrors = ref({});
@@ -112,6 +117,7 @@ export const openOrderAddFormErrors = ref({});
 export const openOrderEditingCell  = ref({ id: null, field: null });
 export const openOrderEditingValue = ref('');
 export const openOrderSelectedIds  = ref([]);
+export const openOrderBulkStatus   = ref('');
 export const openOrderDragOverSection = ref('');
 export const openOrderDropZoneTarget  = ref('');
 export const openOrderExpandedCols    = ref({});

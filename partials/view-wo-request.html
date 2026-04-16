@@ -27,9 +27,24 @@
                             <div>
                                 <label class="block text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1">Part # *</label>
                                 <input v-model="woRequestForm.part_number" type="text" maxlength="30"
+                                    @blur="checkWoRequestPartMatch()"
                                     :class="woRequestFormErrors.part_number ? 'border-red-400 bg-red-50' : 'border-gray-300'"
                                     class="w-full px-2 py-1.5 border rounded-lg text-gray-800 focus:outline-none focus:border-blue-400 text-sm">
                                 <p v-if="woRequestFormErrors.part_number" class="text-red-500 text-xs mt-0.5">Required</p>
+                                <!-- SO# hint banner -->
+                                <div v-if="woRequestSoHint" class="mt-2 bg-blue-50 border border-blue-200 rounded-lg px-2 py-2 text-xs text-blue-800">
+                                    <p class="font-semibold mb-1.5">Is this WO Request for Sales Order <span class="font-mono">{{ woRequestSoHint.salesOrder }}</span>, which is for qty {{ woRequestSoHint.qty ?? '?' }} of part# {{ woRequestSoHint.partNumber }}?</p>
+                                    <div class="flex gap-2">
+                                        <button @click="acceptSoHint()" type="button"
+                                            class="bg-blue-600 hover:bg-blue-500 text-white px-2.5 py-1 rounded font-semibold transition-colors">
+                                            Yes, use this SO#
+                                        </button>
+                                        <button @click="dismissSoHint()" type="button"
+                                            class="bg-white hover:bg-gray-100 text-gray-600 border border-gray-300 px-2.5 py-1 rounded font-semibold transition-colors">
+                                            Dismiss
+                                        </button>
+                                    </div>
+                                </div>
                             </div>
                             <div>
                                 <label class="block text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1">Description</label>

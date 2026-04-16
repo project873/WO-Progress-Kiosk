@@ -21,8 +21,8 @@ import {
 
 // ── State & computed ──────────────────────────────────────────
 import * as store from './libs/store.js';
-import { OPERATORS_BY_DEPT, HOLD_REASONS, SCRAP_REASONS, OPEN_ORDER_STATUSES, OPEN_ORDER_SORT_FIELDS, INVENTORY_TABS } from './libs/config.js';
-import { formatDateLocal, getStageCum, detectTcMode, sanitizePartKey } from './libs/utils.js';
+import { OPERATORS_BY_DEPT, HOLD_REASONS, SCRAP_REASONS, OPEN_ORDER_STATUSES, CHUTE_PART_STATUSES, OPEN_ORDER_SORT_FIELDS, INVENTORY_TABS } from './libs/config.js';
+import { formatDateLocal, getStageCum, detectTcMode, sanitizePartKey, isChutePart } from './libs/utils.js';
 
 // ── Page controllers ──────────────────────────────────────────
 import { selectDept, promptPin, submitPin, goBack,
@@ -32,8 +32,10 @@ import { selectDept, promptPin, submitPin, goBack,
 import { loadWoRequests, submitWoRequestForm, deleteWoRequestItem,
          openWoRequestDetail, closeWoRequestDetail,
          saveWoRequestDetail, approveWoRequest,
-         saveWoRequestInlineFields } from './pages/wo-request-view.js';
+         saveWoRequestInlineFields,
+         checkWoRequestPartMatch, acceptSoHint, dismissSoHint } from './pages/wo-request-view.js';
 import { loadCreateWoItems, confirmCreateWoItem } from './pages/create-wo-view.js';
+import { enterCompletedOrdersView, loadCompletedOrders, restoreCompletedOrder } from './pages/completed-orders-view.js';
 import {
     loadInventoryItems, switchInventoryTab,
     openPullForm, closePullForm, submitPull,
@@ -83,9 +85,9 @@ import { searchCS, searchPastOrders, selectPastWo, clearPastOrders } from './pag
 import {
     loadOpenOrders, setSectionSort, openOrderSortIcon,
     setRowColor, openOrderRowClass, openOrderColorDotClass,
-    openOrderStatusClass, openOrderHasLine3,
+    openOrderStatusClass, chuteStatusClass, openOrderHasLine3,
     cancelAddModal, parsePasteRows, saveOpenOrderRow,
-    moveToSection,
+    moveToSection, bulkChangeStatus,
     onRowMouseDown, onRowMouseEnter, onRowDragStart, onRowDragEnd,
     onSectionDragOver, onSectionDragLeave, onSectionDrop, clearRowSelection,
     onScrollAreaDragOver,
@@ -104,7 +106,7 @@ async function loadPartials() {
         'view-splash', 'view-dashboard', 'view-office',
         'view-manager-home', 'view-manager-kpi', 'view-manager-priorities',
         'view-manager-ai', 'view-manager-problems', 'view-manager-delayed',
-        'view-cs', 'view-inventory', 'view-wo-request', 'view-create-wo', 'view-open-orders',
+        'view-cs', 'view-inventory', 'view-wo-request', 'view-create-wo', 'view-open-orders', 'view-completed-orders',
         'main-close',
         'modal-pin', 'modal-action-panel',
         'modal-tc-unit', 'modal-tc-stock',
@@ -168,7 +170,8 @@ try {
                 if (v === 'inventory')  loadInventoryItems();
                 if (v === 'wo_request')  loadWoRequests();
                 if (v === 'create_wo')   loadCreateWoItems();
-                if (v === 'open_orders') loadOpenOrders();
+                if (v === 'open_orders')      loadOpenOrders();
+                if (v === 'completed_orders') loadCompletedOrders();
             });
             // Reload alerts when navigating back to Manager Hub home from any sub-section
             watch(store.managerSubView, (v) => {
@@ -446,6 +449,7 @@ try {
                 selectedWoRequest:      store.selectedWoRequest,
                 woRequestDetailForm:    store.woRequestDetailForm,
                 woRequestInlineState:   store.woRequestInlineState,
+                woRequestSoHint:        store.woRequestSoHint,
                 enterWoRequestView,
                 submitWoRequestForm,
                 deleteWoRequestItem,
@@ -454,6 +458,7 @@ try {
                 saveWoRequestDetail,
                 approveWoRequest,
                 saveWoRequestInlineFields,
+                checkWoRequestPartMatch, acceptSoHint, dismissSoHint,
 
                 // Create WO
                 createWoItems:          store.createWoItems,
@@ -492,6 +497,11 @@ try {
                 confirmDeleteInventoryItem,
                 openPullHistory, closePullHistory,
 
+                // Completed Orders
+                completedOrders:        store.completedOrders,
+                completedOrdersLoading: store.completedOrdersLoading,
+                enterCompletedOrdersView, loadCompletedOrders, restoreCompletedOrder,
+
                 // Open Orders
                 openOrders:              store.openOrders,
                 openOrdersLoading:       store.openOrdersLoading,
@@ -501,6 +511,7 @@ try {
                 openOrderEditingCell:     store.openOrderEditingCell,
                 openOrderEditingValue:    store.openOrderEditingValue,
                 openOrderSelectedIds:     store.openOrderSelectedIds,
+                openOrderBulkStatus:      store.openOrderBulkStatus,
                 openOrderDragOverSection: store.openOrderDragOverSection,
                 openOrderDropZoneTarget:  store.openOrderDropZoneTarget,
                 openOrderExpandedCols:    store.openOrderExpandedCols,
@@ -511,6 +522,7 @@ try {
                 openOrderAddPasteText:    store.openOrderAddPasteText,
                 openOrderAddPasteRows:    store.openOrderAddPasteRows,
                 openOrderStatuses:        OPEN_ORDER_STATUSES,
+                chutePartStatuses:        CHUTE_PART_STATUSES,
                 openOrderSortFields: OPEN_ORDER_SORT_FIELDS,
                 enterOpenOrdersView,
                 loadOpenOrders,
@@ -520,11 +532,12 @@ try {
                 openOrderRowClass,
                 openOrderColorDotClass,
                 openOrderStatusClass,
+                chuteStatusClass,
                 openOrderHasLine3,
                 cancelAddModal,
                 parsePasteRows,
                 saveOpenOrderRow,
-                moveToSection,
+                moveToSection, bulkChangeStatus,
                 onRowMouseDown, onRowMouseEnter, onRowDragStart, onRowDragEnd,
                 onSectionDragOver, onSectionDragLeave, onSectionDrop, clearRowSelection,
                 onScrollAreaDragOver,
@@ -534,7 +547,7 @@ try {
                 toggleOpenOrderExpand,
 
                 // Utilities available in templates
-                formatDateLocal, detectTcMode, sanitizePartKey
+                formatDateLocal, detectTcMode, sanitizePartKey, isChutePart
             };
         }
     });

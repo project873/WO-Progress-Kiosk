@@ -10,6 +10,31 @@ import * as store from '../libs/store.js';
 import * as db    from '../libs/db.js';
 import { logError } from '../libs/db-shared.js';
 
+// checkWoRequestPartMatch — on blur of Part # field, query open_orders for a row
+// with the same part number and a non-null sales_order. Sets woRequestSoHint if found.
+export async function checkWoRequestPartMatch() {
+    const part = (store.woRequestForm.value.part_number || '').trim().toUpperCase();
+    if (!part) { store.woRequestSoHint.value = null; return; }
+    const { data } = await db.findOpenOrdersByPartNumber(part);
+    const match = (data || []).find(o => o.sales_order);
+    store.woRequestSoHint.value = match
+        ? { salesOrder: match.sales_order, qty: match.to_ship, partNumber: match.part_number }
+        : null;
+}
+
+// acceptSoHint — copies the hinted SO# into the WO Request form and clears the hint.
+export function acceptSoHint() {
+    const hint = store.woRequestSoHint.value;
+    if (!hint) return;
+    store.woRequestForm.value = { ...store.woRequestForm.value, sales_order_number: hint.salesOrder };
+    store.woRequestSoHint.value = null;
+}
+
+// dismissSoHint — discards the hint without applying it.
+export function dismissSoHint() {
+    store.woRequestSoHint.value = null;
+}
+
 // loadWoRequests — fetch all requests (oldest first) and populate store + inline state.
 export async function loadWoRequests() {
     store.woRequestsLoading.value = true;
@@ -64,6 +89,17 @@ export async function submitWoRequestForm() {
     try {
         const { error } = await db.submitWoRequest(form);
         if (error) throw error;
+
+        // Sync open order status → 'WO Requested' if SO# + Part# match
+        const soNum = (form.sales_order_number || '').trim();
+        const part  = (form.part_number || '').trim().toUpperCase();
+        if (soNum && part) {
+            const { data: oo } = await db.findOpenOrderBySoAndPart(soNum, part);
+            if (oo && oo.status !== 'WO Requested' && oo.status !== 'WO Created') {
+                await db.updateOpenOrder(oo.id, { status: 'WO Requested', last_status_update: new Date().toISOString() });
+            }
+        }
+
         resetWoRequestForm();
         store.showToast('WO request submitted.', 'success');
         await loadWoRequests();
@@ -216,6 +252,21 @@ export async function approveWoRequest() {
         const updates = { ..._buildDetailUpdates(form), status: 'approved' };
         const { error } = await db.updateWoRequest(id, updates);
         if (error) throw error;
+
+        // Sync est. lead time as a date to the matching open order's Est. Leadtime column
+        const req      = store.selectedWoRequest.value;
+        const leadDays = parseFloat(form.estimated_lead_time);
+        const soNum    = (req.sales_order_number || '').trim();
+        const part     = (req.part_number        || '').trim().toUpperCase();
+        if (soNum && part && leadDays > 0) {
+            const { data: oo } = await db.findOpenOrderBySoAndPart(soNum, part);
+            if (oo) {
+                const leadDate = new Date();
+                leadDate.setDate(leadDate.getDate() + leadDays);
+                await db.updateOpenOrder(oo.id, { deadline: leadDate.toISOString().split('T')[0] });
+            }
+        }
+
         store.showToast('Approved — ready to create WO.', 'success');
         await _syncAfterSave(id);
     } catch (err) {

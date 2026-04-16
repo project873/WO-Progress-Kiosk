@@ -8,7 +8,7 @@
 
 import * as store from '../libs/store.js';
 import * as db    from '../libs/db.js';
-import { detectOpenOrderSection } from '../libs/utils.js';
+import { detectOpenOrderSection, isChutePart } from '../libs/utils.js';
 import { logError } from '../libs/db-shared.js';
 
 // loadOpenOrders — fetch all open_orders rows into store.
@@ -82,6 +82,18 @@ export function openOrderColorDotClass(color) {
         blue:   'bg-blue-400',
     };
     return map[color] || 'bg-slate-200';
+}
+
+// chuteStatusClass — badge bg+text classes for chute/bracket status values.
+export function chuteStatusClass(status) {
+    const map = {
+        'Ordered':  'bg-purple-100 text-purple-800',
+        'In Stock': 'bg-blue-100   text-blue-800',
+        'Ready':    'bg-green-100  text-green-800',
+        'Complete': 'bg-teal-100   text-teal-800',
+        'N/A':      'bg-slate-100  text-slate-500',
+    };
+    return map[status] || 'bg-slate-100 text-slate-600';
 }
 
 // openOrderStatusClass — badge bg+text classes for a status value.
@@ -313,15 +325,40 @@ export function clearRowSelection() {
     store.openOrderSelectedIds.value = [];
 }
 
+// bulkChangeStatus — update status on all selected rows in parallel, then clear selection.
+// ids: array of row uuids, newStatus: status string.
+// If newStatus is 'Shipped', rows are moved to completed_orders and removed from open_orders.
+export async function bulkChangeStatus(ids, newStatus) {
+    if (!ids.length || !newStatus) return;
+    const now = new Date().toISOString();
+
+    if (newStatus === 'Shipped') {
+        const toShip = store.openOrders.value.filter(o => ids.includes(o.id));
+        const results = await Promise.all(
+            toShip.map(o => db.shipOpenOrder({ ...o, status: 'Shipped', last_status_update: now }))
+        );
+        const failed = results.filter(r => r.error);
+        if (failed.length) store.showToast(`Failed to ship ${failed.length} row(s)`);
+        store.openOrders.value = store.openOrders.value.filter(o => !ids.includes(o.id));
+    } else {
+        const results = await Promise.all(
+            ids.map(id => db.updateOpenOrder(id, { status: newStatus, last_status_update: now }))
+        );
+        const failed = results.filter(r => r.error);
+        if (failed.length) store.showToast(`Failed to update ${failed.length} row(s)`);
+        store.openOrders.value = store.openOrders.value.map(o =>
+            ids.includes(o.id) ? { ...o, status: newStatus, last_status_update: now } : o
+        );
+    }
+
+    store.openOrderSelectedIds.value = [];
+    store.openOrderBulkStatus.value  = '';
+}
+
 // openOrderHasLine3 — true if this row has supplementary line-3 data.
-// boxes/quotes/dims/boxer/picker/info_enterer now appear in the main grid.
+// holding_bin now in Holding Bin col; chute/bracket now in Status col; only wt/override remain.
 export function openOrderHasLine3(order) {
-    return !!(
-        order.weight_lbs ||
-        order.chute_status || order.bracket_adapter_status ||
-        order.holding_bin_chute || order.holding_bin_status ||
-        order.holding_bin_part  || order.override
-    );
+    return !!(order.weight_lbs || order.override);
 }
 
 // ── Inline cell editing ───────────────────────────────────────
@@ -361,8 +398,21 @@ export async function saveCellEdit(id, field) {
 
     cancelCellEdit(); // clear immediately so the UI snaps back
 
+    // Shipping moves the row to completed_orders instead of updating in place
+    if (field === 'status' && value === 'Shipped') {
+        const order = store.openOrders.value.find(o => o.id === id);
+        if (order) {
+            const { error } = await db.shipOpenOrder({ ...order, status: 'Shipped', last_status_update: new Date().toISOString() });
+            if (error) { store.showToast('Failed to ship: ' + error.message); return; }
+            store.openOrders.value = store.openOrders.value.filter(o => o.id !== id);
+        }
+        return;
+    }
+
     const updates = { [field]: value };
     if (field === 'status') updates.last_status_update = new Date().toISOString();
+    if (field === 'chute_status' || field === 'bracket_adapter_status')
+        updates.chute_bracket_last_updated = new Date().toISOString();
 
     const { error } = await db.updateOpenOrder(id, updates);
     if (error) { store.showToast('Failed to save: ' + error.message); await loadOpenOrders(); return; }
@@ -395,7 +445,7 @@ export function cancelAddModal() {
     store.openOrderAddForm.value = {
         part_number: '', to_ship: '', qty_pulled: '', description: '',
         store_bin: '', update_store_bin: '', customer: '', sales_order: '',
-        date_entered: '', deadline: '', status: 'New/Picking',
+        date_entered: new Date().toISOString().split('T')[0], deadline: '', status: 'New/Picking',
         wo_va_notes: '', wo_po_number: '',
     };
     store.openOrderAddFormErrors.value = {};
@@ -427,7 +477,7 @@ export function parsePasteRows() {
             update_store_bin: (c[5] || '').trim() || null,
             customer:         (c[6] || '').trim() || null,
             sales_order:      (c[7] || '').trim() || null,
-            date_entered:     (c[8] || '').trim() || null,
+            date_entered:     (c[8] || '').trim() || new Date().toISOString().split('T')[0],
             status:           (c[9] || '').trim() || 'New/Picking',
             wo_va_notes:      (c[10] || '').trim() || null,
             order_type:       detectOpenOrderSection(part),
@@ -465,6 +515,7 @@ export async function saveOpenOrderRow() {
             status:           form.status || 'New/Picking',
             wo_va_notes:      form.wo_va_notes.trim()       || null,
             order_type:       detectOpenOrderSection(part),
+            ...(isChutePart(part) ? { chute_status: 'New/Picking', bracket_adapter_status: 'New/Picking' } : {}),
         };
 
         const { error } = await db.insertOpenOrders([row]);

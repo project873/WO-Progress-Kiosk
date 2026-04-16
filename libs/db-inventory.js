@@ -233,6 +233,32 @@ export async function deleteWoRequest(id) {
 
 // ── Open Orders queries ───────────────────────────────────────
 
+// findOpenOrderBySoAndPart — find a single open_orders row matching both SO# and part number.
+// Used for WO Request → Open Orders status sync on submit, approve, and create.
+export async function findOpenOrderBySoAndPart(soNumber, partNumber) {
+    if (!soNumber || !partNumber) return { data: null, error: null };
+    const { data, error } = await withRetry(() =>
+        supabase.from('open_orders')
+            .select('id, status, wo_po_number, deadline')
+            .eq('sales_order',  soNumber.trim())
+            .eq('part_number',  partNumber.trim().toUpperCase())
+            .limit(1)
+    );
+    return { data: (data && data[0]) || null, error };
+}
+
+// findOpenOrdersByPartNumber — look up open_orders rows matching a part number
+// that also have a sales_order value, for the WO Request SO# hint feature.
+export async function findOpenOrdersByPartNumber(partNumber) {
+    if (!partNumber) return { data: [], error: null };
+    return withRetry(() =>
+        supabase.from('open_orders')
+            .select('id, part_number, sales_order, to_ship')
+            .eq('part_number', partNumber.trim().toUpperCase())
+            .not('sales_order', 'is', null)
+    );
+}
+
 export async function fetchOpenOrders() {
     return withRetry(() =>
         supabase.from('open_orders')
@@ -261,4 +287,39 @@ export async function deleteOpenOrder(id) {
     return withRetry(() =>
         supabase.from('open_orders').delete().eq('id', id)
     );
+}
+
+// ── Completed Orders queries ──────────────────────────────────
+
+// shipOpenOrder — copies a row from open_orders into completed_orders then deletes the original.
+// row: full open_orders object. shipped_at is set to now().
+export async function shipOpenOrder(row) {
+    const now = new Date().toISOString();
+    const { id, created_at, updated_at, ...fields } = row;
+    const { error: insertErr } = await withRetry(() =>
+        supabase.from('completed_orders').insert([{
+            ...fields,
+            original_id: id,
+            status:      'Shipped',
+            shipped_at:  now,
+            updated_at:  now,
+        }])
+    );
+    if (insertErr) return { error: insertErr };
+    return withRetry(() => supabase.from('open_orders').delete().eq('id', id));
+}
+
+// fetchCompletedOrders — all completed_orders rows, oldest shipped first.
+export async function fetchCompletedOrders() {
+    return withRetry(() =>
+        supabase.from('completed_orders')
+            .select('*')
+            .order('shipped_at', { ascending: true })
+    );
+}
+
+// deleteCompletedOrder — hard-delete one completed_orders row (used by Restore).
+export async function deleteCompletedOrder(id) {
+    if (!id) return { error: new Error('Missing completed order ID') };
+    return withRetry(() => supabase.from('completed_orders').delete().eq('id', id));
 }

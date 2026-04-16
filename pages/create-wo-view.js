@@ -66,6 +66,17 @@ export async function confirmCreateWoItem(id) {
             ? `WO created → ${deptNames}`
             : 'WO confirmed — no dept routing (no fab/weld/assy flags set).';
         store.showToast(msg, 'success');
+
+        // Sync WO# + status → 'WO Created' on matching open order
+        const soNum = (req.sales_order_number || '').trim();
+        const part  = (req.part_number        || '').trim().toUpperCase();
+        if (soNum && part && woNumber) {
+            const { data: oo } = await db.findOpenOrderBySoAndPart(soNum, part);
+            if (oo) {
+                await db.updateOpenOrder(oo.id, { wo_po_number: woNumber, status: 'WO Created', last_status_update: new Date().toISOString() });
+            }
+        }
+
         await loadCreateWoItems();
     } catch (err) {
         store.showToast('Failed to confirm WO: ' + err.message, 'error');
