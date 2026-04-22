@@ -8,6 +8,7 @@
 
 import { supabase } from './db-shared.js';
 import { sanitizePartKey } from './utils.js';
+import { KIOSK_USER_MAP } from './config.js';
 
 // Sign in anonymously so storage RLS (authenticated role) grants access.
 // Called once on app load. Safe to call repeatedly — Supabase reuses the session.
@@ -16,6 +17,23 @@ export async function signInAnonymously() {
     if (error && error.message !== 'User already registered') {
         console.warn('Anonymous sign-in failed:', error.message);
     }
+}
+
+// kioskSignIn — looks up email from KIOSK_USER_MAP and authenticates via Supabase Auth.
+// Returns { role, error } — role is from app_metadata set in the Supabase dashboard.
+export async function kioskSignIn(username, password) {
+    const email = KIOSK_USER_MAP[username.trim().toLowerCase()];
+    if (!email) return { role: null, error: new Error('Unknown username') };
+    const { data, error } = await supabase.auth.signInWithPassword({ email, password });
+    if (error) return { role: null, error };
+    const role = data.user?.app_metadata?.role || null;
+    return { role, error: null };
+}
+
+// kioskSignOut — ends the current Supabase Auth session.
+export async function kioskSignOut() {
+    const { error } = await supabase.auth.signOut();
+    return { error };
 }
 
 // List all part-number folders that have files in storage.

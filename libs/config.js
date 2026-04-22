@@ -9,8 +9,17 @@ const SUPABASE_URL = "https://eqbybduwgzmbkbjyywgk.supabase.co";
 const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImVxYnliZHV3Z3ptYmtianl5d2drIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzIyMDMwNzksImV4cCI6MjA4Nzc3OTA3OX0.j77BJ8LlRzCinGOSHuiCRX1M7KO1A687o9yQGwNXh8M";
 
 export const supabase = createClient(SUPABASE_URL, SUPABASE_KEY, {
-    auth: { autoRefreshToken: false, persistSession: false, detectSessionInUrl: false }
+    auth: { autoRefreshToken: true, persistSession: true, detectSessionInUrl: false }
 });
+
+// ----- Kiosk username → Supabase Auth email map -----
+// Passwords are managed in Supabase Auth dashboard — never stored here.
+export const KIOSK_USER_MAP = {
+    fab:    'fabricationmidwest@gmail.com',
+    weld:   'weldermidwest@gmail.com',
+    assy:   'trucutassembly1@gmail.com',
+    office: 'project@midmfg.com',
+};
 
 // ----- Auth PINs -----
 // Future: move these to Supabase secrets or environment variables

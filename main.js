@@ -28,7 +28,8 @@ import { formatDateLocal, getStageCum, detectTcMode, sanitizePartKey, isChutePar
 import { selectDept, promptPin, submitPin, goBack,
          selectCategory, selectSubCategory, splashBack,
          enterInventoryView, enterWoRequestView, enterCreateWoView,
-         enterOpenOrdersView, enterWoForecastingView } from './pages/splash-view.js';
+         enterOpenOrdersView, enterWoForecastingView,
+         submitLogin, logout, enterManagerView } from './pages/splash-view.js';
 import { loadWoRequests, submitWoRequestForm, deleteWoRequestItem,
          openWoRequestDetail, closeWoRequestDetail,
          saveWoRequestDetail, approveWoRequest,
@@ -69,7 +70,7 @@ import {
     submitTcUnitStageFromUi, tcStockDirectAction, tcUnitStageDirectAction,
     openTcAssyCompleteModal, confirmTcWoComplete, tcUnitNextStep, toggleTcEntryMode
 } from './pages/dashboard-tc.js';
-import { markAlereUpdated, signInAnonymously, checkConnectivity } from './libs/db.js';
+import { markAlereUpdated, checkConnectivity, supabase } from './libs/db.js';
 import {
     searchOfficeReceive, openReceiveModal, submitReceive,
     openCloseoutModal, submitCloseout, loadReceivingEligible,
@@ -112,7 +113,6 @@ async function loadPartials() {
     );
     document.getElementById('app').innerHTML = chunks.join('\n');
 }
-await signInAnonymously();
 await loadPartials();
 
 // ── Show loading fallback until Vue mounts ────────────────────
@@ -147,12 +147,20 @@ try {
                 window.removeEventListener('online',  probeConnectivity);
             });
 
-            // Remove loading fallback once Vue successfully mounts
-            // Also pre-load manager alerts so the splash badge is populated immediately
-            onMounted(() => {
+            // Remove loading fallback once Vue successfully mounts.
+            // Restore an existing Supabase Auth session so a page refresh doesn't log out.
+            onMounted(async () => {
                 if (loadingEl) loadingEl.remove();
-                loadManagerAlerts();
                 probeConnectivity();
+                const { data: { session } } = await supabase.auth.getSession();
+                if (session?.user) {
+                    const role = session.user.app_metadata?.role || null;
+                    if (role) {
+                        store.sessionRole.value = role;
+                        store.currentView.value = 'splash';
+                        loadManagerAlerts();
+                    }
+                }
             });
 
             // Load data on view entry; reset Close-Out auth when leaving wo_status
@@ -232,6 +240,14 @@ try {
 
                 // Undo
                 lastUndoAction: store.lastUndoAction,
+
+                // Session login
+                sessionRole:       store.sessionRole,
+                loginUsername:     store.loginUsername,
+                loginPassword:     store.loginPassword,
+                loginError:        store.loginError,
+                loginLoading:      store.loginLoading,
+                showLoginPassword: store.showLoginPassword,
 
                 // Auth / PIN
                 pinModalOpen: store.pinModalOpen,
@@ -392,6 +408,7 @@ try {
                 // Navigation
                 selectDept, promptPin, submitPin, goBack,
                 selectCategory, selectSubCategory, splashBack,
+                submitLogin, logout, enterManagerView,
 
                 // Dashboard
                 openActionPanel, openTvAssyEntry, tvSelectMode,

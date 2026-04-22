@@ -24,7 +24,7 @@ export * from './store-assy.js';
 export * from './store-inventory.js';
 
 // ── Navigation ────────────────────────────────────────────────
-export const currentView   = ref('splash');
+export const currentView   = ref('login');
 export const selectedDept  = ref('');
 export const loading       = ref(false);
 export const currentTime   = ref('');
@@ -82,6 +82,14 @@ export const noteTextError   = ref(false);
 
 // ── Undo ──────────────────────────────────────────────────────
 export const lastUndoAction = ref(null);
+
+// ── Session login ─────────────────────────────────────────────
+export const sessionRole        = ref(null);   // 'fab'|'weld'|'assy'|'manager'|null
+export const loginUsername      = ref('');
+export const loginPassword      = ref('');
+export const loginError         = ref('');
+export const loginLoading       = ref(false);
+export const showLoginPassword  = ref(false);
 
 // ── Auth / PIN ────────────────────────────────────────────────
 export const pinModalOpen = ref(false);

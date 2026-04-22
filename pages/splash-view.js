@@ -7,8 +7,69 @@
 
 import * as store  from '../libs/store.js';
 import * as db     from '../libs/db.js';
+import { kioskSignIn, kioskSignOut } from '../libs/db.js';
 import { MANAGER_PIN, CS_PIN, CLOSEOUT_PIN } from '../libs/config.js';
 import { logError } from '../libs/db-shared.js';
+
+// ── submitLogin ───────────────────────────────────────────────
+// Validates username/password against Supabase Auth and sets sessionRole.
+export async function submitLogin() {
+    const username = store.loginUsername.value.trim().toLowerCase();
+    const password = store.loginPassword.value;
+    if (!username || !password) {
+        store.loginError.value = 'Enter username and password.';
+        return;
+    }
+    store.loginLoading.value = true;
+    store.loginError.value   = '';
+    try {
+        const { role, error } = await kioskSignIn(username, password);
+        if (error) throw error;
+        if (!role) throw new Error('Account not configured. Contact manager.');
+        store.sessionRole.value    = role;
+        store.loginUsername.value  = '';
+        store.loginPassword.value  = '';
+        store.currentView.value    = 'splash';
+        store.splashLevel.value    = 0;
+        store.splashCategory.value = '';
+    } catch {
+        store.loginError.value = 'Incorrect username or password.';
+    } finally {
+        store.loginLoading.value = false;
+    }
+}
+
+// ── logout ────────────────────────────────────────────────────
+// Signs out of Supabase Auth and returns to the login screen.
+export async function logout() {
+    await kioskSignOut();
+    store.sessionRole.value       = null;
+    store.currentView.value       = 'login';
+    store.splashLevel.value       = 0;
+    store.splashCategory.value    = '';
+    store.splashSubCategory.value = '';
+    store.selectedDept.value      = '';
+    store.actionPanelOpen.value   = false;
+    store.pinModalOpen.value      = false;
+}
+
+// ── enterManagerView ──────────────────────────────────────────
+// Navigates directly to manager hub (no PIN — session already verified as manager).
+export async function enterManagerView() {
+    store.currentView.value    = 'manager';
+    store.managerSubView.value = 'home';
+    store.loading.value = true;
+    try {
+        const { data, error } = await db.fetchAllActiveOrders();
+        if (error) throw error;
+        store.allOrders.value = data || [];
+    } catch (err) {
+        store.showToast('Failed to load manager data: ' + err.message);
+        logError('enterManagerView', err);
+    } finally {
+        store.loading.value = false;
+    }
+}
 
 // ── selectCategory ────────────────────────────────────────────
 // Navigate to a top-level category sub-menu (level 1).
