@@ -37,7 +37,8 @@ import { loadWoRequests, submitWoRequestForm, deleteWoRequestItem,
          saveWoRequestDetail, approveWoRequest,
          saveWoRequestInlineFields,
          checkWoRequestPartMatch, acceptSoHint, dismissSoHint,
-         openSendToForecast, closeSendToForecast, submitSendToForecast } from './pages/wo-request-view.js';
+         openSendToForecast, closeSendToForecast, submitSendToForecast,
+         handleWoFileUploadForRequest } from './pages/wo-request-view.js';
 import { loadForecastedItems,
          openDeleteConfirm, cancelDeleteForecast, confirmDeleteForecast,
          openMoveBackConfirm, cancelMoveBack, confirmMoveBack } from './pages/wo-forecasting-view.js';
@@ -500,6 +501,7 @@ try {
                 saveWoRequestInlineFields,
                 checkWoRequestPartMatch, acceptSoHint, dismissSoHint,
                 openSendToForecast, closeSendToForecast, submitSendToForecast,
+                handleWoFileUploadForRequest,
                 sendToForecastOpen:   store.sendToForecastOpen,
                 sendToForecastTarget: store.sendToForecastTarget,
                 sendToForecastForm:   store.sendToForecastForm,

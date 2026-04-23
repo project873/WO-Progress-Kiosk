@@ -147,6 +147,7 @@ function boolToYesNo(val) {
 // openWoRequestDetail — select a request and populate the manager detail form.
 // Boolean DB fields (fab, weld, bent_rolled_part) are mapped to 'yes'/'no' strings
 // to support <select> binding. fab_print/weld_print store 'yes'/'no' as text.
+// Also loads any existing part prints into woFiles so they show in the modal.
 export function openWoRequestDetail(req) {
     store.selectedWoRequest.value   = req;
     store.woRequestDetailForm.value = {
@@ -167,6 +168,31 @@ export function openWoRequestDetail(req) {
         sent_to_production:  req.sent_to_production  ?? false,
         date_to_start:       req.date_to_start       || ''
     };
+    loadWoFilesForRequest(req.part_number);
+}
+
+// loadWoFilesForRequest — fetch part prints for the given part number into woFiles.
+export async function loadWoFilesForRequest(partNumber) {
+    if (!partNumber) { store.woFiles.value = []; return; }
+    store.woFilesLoading.value = true;
+    const { data, error } = await db.listWoFiles(partNumber);
+    store.woFilesLoading.value = false;
+    if (error) { store.showToast('Could not load files: ' + error.message); return; }
+    store.woFiles.value = data || [];
+}
+
+// handleWoFileUploadForRequest — upload a file for the selected request's part number.
+export async function handleWoFileUploadForRequest(event) {
+    const file = event.target.files[0];
+    const partNumber = store.selectedWoRequest.value?.part_number;
+    if (!file || !partNumber) return;
+    event.target.value = '';
+    store.woFilesLoading.value = true;
+    const { error } = await db.uploadWoFile(partNumber, file);
+    store.woFilesLoading.value = false;
+    if (error) { store.showToast('Upload failed: ' + error.message); return; }
+    store.showToast('File uploaded.', 'success');
+    await loadWoFilesForRequest(partNumber);
 }
 
 export function closeWoRequestDetail() {
