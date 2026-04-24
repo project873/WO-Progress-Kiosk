@@ -33,24 +33,29 @@ export async function loadEngInquiries() {
 // openEngInquiryForm — reset and open the new inquiry modal.
 export function openEngInquiryForm() {
     store.engInquiryForm.value = {
-        wrong_numbers:      '',
-        part_number_trying: '',
-        date_entered:       new Date().toISOString().slice(0, 10), // auto, not shown
-        csr_rep:            '',
-        deck_model_number:  '',
-        brand:              '',
-        deck_model:         '',
-        deck_width:         '',
-        year:               '',
-        customer_name:      '',
-        customer_phone:     '',
-        customer_email:     '',
-        sales_order_number: '',
-        csr_notes:          '',
-        engineering_notes:  '',
-        status:             'Not Started',                          // auto, not shown
-        assigned_to:        '',
-        priority:           'Medium',
+        inquiry_type:              'chute',
+        wrong_numbers:             '',
+        part_number_trying:        '',
+        date_entered:              new Date().toISOString().slice(0, 10),
+        csr_rep:                   '',
+        deck_model_number:         '',
+        brand:                     '',
+        deck_model:                '',
+        deck_width:                '',
+        year:                      '',
+        mower_model:               '',
+        hitch_to_ground_distance:  '',
+        trac_vac_trailer_model:    '',
+        customer_name:             '',
+        customer_phone:            '',
+        customer_email:            '',
+        sales_order_number:        '',
+        csr_notes:                 '',
+        engineering_notes:         '',
+        current_action_step:       '',
+        status:                    'Not Started',
+        assigned_to:               '',
+        priority:                  'Medium',
     };
     store.engInquiryFormErrors.value = {};
     store.engNewInquiryFiles.value   = [];
@@ -87,10 +92,15 @@ export async function submitEngInquiry() {
     if (!form.customer_email?.trim())     errors.customer_email     = true;
     if (!form.csr_rep?.trim())            errors.csr_rep            = true;
     if (!form.brand?.trim())              errors.brand              = true;
-    if (!form.deck_model?.trim())         errors.deck_model         = true;
-    if (!form.deck_width?.trim())         errors.deck_width         = true;
     if (!form.year?.trim())               errors.year               = true;
     if (!form.csr_notes?.trim())          errors.csr_notes          = true;
+    if (form.inquiry_type === 'hitch') {
+        if (!form.mower_model?.trim())           errors.mower_model           = true;
+        if (!form.trac_vac_trailer_model?.trim()) errors.trac_vac_trailer_model = true;
+    } else {
+        if (!form.deck_model?.trim())  errors.deck_model  = true;
+        if (!form.deck_width?.trim())  errors.deck_width  = true;
+    }
     if (Object.keys(errors).length) {
         store.engInquiryFormErrors.value = errors;
         return;
@@ -98,8 +108,11 @@ export async function submitEngInquiry() {
     store.loading.value = true;
     const { data: newRow, error } = await db.insertEngInquiry({
         ...form,
-        part_number_trying: form.part_number_trying?.trim().toUpperCase() || null,
-        wrong_numbers:      form.wrong_numbers?.trim() || null,
+        part_number_trying:       form.part_number_trying?.trim().toUpperCase() || null,
+        wrong_numbers:            form.wrong_numbers?.trim() || null,
+        mower_model:              form.mower_model?.trim() || null,
+        hitch_to_ground_distance: form.hitch_to_ground_distance?.trim() || null,
+        trac_vac_trailer_model:   form.trac_vac_trailer_model?.trim() || null,
     });
     if (error) {
         store.loading.value = false;
@@ -115,6 +128,41 @@ export async function submitEngInquiry() {
     store.engInquiryFormOpen.value = false;
     store.engNewInquiryFiles.value = [];
     await loadEngInquiries();
+}
+
+// saveEngInquiryInline — save all fields on a card row directly (no modal required).
+export async function saveEngInquiryInline(inq) {
+    if (!inq?.id) return;
+    store.loading.value = true;
+    const { error } = await db.updateEngInquiry(inq.id, {
+        wrong_numbers:            inq.wrong_numbers            || null,
+        part_number_trying:       (inq.part_number_trying || '').trim().toUpperCase() || null,
+        correct_part_number:      (inq.correct_part_number || '').trim().toUpperCase() || null,
+        date_entered:             inq.date_entered             || null,
+        csr_rep:                  inq.csr_rep                  || null,
+        deck_model_number:        inq.deck_model_number        || null,
+        brand:                    inq.brand                    || null,
+        deck_model:               inq.deck_model               || null,
+        deck_width:               inq.deck_width               || null,
+        year:                     inq.year                     || null,
+        inquiry_type:             inq.inquiry_type             || 'chute',
+        mower_model:              inq.mower_model              || null,
+        hitch_to_ground_distance: inq.hitch_to_ground_distance || null,
+        trac_vac_trailer_model:   inq.trac_vac_trailer_model   || null,
+        customer_name:            inq.customer_name            || null,
+        customer_phone:           inq.customer_phone           || null,
+        customer_email:           inq.customer_email           || null,
+        sales_order_number:       inq.sales_order_number       || null,
+        csr_notes:                inq.csr_notes                || null,
+        engineering_notes:        inq.engineering_notes        || null,
+        current_action_step:      inq.current_action_step      || null,
+        status:                   inq.status                   || null,
+        assigned_to:              inq.assigned_to              || null,
+        priority:                 inq.priority                 || null,
+    });
+    store.loading.value = false;
+    if (error) { store.showToast('Could not save: ' + error.message); return; }
+    store.showToast('Saved.', 'success');
 }
 
 // openEngInquiryDetail — select an inquiry and open the detail/edit modal.
@@ -142,17 +190,22 @@ export async function saveEngInquiry() {
         part_number_trying:  (inq.part_number_trying || '').trim().toUpperCase() || null,
         date_entered:        inq.date_entered         || null,
         csr_rep:             inq.csr_rep              || null,
-        deck_model_number:   inq.deck_model_number    || null,
-        brand:               inq.brand                || null,
-        deck_model:          inq.deck_model           || null,
-        deck_width:          inq.deck_width           || null,
-        year:                inq.year                 || null,
+        deck_model_number:        inq.deck_model_number           || null,
+        brand:                    inq.brand                       || null,
+        deck_model:               inq.deck_model                  || null,
+        deck_width:               inq.deck_width                  || null,
+        year:                     inq.year                        || null,
+        inquiry_type:             inq.inquiry_type                || 'chute',
+        mower_model:              inq.mower_model                 || null,
+        hitch_to_ground_distance: inq.hitch_to_ground_distance    || null,
+        trac_vac_trailer_model:   inq.trac_vac_trailer_model      || null,
         customer_name:       inq.customer_name        || null,
         customer_phone:      inq.customer_phone       || null,
         customer_email:      inq.customer_email       || null,
         sales_order_number:  inq.sales_order_number   || null,
         csr_notes:           inq.csr_notes            || null,
-        engineering_notes:   inq.engineering_notes    || null,
+        engineering_notes:    inq.engineering_notes    || null,
+        current_action_step:  inq.current_action_step  || null,
         correct_part_number: inq.correct_part_number  || null,
         status:              inq.status               || null,
         assigned_to:         inq.assigned_to          || null,
@@ -162,6 +215,21 @@ export async function saveEngInquiry() {
     if (error) { store.showToast('Could not save: ' + error.message); return; }
     store.showToast('Inquiry updated.', 'success');
     await loadEngInquiries();
+}
+
+// openEngImagesModal — open images-only popup for an inline card row.
+export async function openEngImagesModal(inq) {
+    store.engSelectedInquiry.value = { ...inq };
+    store.engInquiryImages.value   = [];
+    store.engImagesModalOpen.value = true;
+    await loadEngInquiryImages(inq.id);
+}
+
+// closeEngImagesModal — close the images-only popup.
+export function closeEngImagesModal() {
+    store.engImagesModalOpen.value = false;
+    store.engSelectedInquiry.value = null;
+    store.engInquiryImages.value   = [];
 }
 
 // loadEngInquiryImages — fetch signed image URLs for the given inquiry id.

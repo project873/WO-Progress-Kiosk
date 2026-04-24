@@ -1,0 +1,54 @@
+<!-- ============================================================
+     modal-eng-images.html — Engineering inquiry images popup
+     ============================================================ -->
+<div v-if="engImagesModalOpen"
+    class="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4"
+    @click.self="closeEngImagesModal">
+    <div class="bg-white rounded-2xl shadow-2xl w-full max-w-3xl max-h-[85vh] flex flex-col">
+
+        <!-- Header -->
+        <div class="shrink-0 flex items-center justify-between px-6 py-4 border-b border-gray-100">
+            <div>
+                <h2 class="text-base font-extrabold text-gray-800">Images</h2>
+                <p v-if="engSelectedInquiry" class="text-xs text-gray-400">
+                    {{ engSelectedInquiry.customer_name || '—' }} &middot; SO# {{ engSelectedInquiry.sales_order_number || '—' }}
+                </p>
+            </div>
+            <div class="flex items-center gap-3">
+                <label class="cursor-pointer bg-blue-600 hover:bg-blue-500 text-white px-3 py-1.5 rounded text-xs font-bold flex items-center gap-1.5 transition-colors">
+                    <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M12 4v16m8-8H4"/></svg>
+                    Upload
+                    <input type="file" class="sr-only" accept=".jpg,.jpeg,.png,.webp,.pdf" @change="handleEngImageUpload($event)">
+                </label>
+                <button @click="closeEngImagesModal" class="text-gray-400 hover:text-gray-600">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+                </button>
+            </div>
+        </div>
+
+        <!-- Body -->
+        <div class="flex-1 min-h-0 overflow-y-auto p-6">
+            <div v-if="engImagesLoading" class="flex items-center justify-center h-32">
+                <span class="text-gray-400 text-sm">Loading&hellip;</span>
+            </div>
+            <div v-else-if="engInquiryImages.length === 0" class="flex flex-col items-center justify-center h-32 gap-2">
+                <svg class="w-8 h-8 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
+                <p class="text-gray-400 text-sm italic">No images uploaded yet</p>
+            </div>
+            <div v-else class="grid grid-cols-3 gap-4">
+                <a v-for="img in engInquiryImages" :key="img.name" :href="img.signedUrl" target="_blank"
+                    class="group block rounded-xl overflow-hidden border border-gray-200 hover:border-rose-300 transition-colors bg-gray-50">
+                    <div v-if="img.name.toLowerCase().endsWith('.pdf')"
+                        class="h-36 flex flex-col items-center justify-center gap-2 bg-red-50">
+                        <svg class="w-10 h-10 text-red-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z"/></svg>
+                        <span class="text-xs text-red-500 font-semibold">PDF</span>
+                    </div>
+                    <img v-else :src="img.signedUrl" :alt="img.name"
+                        class="w-full h-36 object-cover group-hover:opacity-90 transition-opacity">
+                    <p class="px-2 py-1 text-[10px] text-gray-500 truncate">{{ img.name }}</p>
+                </a>
+            </div>
+        </div>
+
+    </div>
+</div>

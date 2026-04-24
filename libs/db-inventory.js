@@ -129,17 +129,20 @@ export async function insertWorkOrdersFromRequest(req, woNumber) {
     };
     if (req.sales_order_number) base.sales_order = req.sales_order_number.trim();
 
-    const weldArea = (req.weld || '').trim();
+    const weldArea  = (req.weld       || '').trim();
+    const fab       = (req.fab        || '').trim().toLowerCase();
+    const fabPrint  = (req.fab_print  || '').trim().toLowerCase();
+    const weldPrint = (req.weld_print || '').trim().toLowerCase();
 
-    if (req.fab === 'yes' && req.fab_print === 'yes') {
+    if (fab === 'yes' && fabPrint === 'yes') {
         const fabRow = { ...base, department: 'Fab' };
-        if (weldArea && req.weld_print !== 'yes') {
+        if (weldArea && weldPrint !== 'yes') {
             fabRow.fab_bring_to = weldArea;
         }
         inserts.push(fabRow);
     }
 
-    if (weldArea && weldArea !== 'Paint' && req.weld_print === 'yes') {
+    if (weldArea && weldArea !== 'Paint' && weldPrint === 'yes') {
         const weldRow = {
             ...base,
             department: 'Weld',

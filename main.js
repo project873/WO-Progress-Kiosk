@@ -113,7 +113,8 @@ import { enterEngineeringInquiriesView, enterEngineeringFollowupView,
          openEngInquiryForm, closeEngInquiryForm, submitEngInquiry,
          handleEngNewInquiryFileSelect, removeEngNewInquiryFile,
          openEngInquiryDetail, closeEngInquiryDetail,
-         saveEngInquiry, handleEngImageUpload } from './pages/engineering-view.js';
+         saveEngInquiry, saveEngInquiryInline, handleEngImageUpload,
+         openEngImagesModal, closeEngImagesModal } from './pages/engineering-view.js';
 
 // ── Load HTML partials into #app before Vue mounts ───────────
 // Fetches HTML fragment files from ./partials/ and concatenates them into #app.
@@ -209,12 +210,15 @@ try {
                 engInquiriesLoading:    store.engInquiriesLoading,
                 engStatusFilter:        store.engStatusFilter,
                 engPriorityFilter:      store.engPriorityFilter,
+                engAssigneeFilter:      store.engAssigneeFilter,
+                engManualSort:          store.engManualSort,
                 engInquiryFormOpen:     store.engInquiryFormOpen,
                 engInquiryForm:         store.engInquiryForm,
                 engInquiryFormErrors:   store.engInquiryFormErrors,
                 engNewInquiryFiles:     store.engNewInquiryFiles,
                 engSelectedInquiry:     store.engSelectedInquiry,
                 engInquiryDetailOpen:   store.engInquiryDetailOpen,
+                engImagesModalOpen:     store.engImagesModalOpen,
                 engInquiryImages:       store.engInquiryImages,
                 engImagesLoading:       store.engImagesLoading,
                 filteredEngInquiries:   store.filteredEngInquiries,
@@ -448,7 +452,8 @@ try {
                 openEngInquiryForm, closeEngInquiryForm, submitEngInquiry,
                 handleEngNewInquiryFileSelect, removeEngNewInquiryFile,
                 openEngInquiryDetail, closeEngInquiryDetail,
-                saveEngInquiry, handleEngImageUpload,
+                saveEngInquiry, saveEngInquiryInline, handleEngImageUpload,
+                openEngImagesModal, closeEngImagesModal,
 
                 // Dashboard
                 openActionPanel, openTvAssyEntry, tvSelectMode,

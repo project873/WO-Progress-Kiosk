@@ -22,6 +22,27 @@
         <!-- Body -->
         <div class="flex-1 min-h-0 overflow-y-auto px-7 py-5 space-y-5">
 
+            <!-- Chute / Hitch toggle -->
+            <div class="flex items-center gap-3">
+                <span class="text-xs font-bold text-gray-500 uppercase tracking-wide shrink-0">Type:</span>
+                <div class="inline-flex rounded-xl border border-gray-200 overflow-hidden">
+                    <button @click="engSelectedInquiry.inquiry_type = 'chute'"
+                        :class="engSelectedInquiry.inquiry_type === 'chute'
+                            ? 'bg-rose-600 text-white'
+                            : 'bg-white text-gray-600 hover:bg-gray-50'"
+                        class="px-6 py-2 text-sm font-bold transition-colors">
+                        Chute
+                    </button>
+                    <button @click="engSelectedInquiry.inquiry_type = 'hitch'"
+                        :class="engSelectedInquiry.inquiry_type === 'hitch'
+                            ? 'bg-rose-600 text-white'
+                            : 'bg-white text-gray-600 hover:bg-gray-50'"
+                        class="px-6 py-2 text-sm font-bold border-l border-gray-200 transition-colors">
+                        Hitch
+                    </button>
+                </div>
+            </div>
+
             <!-- Row 1: Priority / Status / Assigned To -->
             <div class="grid grid-cols-3 gap-4">
                 <div>
@@ -72,8 +93,8 @@
                 </div>
             </div>
 
-            <!-- Row 3: Deck info -->
-            <div class="grid grid-cols-4 gap-4">
+            <!-- Row 3: Mower info — Chute -->
+            <div v-if="engSelectedInquiry.inquiry_type !== 'hitch'" class="grid grid-cols-4 gap-4">
                 <div>
                     <label class="block text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1">Deck Model #</label>
                     <input v-model="engSelectedInquiry.deck_model_number" type="text" maxlength="60"
@@ -100,6 +121,35 @@
                         <input v-model="engSelectedInquiry.year" type="text" maxlength="10"
                             class="w-full px-3 py-2 border border-gray-300 rounded-lg text-gray-800 text-sm focus:outline-none focus:border-rose-400">
                     </div>
+                </div>
+            </div>
+
+            <!-- Row 3: Mower / Trailer info — Hitch -->
+            <div v-else class="grid grid-cols-5 gap-4">
+                <div>
+                    <label class="block text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1">Brand</label>
+                    <input v-model="engSelectedInquiry.brand" type="text" maxlength="60"
+                        class="w-full px-3 py-2 border border-gray-300 rounded-lg text-gray-800 text-sm focus:outline-none focus:border-rose-400">
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1">Model of Mower</label>
+                    <input v-model="engSelectedInquiry.mower_model" type="text" maxlength="60"
+                        class="w-full px-3 py-2 border border-gray-300 rounded-lg text-gray-800 text-sm focus:outline-none focus:border-rose-400">
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1">Year</label>
+                    <input v-model="engSelectedInquiry.year" type="text" maxlength="10"
+                        class="w-full px-3 py-2 border border-gray-300 rounded-lg text-gray-800 text-sm focus:outline-none focus:border-rose-400">
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1">Hitch to Ground Distance</label>
+                    <input v-model="engSelectedInquiry.hitch_to_ground_distance" type="text" maxlength="40"
+                        class="w-full px-3 py-2 border border-gray-300 rounded-lg text-gray-800 text-sm focus:outline-none focus:border-rose-400">
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1">Trac Vac Trailer Model</label>
+                    <input v-model="engSelectedInquiry.trac_vac_trailer_model" type="text" maxlength="60"
+                        class="w-full px-3 py-2 border border-gray-300 rounded-lg text-gray-800 text-sm focus:outline-none focus:border-rose-400">
                 </div>
             </div>
 
