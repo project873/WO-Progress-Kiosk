@@ -130,6 +130,21 @@ export async function submitEngInquiry() {
     await loadEngInquiries();
 }
 
+// appendEngNote — timestamp and append a new log entry to a note field, then save inline.
+export async function appendEngNote(inq, field, entryKey) {
+    const key     = inq.id + '_' + entryKey;
+    const newText = (store.engNewEntries.value[key] || '').trim();
+    if (!newText) return;
+    const now  = new Date();
+    const mm   = String(now.getMonth() + 1).padStart(2, '0');
+    const dd   = String(now.getDate()).padStart(2, '0');
+    const time = now.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: true });
+    const stamp = `[${mm}/${dd} ${time}]`;
+    inq[field] = inq[field] ? inq[field] + '\n' + stamp + ' ' + newText : stamp + ' ' + newText;
+    store.engNewEntries.value[key] = '';
+    await saveEngInquiryInline(inq);
+}
+
 // saveEngInquiryInline — save all fields on a card row directly (no modal required).
 export async function saveEngInquiryInline(inq) {
     if (!inq?.id) return;
@@ -156,6 +171,7 @@ export async function saveEngInquiryInline(inq) {
         csr_notes:                inq.csr_notes                || null,
         engineering_notes:        inq.engineering_notes        || null,
         current_action_step:      inq.current_action_step      || null,
+        action_step_due_date:     inq.action_step_due_date     || null,
         status:                   inq.status                   || null,
         assigned_to:              inq.assigned_to              || null,
         priority:                 inq.priority                 || null,
@@ -203,13 +219,14 @@ export async function saveEngInquiry() {
         customer_phone:      inq.customer_phone       || null,
         customer_email:      inq.customer_email       || null,
         sales_order_number:  inq.sales_order_number   || null,
-        csr_notes:           inq.csr_notes            || null,
+        csr_notes:            inq.csr_notes            || null,
         engineering_notes:    inq.engineering_notes    || null,
         current_action_step:  inq.current_action_step  || null,
-        correct_part_number: inq.correct_part_number  || null,
-        status:              inq.status               || null,
-        assigned_to:         inq.assigned_to          || null,
-        priority:            inq.priority             || null,
+        action_step_due_date: inq.action_step_due_date || null,
+        correct_part_number:  inq.correct_part_number  || null,
+        status:               inq.status               || null,
+        assigned_to:          inq.assigned_to          || null,
+        priority:             inq.priority             || null,
     });
     store.loading.value = false;
     if (error) { store.showToast('Could not save: ' + error.message); return; }

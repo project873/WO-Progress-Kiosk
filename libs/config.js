@@ -109,7 +109,8 @@ export const PARTIAL_NAMES = [
     'modal-misc', 'modal-open-orders-add',
     'modal-action-panel-print',
     'modal-eng-inquiry',
-    'modal-eng-images'
+    'modal-eng-images',
+    'modal-eng-create'
 ];
 
 export const OPEN_ORDER_SORT_FIELDS = [
@@ -125,8 +126,8 @@ export const ENG_STATUSES = [
     'Not Started',
     'In Progress',
     'Ready to Design',
-    'Needing To Get Measurements in Person',
-    'Not On Order. Design Complete. Ready For Order',
+    'Needs Measurements',
+    'Design Complete / Ready to Order',
     'On Hold',
     'Done',
     'Canceled',
@@ -134,4 +135,4 @@ export const ENG_STATUSES = [
 
 export const ENG_PRIORITIES = ['Low', 'Medium', 'High', 'Urgent'];
 
-export const ENG_ASSIGNEES = ['CSR', 'Engineering'];
+export const ENG_ASSIGNEES = ['CSR', 'Engineering', 'Customer'];

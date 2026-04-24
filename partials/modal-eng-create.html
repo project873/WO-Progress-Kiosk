@@ -1,0 +1,222 @@
+<!-- ============================================================
+     modal-eng-create.html — New Engineering Inquiry creation modal
+     ============================================================ -->
+<div v-if="engInquiryFormOpen"
+    class="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4"
+    @click.self="closeEngInquiryForm">
+    <div class="bg-white rounded-2xl shadow-2xl w-full max-w-4xl max-h-[90vh] flex flex-col">
+
+        <!-- Modal header -->
+        <div class="shrink-0 flex items-center justify-between px-7 py-5 border-b border-gray-100">
+            <h2 class="text-lg font-extrabold text-gray-800">New Inquiry / Concern</h2>
+            <button @click="closeEngInquiryForm" class="text-gray-400 hover:text-gray-600 transition-colors">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+            </button>
+        </div>
+
+        <!-- Modal body -->
+        <div class="flex-1 min-h-0 overflow-y-auto px-7 py-5 space-y-6">
+
+            <!-- Chute / Hitch selector -->
+            <div class="flex items-center gap-3">
+                <span class="text-xs font-bold text-gray-500 uppercase tracking-wide shrink-0">Type:</span>
+                <div class="inline-flex rounded-xl border border-gray-200 overflow-hidden">
+                    <button @click="engInquiryForm.inquiry_type = 'chute'"
+                        :class="engInquiryForm.inquiry_type === 'chute'
+                            ? 'bg-rose-600 text-white'
+                            : 'bg-white text-gray-600 hover:bg-gray-50'"
+                        class="px-6 py-2 text-sm font-bold transition-colors">
+                        Chute
+                    </button>
+                    <button @click="engInquiryForm.inquiry_type = 'hitch'"
+                        :class="engInquiryForm.inquiry_type === 'hitch'
+                            ? 'bg-rose-600 text-white'
+                            : 'bg-white text-gray-600 hover:bg-gray-50'"
+                        class="px-6 py-2 text-sm font-bold border-l border-gray-200 transition-colors">
+                        Hitch
+                    </button>
+                </div>
+            </div>
+
+            <!-- Top: Priority / Assigned To / Sales Order # -->
+            <div class="grid grid-cols-3 gap-4">
+                <div>
+                    <label class="block text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1">Priority</label>
+                    <select v-model="engInquiryForm.priority"
+                        class="w-full px-3 py-2 border border-gray-300 rounded-lg text-gray-800 text-sm focus:outline-none focus:border-rose-400 bg-white">
+                        <option v-for="p in engPriorities" :key="p" :value="p">{{ p }}</option>
+                    </select>
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1">Assigned To</label>
+                    <select v-model="engInquiryForm.assigned_to"
+                        class="w-full px-3 py-2 border border-gray-300 rounded-lg text-gray-800 text-sm focus:outline-none focus:border-rose-400 bg-white">
+                        <option value="">— Select —</option>
+                        <option v-for="a in engAssignees" :key="a" :value="a">{{ a }}</option>
+                    </select>
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1">Sales Order # <span class="text-red-500">*</span> <span class="text-gray-400 normal-case font-normal">(use "none" if N/A)</span></label>
+                    <input v-model="engInquiryForm.sales_order_number" type="text" maxlength="30"
+                        :class="engInquiryFormErrors.sales_order_number ? 'border-red-400 bg-red-50' : 'border-gray-300'"
+                        class="w-full px-3 py-2 border rounded-lg text-gray-800 text-sm focus:outline-none focus:border-rose-400">
+                </div>
+            </div>
+
+            <!-- Mower Info — Chute -->
+            <div v-if="engInquiryForm.inquiry_type === 'chute'">
+                <p class="text-sm font-extrabold text-gray-700 uppercase tracking-wide mb-3 border-b border-gray-100 pb-2">Mower Info</p>
+                <div class="grid grid-cols-5 gap-4">
+                    <div>
+                        <label class="block text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1">Brand <span class="text-red-500">*</span></label>
+                        <input v-model="engInquiryForm.brand" type="text" maxlength="60"
+                            :class="engInquiryFormErrors.brand ? 'border-red-400 bg-red-50' : 'border-gray-300'"
+                            class="w-full px-3 py-2 border rounded-lg text-gray-800 text-sm focus:outline-none focus:border-rose-400">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1">Model of Deck <span class="text-red-500">*</span></label>
+                        <input v-model="engInquiryForm.deck_model" type="text" maxlength="60"
+                            :class="engInquiryFormErrors.deck_model ? 'border-red-400 bg-red-50' : 'border-gray-300'"
+                            class="w-full px-3 py-2 border rounded-lg text-gray-800 text-sm focus:outline-none focus:border-rose-400">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1">Deck Width <span class="text-red-500">*</span></label>
+                        <input v-model="engInquiryForm.deck_width" type="text" maxlength="20"
+                            :class="engInquiryFormErrors.deck_width ? 'border-red-400 bg-red-50' : 'border-gray-300'"
+                            class="w-full px-3 py-2 border rounded-lg text-gray-800 text-sm focus:outline-none focus:border-rose-400">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1">Year <span class="text-red-500">*</span></label>
+                        <input v-model="engInquiryForm.year" type="text" maxlength="10"
+                            :class="engInquiryFormErrors.year ? 'border-red-400 bg-red-50' : 'border-gray-300'"
+                            class="w-full px-3 py-2 border rounded-lg text-gray-800 text-sm focus:outline-none focus:border-rose-400">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1">Deck Model #</label>
+                        <input v-model="engInquiryForm.deck_model_number" type="text" maxlength="60"
+                            class="w-full px-3 py-2 border border-gray-300 rounded-lg text-gray-800 text-sm focus:outline-none focus:border-rose-400">
+                    </div>
+                </div>
+            </div>
+
+            <!-- Mower Info — Hitch -->
+            <div v-else>
+                <p class="text-sm font-extrabold text-gray-700 uppercase tracking-wide mb-3 border-b border-gray-100 pb-2">Mower / Trailer Info</p>
+                <div class="grid grid-cols-2 gap-4 mb-4">
+                    <div>
+                        <label class="block text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1">Brand <span class="text-red-500">*</span></label>
+                        <input v-model="engInquiryForm.brand" type="text" maxlength="60"
+                            :class="engInquiryFormErrors.brand ? 'border-red-400 bg-red-50' : 'border-gray-300'"
+                            class="w-full px-3 py-2 border rounded-lg text-gray-800 text-sm focus:outline-none focus:border-rose-400">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1">Model of Mower <span class="text-red-500">*</span></label>
+                        <input v-model="engInquiryForm.mower_model" type="text" maxlength="60"
+                            :class="engInquiryFormErrors.mower_model ? 'border-red-400 bg-red-50' : 'border-gray-300'"
+                            class="w-full px-3 py-2 border rounded-lg text-gray-800 text-sm focus:outline-none focus:border-rose-400">
+                    </div>
+                </div>
+                <div class="grid grid-cols-3 gap-4">
+                    <div>
+                        <label class="block text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1">Year <span class="text-red-500">*</span></label>
+                        <input v-model="engInquiryForm.year" type="text" maxlength="10"
+                            :class="engInquiryFormErrors.year ? 'border-red-400 bg-red-50' : 'border-gray-300'"
+                            class="w-full px-3 py-2 border rounded-lg text-gray-800 text-sm focus:outline-none focus:border-rose-400">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1">Distance: Hitch to Ground</label>
+                        <input v-model="engInquiryForm.hitch_to_ground_distance" type="text" maxlength="40"
+                            class="w-full px-3 py-2 border border-gray-300 rounded-lg text-gray-800 text-sm focus:outline-none focus:border-rose-400">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1">Model of Trac Vac Trailer <span class="text-red-500">*</span></label>
+                        <input v-model="engInquiryForm.trac_vac_trailer_model" type="text" maxlength="60"
+                            :class="engInquiryFormErrors.trac_vac_trailer_model ? 'border-red-400 bg-red-50' : 'border-gray-300'"
+                            class="w-full px-3 py-2 border rounded-lg text-gray-800 text-sm focus:outline-none focus:border-rose-400">
+                    </div>
+                </div>
+            </div>
+
+            <!-- Customer Info -->
+            <div>
+                <p class="text-sm font-extrabold text-gray-700 uppercase tracking-wide mb-3 border-b border-gray-100 pb-2">Customer Info</p>
+                <div class="grid grid-cols-4 gap-4">
+                    <div>
+                        <label class="block text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1">Customer Name <span class="text-red-500">*</span></label>
+                        <input v-model="engInquiryForm.customer_name" type="text" maxlength="100"
+                            :class="engInquiryFormErrors.customer_name ? 'border-red-400 bg-red-50' : 'border-gray-300'"
+                            class="w-full px-3 py-2 border rounded-lg text-gray-800 text-sm focus:outline-none focus:border-rose-400">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1">Phone <span class="text-red-500">*</span></label>
+                        <input v-model="engInquiryForm.customer_phone" type="text" maxlength="30"
+                            :class="engInquiryFormErrors.customer_phone ? 'border-red-400 bg-red-50' : 'border-gray-300'"
+                            class="w-full px-3 py-2 border rounded-lg text-gray-800 text-sm focus:outline-none focus:border-rose-400">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1">Email <span class="text-red-500">*</span></label>
+                        <input v-model="engInquiryForm.customer_email" type="email" maxlength="100"
+                            :class="engInquiryFormErrors.customer_email ? 'border-red-400 bg-red-50' : 'border-gray-300'"
+                            class="w-full px-3 py-2 border rounded-lg text-gray-800 text-sm focus:outline-none focus:border-rose-400">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1">CSR Rep <span class="text-red-500">*</span></label>
+                        <input v-model="engInquiryForm.csr_rep" type="text" maxlength="60"
+                            :class="engInquiryFormErrors.csr_rep ? 'border-red-400 bg-red-50' : 'border-gray-300'"
+                            class="w-full px-3 py-2 border rounded-lg text-gray-800 text-sm focus:outline-none focus:border-rose-400">
+                    </div>
+                </div>
+            </div>
+
+            <!-- Notes -->
+            <div class="grid grid-cols-2 gap-4">
+                <div>
+                    <label class="block text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1">CSR Notes / Description <span class="text-red-500">*</span></label>
+                    <textarea v-model="engInquiryForm.csr_notes" rows="3" maxlength="2000"
+                        :class="engInquiryFormErrors.csr_notes ? 'border-red-400 bg-red-50' : 'border-gray-300'"
+                        class="w-full px-3 py-2 border rounded-lg text-gray-800 text-sm focus:outline-none focus:border-rose-400 resize-none"></textarea>
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1">Engineering Notes / Questions</label>
+                    <textarea v-model="engInquiryForm.engineering_notes" rows="3" maxlength="2000"
+                        class="w-full px-3 py-2 border border-gray-300 rounded-lg text-gray-800 text-sm focus:outline-none focus:border-rose-400 resize-none"></textarea>
+                </div>
+            </div>
+
+            <!-- Images -->
+            <div>
+                <div class="flex items-center gap-3 mb-2">
+                    <span class="text-xs font-bold text-gray-500 uppercase tracking-widest">&#128247; Images</span>
+                    <label class="cursor-pointer bg-blue-600 hover:bg-blue-500 text-white px-3 py-1.5 rounded text-xs font-bold flex items-center gap-1.5 transition-colors">
+                        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M12 4v16m8-8H4"/></svg>
+                        Add Images
+                        <input type="file" class="sr-only" accept=".jpg,.jpeg,.png,.webp,.pdf" multiple @change="handleEngNewInquiryFileSelect($event)">
+                    </label>
+                </div>
+                <div v-if="engNewInquiryFiles.length === 0" class="text-gray-400 text-xs italic">No images queued</div>
+                <div v-else class="flex flex-wrap gap-2">
+                    <div v-for="(file, i) in engNewInquiryFiles" :key="i"
+                        class="flex items-center gap-2 bg-gray-100 border border-gray-200 rounded-lg px-3 py-1.5">
+                        <svg class="w-4 h-4 text-gray-400 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
+                        <span class="text-xs text-gray-700 max-w-[160px] truncate">{{ file.name }}</span>
+                        <button @click="removeEngNewInquiryFile(i)" class="text-gray-400 hover:text-red-500 transition-colors text-xs leading-none">&#10005;</button>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+
+        <!-- Modal footer -->
+        <div class="shrink-0 flex items-center justify-end gap-3 px-7 py-5 border-t border-gray-100">
+            <button @click="closeEngInquiryForm"
+                class="bg-gray-100 hover:bg-gray-200 text-gray-700 px-6 py-2.5 rounded-xl font-bold text-sm uppercase tracking-wide active:scale-95 transition-all">
+                Cancel
+            </button>
+            <button @click="submitEngInquiry" :disabled="loading"
+                class="bg-rose-600 hover:bg-rose-500 text-white px-8 py-2.5 rounded-xl font-bold text-sm uppercase tracking-wide active:scale-95 transition-all disabled:opacity-40 disabled:cursor-not-allowed">
+                Save Inquiry
+            </button>
+        </div>
+
+    </div>
+</div>

@@ -34,6 +34,9 @@ export const engImagesModalOpen    = ref(false); // images-only popup
 export const engInquiryImages   = ref([]);
 export const engImagesLoading   = ref(false);
 
+// Per-card new log entry inputs, keyed as `${inq.id}_csr`, `_eng`, `_action`
+export const engNewEntries = ref({});
+
 // filteredEngInquiries — filters by status/priority/assignee then sorts.
 export const filteredEngInquiries = computed(() => {
     let list = engInquiries.value;
@@ -43,8 +46,8 @@ export const filteredEngInquiries = computed(() => {
 
     const PRIORITY = { Urgent: 0, High: 1, Medium: 2, Low: 3 };
     const STATUS   = { 'Not Started': 0, 'In Progress': 1, 'Ready to Design': 2,
-                       'Needing To Get Measurements in Person': 3,
-                       'Not On Order. Design Complete. Ready For Order': 4,
+                       'Needs Measurements': 3,
+                       'Design Complete / Ready to Order': 4,
                        'On Hold': 5, 'Done': 6, 'Canceled': 7 };
     const out = [...list];
     const ms  = engManualSort.value;

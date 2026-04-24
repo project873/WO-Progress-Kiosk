@@ -114,7 +114,8 @@ import { enterEngineeringInquiriesView, enterEngineeringFollowupView,
          handleEngNewInquiryFileSelect, removeEngNewInquiryFile,
          openEngInquiryDetail, closeEngInquiryDetail,
          saveEngInquiry, saveEngInquiryInline, handleEngImageUpload,
-         openEngImagesModal, closeEngImagesModal } from './pages/engineering-view.js';
+         openEngImagesModal, closeEngImagesModal,
+         appendEngNote } from './pages/engineering-view.js';
 
 // ── Load HTML partials into #app before Vue mounts ───────────
 // Fetches HTML fragment files from ./partials/ and concatenates them into #app.
@@ -454,6 +455,8 @@ try {
                 openEngInquiryDetail, closeEngInquiryDetail,
                 saveEngInquiry, saveEngInquiryInline, handleEngImageUpload,
                 openEngImagesModal, closeEngImagesModal,
+                engNewEntries:          store.engNewEntries,
+                appendEngNote,
 
                 // Dashboard
                 openActionPanel, openTvAssyEntry, tvSelectMode,
