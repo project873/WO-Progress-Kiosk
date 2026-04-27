@@ -82,4 +82,37 @@ export async function fetchAppPins() {
     return map;
 }
 
+// fetchCompletedWosByDept — returns completed (not yet closed) WOs for a dept, newest first.
+export async function fetchCompletedWosByDept(dept) {
+    const deptFilter = DEPT_ALIASES[dept] || [dept];
+    const { data, error } = await withRetry(() =>
+        supabase.from('work_orders')
+            .select('*')
+            .in('department', deptFilter)
+            .eq('status', 'completed')
+            .order('comp_date', { ascending: false, nullsFirst: false })
+            .order('updated_at', { ascending: false })
+            .limit(100)
+    );
+    if (error) logError('fetchCompletedWosByDept', error);
+    return (data || []).map(normalizeDept);
+}
+
+// fetchArchivedWosByDept — returns closed-out WOs from completed_work_orders for past 90 days.
+export async function fetchArchivedWosByDept(dept) {
+    const deptFilter = DEPT_ALIASES[dept] || [dept];
+    const cutoff = new Date();
+    cutoff.setDate(cutoff.getDate() - 90);
+    const { data, error } = await withRetry(() =>
+        supabase.from('completed_work_orders')
+            .select('*')
+            .in('department', deptFilter)
+            .gte('archived_at', cutoff.toISOString())
+            .order('archived_at', { ascending: false })
+            .limit(200)
+    );
+    if (error) logError('fetchArchivedWosByDept', error);
+    return (data || []).map(normalizeDept);
+}
+
 export { supabase };

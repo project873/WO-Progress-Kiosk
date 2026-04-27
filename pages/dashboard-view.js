@@ -13,7 +13,7 @@ import * as store  from '../libs/store.js';
 import * as db     from '../libs/db.js';
 import { deepClone, sanitizeText, isNonEmpty, isValidQty } from '../libs/utils.js';
 import { fetchDeptOrders } from '../libs/db.js';
-import { logError } from '../libs/db-shared.js';
+import { logError, fetchCompletedWosByDept, fetchArchivedWosByDept } from '../libs/db-shared.js';
 
 // ── openActionPanel ───────────────────────────────────────────
 export function openActionPanel(order) {
@@ -467,7 +467,6 @@ export async function completeReelWo() {
         store.loading.value = false;
     }
 }
-
 // ── holdSince ─────────────────────────────────────────────────
 // Parses the last "ON HOLD" log entry from order.notes and returns
 // the timestamp string, or null if the WO is not on hold / has no log.
@@ -481,4 +480,21 @@ export function holdSince(order) {
         }
     }
     return null;
+}
+// ── toggleCompletedDeptView — switches between active and completed view.
+export async function toggleCompletedDeptView() {
+    if (!store.showingCompletedDept.value) {
+        store.completedDeptOrders.value = [];
+        store.closedOutDeptOrders.value = [];
+        const dept = store.selectedDept.value;
+        store.showingCompletedDept.value = true;
+        const [open, archived] = await Promise.all([
+            fetchCompletedWosByDept(dept),
+            fetchArchivedWosByDept(dept),
+        ]);
+        store.completedDeptOrders.value = open;
+        store.closedOutDeptOrders.value = archived;
+    } else {
+        store.showingCompletedDept.value = false;
+    }
 }

@@ -5,10 +5,99 @@
                 <!-- ── Main WO board (left / center) ─────────── -->
                 <div class="flex-1 overflow-y-auto pb-20">
                 <div class="max-w-5xl mx-auto p-6 space-y-8">
-                    <div v-if="selectedDept === 'Trac Vac Assy' || selectedDept === 'Tru Cut Assy'" class="flex justify-end">
-                        <button @click="newWoModalOpen = true" class="bg-blue-600 px-6 py-3 font-bold text-lg rounded-lg">+ Add Manual Job</button>
+                    <!-- Header row: Add Job (assy only) + Completed WOs toggle -->
+                    <div class="flex justify-between items-center">
+                        <div v-if="selectedDept === 'Trac Vac Assy' || selectedDept === 'Tru Cut Assy'">
+                            <button v-if="!showingCompletedDept" @click="newWoModalOpen = true" class="bg-blue-600 px-6 py-3 font-bold text-lg rounded-lg">+ Add Manual Job</button>
+                        </div>
+                        <div v-else></div>
+                        <button v-if="!showingCompletedDept" @click="toggleCompletedDeptView()"
+                            class="px-5 py-2.5 bg-slate-700 hover:bg-slate-600 border border-slate-500 text-slate-200 font-semibold rounded-lg text-sm transition-all">
+                            Completed WOs &#8594;
+                        </button>
+                        <button v-else @click="toggleCompletedDeptView()"
+                            class="px-5 py-2.5 bg-slate-700 hover:bg-slate-600 border border-slate-500 text-slate-200 font-semibold rounded-lg text-sm transition-all">
+                            &#8592; Active WOs
+                        </button>
                     </div>
-                    <!-- Department search bar -->
+
+                    <!-- Completed WOs panel -->
+                    <div v-if="showingCompletedDept" class="space-y-8">
+
+                        <!-- Section 1: Not Closed Out Yet -->
+                        <div>
+                            <h3 class="text-base font-bold text-amber-400 uppercase tracking-wide mb-3">Not Closed Out Yet</h3>
+                            <div v-if="completedDeptOrders.length === 0" class="bg-slate-800 rounded-xl border border-slate-700 px-6 py-8 text-center text-slate-500">
+                                No pending close-out WOs for {{ selectedDept }}.
+                            </div>
+                            <div v-else class="bg-slate-800 rounded-xl border border-amber-700/40 overflow-hidden">
+                                <div class="overflow-x-auto">
+                                    <table class="w-full text-sm">
+                                        <thead class="bg-slate-900 text-slate-400 text-xs uppercase">
+                                            <tr>
+                                                <th class="px-4 py-3 text-left">WO #</th>
+                                                <th class="px-4 py-3 text-left">Part #</th>
+                                                <th class="px-4 py-3 text-left">Description</th>
+                                                <th class="px-4 py-3 text-center">Qty</th>
+                                                <th class="px-4 py-3 text-left">Operator</th>
+                                                <th class="px-4 py-3 text-left">Completed</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody class="divide-y divide-slate-700">
+                                            <tr v-for="o in completedDeptOrders" :key="o.id" class="hover:bg-slate-700/40">
+                                                <td class="px-4 py-3 font-mono text-blue-300">{{ o.wo_number }}</td>
+                                                <td class="px-4 py-3 font-mono text-slate-200">{{ o.part_number }}</td>
+                                                <td class="px-4 py-3 text-slate-300 max-w-xs truncate">{{ o.description }}</td>
+                                                <td class="px-4 py-3 text-center text-slate-200">{{ o.qty_completed ?? o.qty_required }}</td>
+                                                <td class="px-4 py-3 text-slate-300">{{ o.assigned_operator || '—' }}</td>
+                                                <td class="px-4 py-3 text-slate-400">{{ formatDateLocal(o.comp_date) }}</td>
+                                            </tr>
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Section 2: Closed Out Past 90 Days -->
+                        <div>
+                            <h3 class="text-base font-bold text-emerald-400 uppercase tracking-wide mb-3">Completed / Closed Out WOs — Past 90 Days</h3>
+                            <div v-if="closedOutDeptOrders.length === 0" class="bg-slate-800 rounded-xl border border-slate-700 px-6 py-8 text-center text-slate-500">
+                                No closed-out WOs in the past 90 days for {{ selectedDept }}.
+                            </div>
+                            <div v-else class="bg-slate-800 rounded-xl border border-emerald-700/40 overflow-hidden">
+                                <div class="overflow-x-auto">
+                                    <table class="w-full text-sm">
+                                        <thead class="bg-slate-900 text-slate-400 text-xs uppercase">
+                                            <tr>
+                                                <th class="px-4 py-3 text-left">WO #</th>
+                                                <th class="px-4 py-3 text-left">Part #</th>
+                                                <th class="px-4 py-3 text-left">Description</th>
+                                                <th class="px-4 py-3 text-center">Qty</th>
+                                                <th class="px-4 py-3 text-left">Operator</th>
+                                                <th class="px-4 py-3 text-left">Completed</th>
+                                                <th class="px-4 py-3 text-left">Closed Out</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody class="divide-y divide-slate-700">
+                                            <tr v-for="o in closedOutDeptOrders" :key="o.id" class="hover:bg-slate-700/40">
+                                                <td class="px-4 py-3 font-mono text-blue-300">{{ o.wo_number }}</td>
+                                                <td class="px-4 py-3 font-mono text-slate-200">{{ o.part_number }}</td>
+                                                <td class="px-4 py-3 text-slate-300 max-w-xs truncate">{{ o.description }}</td>
+                                                <td class="px-4 py-3 text-center text-slate-200">{{ o.qty_completed ?? o.qty_required }}</td>
+                                                <td class="px-4 py-3 text-slate-300">{{ o.assigned_operator || '—' }}</td>
+                                                <td class="px-4 py-3 text-slate-400">{{ formatDateLocal(o.comp_date) }}</td>
+                                                <td class="px-4 py-3 text-slate-400">{{ formatDateLocal(o.archived_at) }}</td>
+                                            </tr>
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        </div>
+
+                    </div>
+
+                    <!-- Department search bar (hidden when viewing completed) -->
+                    <template v-if="!showingCompletedDept">
                     <div class="flex items-center gap-3">
                         <div class="relative flex-1 max-w-lg">
                             <input v-model="dashSearch" type="text"
@@ -158,6 +247,7 @@
                             </div>
                         </div>
                     </template>
+                    </template><!-- end v-if="!showingCompletedDept" -->
                 </div>
                 </div><!-- end main scroll -->
 

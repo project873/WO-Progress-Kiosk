@@ -41,6 +41,11 @@ export const allOrders       = ref([]);
 export const woStatusOrders  = ref([]);
 export const closeoutOrders  = ref([]);
 
+// ── Dept completed WOs view ───────────────────────────────────
+export const completedDeptOrders  = ref([]);
+export const closedOutDeptOrders  = ref([]);
+export const showingCompletedDept = ref(false);
+
 // ── Action panel ──────────────────────────────────────────────
 export const actionPanelOpen   = ref(false);
 export const activeOrder       = ref(null);
