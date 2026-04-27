@@ -101,7 +101,7 @@ export const PARTIAL_NAMES = [
     'view-manager-home', 'view-manager-kpi', 'view-manager-priorities',
     'view-manager-ai', 'view-manager-problems', 'view-manager-delayed',
     'view-cs', 'view-inventory', 'view-wo-request', 'view-wo-forecasting', 'view-create-wo', 'view-open-orders', 'view-completed-orders',
-    'view-engineering-inquiries', 'view-engineering-followup',
+    'view-engineering-inquiries', 'view-engineering-followup', 'view-engineering-completed',
     'main-close',
     'modal-pin', 'modal-action-panel',
     'modal-tc-unit', 'modal-tc-stock',
@@ -111,7 +111,8 @@ export const PARTIAL_NAMES = [
     'modal-action-panel-print',
     'modal-eng-inquiry',
     'modal-eng-images',
-    'modal-eng-create'
+    'modal-eng-create',
+    'modal-eng-confirm'
 ];
 
 export const OPEN_ORDER_SORT_FIELDS = [

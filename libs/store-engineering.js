@@ -37,6 +37,28 @@ export const engImagesLoading   = ref(false);
 // Per-card new log entry inputs, keyed as `${inq.id}_csr`, `_eng`, `_action`
 export const engNewEntries = ref({});
 
+// Delete confirmation modal
+export const engDeleteConfirmOpen = ref(false);
+export const engDeleteTarget      = ref(null);
+
+// Completed inquiries view
+export const engCompletedInquiries = ref([]);
+export const engCompletedLoading   = ref(false);
+export const engCompletedFrom      = ref('');
+export const engCompletedTo        = ref('');
+export const engCompletedSearch    = ref('');
+
+export const filteredEngCompleted = computed(() => {
+    const search = engCompletedSearch.value.trim().toLowerCase();
+    if (!search) return engCompletedInquiries.value;
+    return engCompletedInquiries.value.filter(r =>
+        (r.customer_name     || '').toLowerCase().includes(search) ||
+        (r.sales_order_number|| '').toLowerCase().includes(search) ||
+        (r.part_number_trying|| '').toLowerCase().includes(search) ||
+        (r.correct_part_number||'').toLowerCase().includes(search)
+    );
+});
+
 // filteredEngInquiries — filters by status/priority/assignee then sorts.
 export const filteredEngInquiries = computed(() => {
     let list = engInquiries.value;

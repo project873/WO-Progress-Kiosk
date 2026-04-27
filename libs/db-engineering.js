@@ -48,6 +48,116 @@ export async function updateEngInquiry(id, fields) {
     return { data, error };
 }
 
+// fetchEngCompletedInquiries — archived rows, newest first, optional archived_at date range.
+// Returns { data, error }
+export async function fetchEngCompletedInquiries(fromDate, toDate) {
+    let q = supabase
+        .from('eng_inquiries_completed')
+        .select('*')
+        .order('archived_at', { ascending: false });
+    if (fromDate) q = q.gte('archived_at', fromDate);
+    if (toDate)   q = q.lte('archived_at', toDate + 'T23:59:59');
+    const { data, error } = await q;
+    return { data: data || [], error };
+}
+
+// restoreEngInquiry — move a completed row back to eng_inquiries with status 'In Progress'.
+// Uses original_id as the restored row's id so storage image paths remain valid.
+// Returns { error }
+export async function restoreEngInquiry(inq) {
+    const { error: insertErr } = await supabase
+        .from('eng_inquiries')
+        .insert({
+            id:                      inq.original_id || undefined,
+            inquiry_type:            inq.inquiry_type            || null,
+            wrong_numbers:           inq.wrong_numbers           || null,
+            part_number_trying:      inq.part_number_trying      || null,
+            correct_part_number:     inq.correct_part_number     || null,
+            date_entered:            inq.date_entered            || null,
+            csr_rep:                 inq.csr_rep                 || null,
+            deck_model_number:       inq.deck_model_number       || null,
+            brand:                   inq.brand                   || null,
+            deck_model:              inq.deck_model              || null,
+            deck_width:              inq.deck_width              || null,
+            year:                    inq.year                    || null,
+            mower_model:             inq.mower_model             || null,
+            hose_size:               inq.hose_size               || null,
+            trac_vac_trailer_model:  inq.trac_vac_trailer_model  || null,
+            customer_name:           inq.customer_name           || null,
+            customer_phone:          inq.customer_phone          || null,
+            customer_email:          inq.customer_email          || null,
+            sales_order_number:      inq.sales_order_number      || null,
+            csr_notes:               inq.csr_notes               || null,
+            engineering_notes:       inq.engineering_notes       || null,
+            current_action_step:     inq.current_action_step     || null,
+            action_step_due_date:    inq.action_step_due_date    || null,
+            status:                  'In Progress',
+            assigned_to:             inq.assigned_to             || null,
+            priority:                inq.priority                || null,
+            created_at:              inq.created_at              || null,
+            updated_at:              new Date().toISOString(),
+        });
+    if (insertErr) return { error: insertErr };
+    const { error: deleteErr } = await supabase
+        .from('eng_inquiries_completed')
+        .delete()
+        .eq('id', inq.id);
+    return { error: deleteErr };
+}
+
+// archiveEngInquiry — copy a row to eng_inquiries_completed then delete from eng_inquiries.
+// Returns { error }
+export async function archiveEngInquiry(inq) {
+    const { error: insertErr } = await supabase
+        .from('eng_inquiries_completed')
+        .insert({
+            original_id:             inq.id,
+            archived_at:             new Date().toISOString(),
+            inquiry_type:            inq.inquiry_type            || null,
+            wrong_numbers:           inq.wrong_numbers           || null,
+            part_number_trying:      inq.part_number_trying      || null,
+            correct_part_number:     inq.correct_part_number     || null,
+            date_entered:            inq.date_entered            || null,
+            csr_rep:                 inq.csr_rep                 || null,
+            deck_model_number:       inq.deck_model_number       || null,
+            brand:                   inq.brand                   || null,
+            deck_model:              inq.deck_model              || null,
+            deck_width:              inq.deck_width              || null,
+            year:                    inq.year                    || null,
+            mower_model:             inq.mower_model             || null,
+            hose_size:               inq.hose_size               || null,
+            trac_vac_trailer_model:  inq.trac_vac_trailer_model  || null,
+            customer_name:           inq.customer_name           || null,
+            customer_phone:          inq.customer_phone          || null,
+            customer_email:          inq.customer_email          || null,
+            sales_order_number:      inq.sales_order_number      || null,
+            csr_notes:               inq.csr_notes               || null,
+            engineering_notes:       inq.engineering_notes       || null,
+            current_action_step:     inq.current_action_step     || null,
+            action_step_due_date:    inq.action_step_due_date    || null,
+            status:                  'Done',
+            assigned_to:             inq.assigned_to             || null,
+            priority:                inq.priority                || null,
+            created_at:              inq.created_at              || null,
+            updated_at:              new Date().toISOString(),
+        });
+    if (insertErr) return { error: insertErr };
+    const { error: deleteErr } = await supabase
+        .from('eng_inquiries')
+        .delete()
+        .eq('id', inq.id);
+    return { error: deleteErr };
+}
+
+// deleteEngInquiry — hard-delete a row by id. Returns { error }.
+export async function deleteEngInquiry(id) {
+    const { error } = await supabase
+        .from('eng_inquiries')
+        .delete()
+        .eq('id', id);
+    return { error };
+}
+
 // uploadEngInquiryImage — upload a file to eng-inquiry-images/{id}/{filename}.
 // upsert:true replaces same-named files.
 // Returns Supabase storage response { data, error }

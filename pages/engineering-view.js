@@ -260,6 +260,75 @@ export async function loadEngInquiryImages(inquiryId) {
     store.engInquiryImages.value = data;
 }
 
+// enterEngCompletedView — navigate to the completed inquiries archive.
+export async function enterEngCompletedView() {
+    store.engView.value     = 'completed';
+    store.currentView.value = 'engineering';
+    await loadEngCompletedInquiries();
+}
+
+// loadEngCompletedInquiries — fetch completed rows using current date range filters.
+export async function loadEngCompletedInquiries() {
+    store.engCompletedLoading.value = true;
+    const { data, error } = await db.fetchEngCompletedInquiries(
+        store.engCompletedFrom.value,
+        store.engCompletedTo.value
+    );
+    store.engCompletedLoading.value = false;
+    if (error) { store.showToast('Could not load completed inquiries: ' + error.message); return; }
+    store.engCompletedInquiries.value = data;
+}
+
+// restoreEngFromCompleted — move a completed row back to active eng_inquiries.
+export async function restoreEngFromCompleted(inq) {
+    store.loading.value = true;
+    const { error } = await db.restoreEngInquiry(inq);
+    store.loading.value = false;
+    if (error) { store.showToast('Could not restore inquiry: ' + error.message); return; }
+    store.showToast('Inquiry restored to active.', 'success');
+    await loadEngCompletedInquiries();
+}
+
+// onEngStatusChange — save status inline; if 'Done', archive the row instead.
+export async function onEngStatusChange(inq) {
+    if (inq.status !== 'Done') {
+        await saveEngInquiryInline(inq);
+        return;
+    }
+    store.loading.value = true;
+    const { error } = await db.archiveEngInquiry(inq);
+    store.loading.value = false;
+    if (error) { store.showToast('Could not complete inquiry: ' + error.message); return; }
+    store.showToast('Inquiry marked Done and archived.', 'success');
+    await loadEngInquiries();
+}
+
+// openEngDeleteConfirm — set the target and open the delete confirmation modal.
+export function openEngDeleteConfirm(inq) {
+    store.engDeleteTarget.value      = inq;
+    store.engDeleteConfirmOpen.value = true;
+}
+
+// closeEngDeleteConfirm — close the confirmation modal without deleting.
+export function closeEngDeleteConfirm() {
+    store.engDeleteConfirmOpen.value = false;
+    store.engDeleteTarget.value      = null;
+}
+
+// confirmEngDelete — delete the targeted inquiry and refresh the list.
+export async function confirmEngDelete() {
+    const inq = store.engDeleteTarget.value;
+    if (!inq?.id) return;
+    store.loading.value = true;
+    const { error } = await db.deleteEngInquiry(inq.id);
+    store.loading.value = false;
+    if (error) { store.showToast('Could not delete: ' + error.message); return; }
+    store.engDeleteConfirmOpen.value = false;
+    store.engDeleteTarget.value      = null;
+    store.showToast('Inquiry deleted.', 'success');
+    await loadEngInquiries();
+}
+
 // handleEngImageUpload — upload a file for the selected inquiry then refresh.
 export async function handleEngImageUpload(event) {
     const file = event.target.files[0];

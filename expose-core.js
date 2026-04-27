@@ -43,7 +43,11 @@ import { enterEngineeringInquiriesView, enterEngineeringFollowupView,
          openEngInquiryDetail, closeEngInquiryDetail,
          saveEngInquiry, saveEngInquiryInline, handleEngImageUpload,
          openEngImagesModal, closeEngImagesModal,
-         appendEngNote } from './pages/engineering-view.js';
+         appendEngNote,
+         openEngDeleteConfirm, closeEngDeleteConfirm, confirmEngDelete,
+         onEngStatusChange,
+         enterEngCompletedView, loadEngCompletedInquiries,
+         restoreEngFromCompleted } from './pages/engineering-view.js';
 
 export function buildCoreExpose() {
     return {
@@ -272,6 +276,17 @@ export function buildCoreExpose() {
         openEngImagesModal, closeEngImagesModal,
         engNewEntries: store.engNewEntries,
         appendEngNote,
+        engDeleteConfirmOpen: store.engDeleteConfirmOpen,
+        engDeleteTarget:      store.engDeleteTarget,
+        openEngDeleteConfirm, closeEngDeleteConfirm, confirmEngDelete,
+        onEngStatusChange,
+        engCompletedInquiries: store.engCompletedInquiries,
+        engCompletedLoading:   store.engCompletedLoading,
+        engCompletedFrom:      store.engCompletedFrom,
+        engCompletedTo:        store.engCompletedTo,
+        engCompletedSearch:    store.engCompletedSearch,
+        filteredEngCompleted:  store.filteredEngCompleted,
+        enterEngCompletedView, loadEngCompletedInquiries, restoreEngFromCompleted,
 
         // Dashboard
         openActionPanel, openTvAssyEntry, tvSelectMode,
