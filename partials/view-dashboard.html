@@ -162,6 +162,11 @@
                                     <div v-if="order.department === 'Trac Vac Assy' && order.sales_order"
                                         class="text-emerald-400 text-xs font-semibold mt-0.5">SO# {{ order.sales_order }}</div>
                                     <div class="text-slate-400 text-sm line-clamp-2 h-10">{{ order.description }}</div>
+                                    <div v-if="order.production_notes"
+                                        class="mt-1 flex items-start gap-1 text-xs text-red-300 font-semibold leading-snug">
+                                        <span class="text-red-400 shrink-0">&#9733;</span>
+                                        <span class="line-clamp-2">{{ order.production_notes }}</span>
+                                    </div>
                                     <div class="flex justify-between mt-4">
                                         <span class="text-emerald-400 font-bold border rounded px-1">{{ order.qty_completed }} / {{ order.qty_required }}</span>
                                         <span class="text-slate-500 text-sm">{{ order.operator || 'None' }}</span>

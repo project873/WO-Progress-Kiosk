@@ -97,8 +97,15 @@
                         <!-- Color -->
                         <div>
                             <label class="block text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1">Color</label>
-                            <input v-model="woRequestDetailForm.color" type="text" maxlength="30"
-                                class="w-full px-3 py-2 border border-gray-300 rounded-lg text-gray-800 focus:outline-none focus:border-blue-400 text-sm">
+                            <select v-model="woRequestDetailForm.color"
+                                class="w-full px-3 py-2 border border-gray-300 rounded-lg text-gray-800 focus:outline-none focus:border-blue-400 text-sm bg-white">
+                                <option value="">— Select —</option>
+                                <option value="Black">Black</option>
+                                <option value="Red">Red</option>
+                                <option value="Grey">Grey</option>
+                                <option value="Zinc">Zinc</option>
+                                <option value="None">None</option>
+                            </select>
                         </div>
 
                         <!-- Fab ★ -->
@@ -192,6 +199,17 @@
                                 class="w-full px-3 py-2 border border-gray-300 rounded-lg text-gray-800 focus:outline-none focus:border-blue-400 text-sm">
                         </div>
 
+                    </div>
+
+                    <!-- Production Notes -->
+                    <div class="mt-4">
+                        <label class="block text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1">
+                            &#9733; Production Notes
+                            <span class="normal-case font-normal text-gray-400 ml-1">(shown on production card)</span>
+                        </label>
+                        <textarea v-model="woRequestDetailForm.production_notes" rows="2" maxlength="300"
+                            placeholder="e.g. Use jig #4, check weld spec sheet..."
+                            class="w-full px-3 py-2 border border-gray-300 rounded-lg text-gray-800 focus:outline-none focus:border-blue-400 text-sm resize-none"></textarea>
                     </div>
 
                     <!-- Prints & Files -->

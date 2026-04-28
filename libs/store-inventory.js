@@ -40,7 +40,8 @@ export const woRequestDetailForm = ref({
     alere_qty: '', qty_sold_used_12mo: '', where_used: '', qty_to_make: '',
     fab: '', fab_print: '', weld: '', weld_print: '',
     assy_wo: '', color: '', bent_rolled_part: '', set_up_time: '',
-    alere_bin: '', estimated_lead_time: '', sent_to_production: false, date_to_start: ''
+    alere_bin: '', estimated_lead_time: '', sent_to_production: false, date_to_start: '',
+    production_notes: ''
 });
 export const filteredWoRequests = computed(() => {
     const q = woRequestSearch.value.trim().toLowerCase();

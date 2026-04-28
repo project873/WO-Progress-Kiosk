@@ -166,7 +166,8 @@ export function openWoRequestDetail(req) {
         alere_bin:           req.alere_bin           || '',
         estimated_lead_time: req.estimated_lead_time ?? '',
         sent_to_production:  req.sent_to_production  ?? false,
-        date_to_start:       req.date_to_start       || ''
+        date_to_start:       req.date_to_start       || '',
+        production_notes:    req.production_notes    || ''
     };
     loadWoFilesForRequest(req.part_number);
 }
@@ -218,6 +219,7 @@ function _buildDetailUpdates(form) {
         estimated_lead_time: form.estimated_lead_time !== '' ? parseFloat(form.estimated_lead_time): null,
         sent_to_production:  form.sent_to_production,
         date_to_start:       form.date_to_start       || null,
+        production_notes:    form.production_notes.trim() || null,
     };
 }
 

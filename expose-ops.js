@@ -9,7 +9,7 @@ import { OPEN_ORDER_STATUSES, CHUTE_PART_STATUSES,
          OPEN_ORDER_SORT_FIELDS, INVENTORY_TABS } from './libs/config.js';
 import { enterInventoryView, enterWoRequestView, enterCreateWoView,
          enterOpenOrdersView, enterWoForecastingView,
-         saveHeaderLinks } from './pages/splash-view.js';
+         saveHeaderLinks, saveSplashLinks } from './pages/splash-view.js';
 import { openManagerSection, loadKpiData, loadDelayedOrders,
          fetchPriorityOrders, updatePriority, updateAssignedOperator,
          handleAssignChange, submitCustomAssign, cancelCustomAssign,
@@ -230,6 +230,10 @@ export function buildOpsExpose() {
         headerLinksModalOpen: store.headerLinksModalOpen,
         headerLinksSaving:    store.headerLinksSaving,
         saveHeaderLinks,
+        splashLinks:          store.splashLinks,
+        splashLinksModalOpen: store.splashLinksModalOpen,
+        splashLinksSaving:    store.splashLinksSaving,
+        saveSplashLinks,
         openOrderColorDotClass,
         openOrderStatusClass,
         chuteStatusClass,

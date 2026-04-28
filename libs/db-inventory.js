@@ -118,14 +118,15 @@ export async function fetchPullHistory(table, inventoryId) {
 export async function insertWorkOrdersFromRequest(req, woNumber) {
     const inserts = [];
     const base = {
-        wo_number:     (woNumber || req.alere_wo_number || '').trim().toUpperCase(),
-        part_number:   (req.part_number  || '').trim().toUpperCase(),
-        description:   (req.description  || ''),
-        qty_required:  parseInt(req.qty_to_make, 10) || 1,
-        wo_type:       'Unit',
-        status:        'not_started',
-        qty_completed: 0,
-        priority:      0,
+        wo_number:        (woNumber || req.alere_wo_number || '').trim().toUpperCase(),
+        part_number:      (req.part_number  || '').trim().toUpperCase(),
+        description:      (req.description  || ''),
+        qty_required:     parseInt(req.qty_to_make, 10) || 1,
+        wo_type:          'Unit',
+        status:           'not_started',
+        qty_completed:    0,
+        priority:         0,
+        production_notes: req.production_notes || null,
     };
     if (req.sales_order_number) base.sales_order = req.sales_order_number.trim();
 

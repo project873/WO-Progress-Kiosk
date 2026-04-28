@@ -117,20 +117,32 @@
                             <span class="text-4xl font-bold uppercase">Engineering</span>
                         </button>
                     </div>
+
+                    <!-- ── Quick Links ───────────────────────────── -->
+                    <div v-if="splashLinks.some(l => l.url && l.label) || sessionRole === 'manager'"
+                        class="w-full border-t border-slate-700 pt-6">
+                        <div class="flex items-center gap-2 flex-wrap justify-center">
+                            <template v-for="(link, i) in splashLinks" :key="i">
+                                <a v-if="link.url && link.label" :href="link.url" target="_blank"
+                                    class="px-5 py-2.5 bg-white hover:bg-blue-50 text-gray-800 rounded-xl text-sm font-bold border-2 border-blue-300 active:scale-95 transition-transform whitespace-nowrap shadow-sm">
+                                    {{ link.label }}
+                                </a>
+                            </template>
+                            <button v-if="sessionRole === 'manager'" @click="splashLinksModalOpen = true"
+                                title="Configure quick links"
+                                class="p-2 rounded-xl text-slate-400 hover:text-white hover:bg-slate-700 transition-colors shrink-0">
+                                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"/>
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
+                                </svg>
+                            </button>
+                        </div>
+                    </div>
                 </div>
 
                 <!-- ── Level 1: Production sub-menu ────────────── -->
                 <div v-else-if="splashLevel === 1 && splashCategory === 'production'"
                     class="w-full max-w-7xl px-4 flex flex-col items-center gap-8">
-                    <div class="w-full flex items-center gap-6">
-                        <button @click="splashBack"
-                            class="bg-slate-700 hover:bg-slate-600 text-white rounded-xl p-3 active:scale-95 transition-transform flex items-center justify-center shrink-0">
-                            <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M15 19l-7-7 7-7"/>
-                            </svg>
-                        </button>
-                        <h2 class="text-4xl font-extrabold text-white">Production</h2>
-                    </div>
                     <div class="grid grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-6 w-full">
                         <!-- Active WO's -->
                         <button @click="selectSubCategory('active-wos')"
@@ -170,15 +182,6 @@
                 <!-- ── Level 1: Inventory sub-menu ─────────────── -->
                 <div v-else-if="splashLevel === 1 && splashCategory === 'inventory'"
                     class="w-full max-w-7xl px-4 flex flex-col items-center gap-8">
-                    <div class="w-full flex items-center gap-6">
-                        <button @click="splashBack"
-                            class="bg-slate-700 hover:bg-slate-600 text-white rounded-xl p-3 active:scale-95 transition-transform flex items-center justify-center shrink-0">
-                            <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M15 19l-7-7 7-7"/>
-                            </svg>
-                        </button>
-                        <h2 class="text-4xl font-extrabold text-white">Inventory</h2>
-                    </div>
                     <div class="grid grid-cols-2 lg:grid-cols-4 gap-6 w-full">
                         <!-- WO Receive & Close Out -->
                         <button @click="selectDept('WO Status')"
@@ -230,15 +233,6 @@
                 <!-- ── Level 1: Purchasing sub-menu ────────────── -->
                 <div v-else-if="splashLevel === 1 && splashCategory === 'purchasing'"
                     class="w-full max-w-7xl px-4 flex flex-col items-center gap-8">
-                    <div class="w-full flex items-center gap-6">
-                        <button @click="splashBack"
-                            class="bg-slate-700 hover:bg-slate-600 text-white rounded-xl p-3 active:scale-95 transition-transform flex items-center justify-center shrink-0">
-                            <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M15 19l-7-7 7-7"/>
-                            </svg>
-                        </button>
-                        <h2 class="text-4xl font-extrabold text-white">Purchasing</h2>
-                    </div>
                     <div class="grid grid-cols-2 lg:grid-cols-3 gap-6 w-full max-w-3xl">
                         <!-- PO Requests (stub) -->
                         <button disabled class="bg-white text-gray-400 rounded-2xl shadow-md p-10 flex flex-col items-center gap-3 border-2 border-gray-200 opacity-50 cursor-not-allowed">
@@ -252,15 +246,6 @@
                 <!-- ── Level 1: Engineering sub-menu ──────────────── -->
                 <div v-else-if="splashLevel === 1 && splashCategory === 'engineering'"
                     class="w-full max-w-7xl px-4 flex flex-col items-center gap-8">
-                    <div class="w-full flex items-center gap-6">
-                        <button @click="splashBack"
-                            class="bg-slate-700 hover:bg-slate-600 text-white rounded-xl p-3 active:scale-95 transition-transform flex items-center justify-center shrink-0">
-                            <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M15 19l-7-7 7-7"/>
-                            </svg>
-                        </button>
-                        <h2 class="text-4xl font-extrabold text-white">Engineering</h2>
-                    </div>
                     <div class="grid grid-cols-2 gap-6 w-full max-w-2xl">
                         <!-- Customer Inquiries & Concerns -->
                         <button @click="enterEngineeringInquiriesView"
@@ -285,15 +270,6 @@
                 <!-- ── Level 2: Active WO's dept selection ──────── -->
                 <div v-else-if="splashLevel === 2 && splashSubCategory === 'active-wos'"
                     class="w-full max-w-7xl px-4 flex flex-col items-center gap-8">
-                    <div class="w-full flex items-center gap-6">
-                        <button @click="splashBack"
-                            class="bg-slate-700 hover:bg-slate-600 text-white rounded-xl p-3 active:scale-95 transition-transform flex items-center justify-center shrink-0">
-                            <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M15 19l-7-7 7-7"/>
-                            </svg>
-                        </button>
-                        <h2 class="text-4xl font-extrabold text-white">Active WO's</h2>
-                    </div>
                     <div class="grid grid-cols-2 lg:grid-cols-4 gap-6 w-full">
                         <button @click="selectDept('Fab')"
                             class="bg-white hover:bg-gray-50 text-gray-800 rounded-2xl shadow-md p-10 flex flex-col items-center gap-4 border-2 border-gray-300 active:scale-95 transition-transform">
@@ -349,15 +325,6 @@
                 <!-- ── Level 2: Shipping ────────────────────────── -->
                 <div v-else-if="splashLevel === 2 && splashSubCategory === 'shipping'"
                     class="w-full max-w-7xl px-4 flex flex-col items-center gap-8">
-                    <div class="w-full flex items-center gap-6">
-                        <button @click="splashBack"
-                            class="bg-slate-700 hover:bg-slate-600 text-white rounded-xl p-3 active:scale-95 transition-transform flex items-center justify-center shrink-0">
-                            <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M15 19l-7-7 7-7"/>
-                            </svg>
-                        </button>
-                        <h2 class="text-4xl font-extrabold text-white">Shipping</h2>
-                    </div>
                     <div class="grid grid-cols-2 gap-6 w-full max-w-2xl">
                         <!-- Open Orders -->
                         <button @click="enterOpenOrdersView"
@@ -374,4 +341,38 @@
                     </div>
                 </div>
 
+            </div>
+
+            <!-- ── Splash Quick-Links Config Modal ───────────── -->
+            <div v-if="splashLinksModalOpen"
+                class="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm"
+                @click.self="splashLinksModalOpen = false">
+                <div class="bg-white rounded-2xl shadow-2xl w-full max-w-md mx-4">
+                    <div class="flex items-center justify-between px-5 py-4 border-b border-gray-200">
+                        <h2 class="text-lg font-bold text-gray-800">Configure Quick Links</h2>
+                        <button @click="splashLinksModalOpen = false" class="text-gray-400 hover:text-gray-600 p-1">&times;</button>
+                    </div>
+                    <div class="p-5 space-y-2 max-h-72 overflow-y-auto">
+                        <div v-for="(link, i) in splashLinks" :key="i" class="flex items-center gap-2">
+                            <input v-model="link.label" type="text" placeholder="Label" maxlength="40"
+                                class="flex-1 px-3 py-2 border border-gray-300 rounded-lg text-sm text-gray-800 focus:outline-none focus:border-blue-400">
+                            <input v-model="link.url" type="url" placeholder="https://..." maxlength="500"
+                                class="flex-[2] px-3 py-2 border border-gray-300 rounded-lg text-sm text-gray-800 focus:outline-none focus:border-blue-400">
+                            <button @click="splashLinks.splice(i, 1)" title="Remove"
+                                class="text-red-400 hover:text-red-600 font-bold text-lg px-1">&times;</button>
+                        </div>
+                    </div>
+                    <div class="px-5 pb-2">
+                        <button @click="splashLinks.push({ label: '', url: '' })"
+                            class="text-blue-600 hover:text-blue-800 text-sm font-semibold">+ Add link</button>
+                    </div>
+                    <div class="flex gap-3 px-5 py-4 border-t border-gray-100">
+                        <button @click="splashLinksModalOpen = false"
+                            class="flex-1 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 font-bold rounded-xl text-sm">Cancel</button>
+                        <button @click="saveSplashLinks()" :disabled="splashLinksSaving"
+                            class="flex-1 py-2 bg-blue-600 hover:bg-blue-500 text-white font-bold rounded-xl text-sm disabled:opacity-50">
+                            {{ splashLinksSaving ? 'Saving…' : 'Save Links' }}
+                        </button>
+                    </div>
+                </div>
             </div>

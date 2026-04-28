@@ -18,7 +18,7 @@ import { PARTIAL_NAMES } from './libs/config.js';
 import { fetchAppPins } from './libs/db-shared.js';
 import { setPins } from './libs/pins.js';
 import { checkConnectivity, supabase } from './libs/db.js';
-import { loadHeaderLinks } from './pages/splash-view.js';
+import { loadHeaderLinks, loadSplashLinks } from './pages/splash-view.js';
 import { loadManagerAlerts } from './pages/manager-view.js';
 import { loadReceivingEligible } from './pages/wo-status-view.js';
 import { loadInventoryItems } from './pages/inventory-view.js';
@@ -40,7 +40,7 @@ async function loadPartials() {
 }
 const [, pinsMap] = await Promise.all([loadPartials(), fetchAppPins()]);
 setPins(pinsMap);
-await loadHeaderLinks();
+await Promise.all([loadHeaderLinks(), loadSplashLinks()]);
 
 const loadingEl = document.getElementById('app-loading');
 

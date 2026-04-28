@@ -318,3 +318,33 @@ export async function saveHeaderLinks() {
         store.headerLinksSaving.value = false;
     }
 }
+
+// ── loadSplashLinks ───────────────────────────────────────────
+// Reads splash_links JSON from app_settings and populates store.
+export async function loadSplashLinks() {
+    try {
+        const val = await db.fetchAppSetting('splash_links');
+        if (!val) return;
+        const parsed = JSON.parse(val);
+        if (Array.isArray(parsed) && parsed.length > 0) {
+            store.splashLinks.value = parsed;
+        }
+    } catch { /* silently ignore — links are optional */ }
+}
+
+// ── saveSplashLinks ───────────────────────────────────────────
+// Persists current store.splashLinks to app_settings and closes modal.
+export async function saveSplashLinks() {
+    store.splashLinksSaving.value = true;
+    try {
+        const { error } = await db.upsertAppSetting('splash_links', JSON.stringify(store.splashLinks.value));
+        if (error) throw error;
+        store.splashLinksModalOpen.value = false;
+        store.showToast('Links saved.', 'success');
+    } catch (err) {
+        store.showToast('Failed to save links: ' + err.message, 'error');
+        logError('saveSplashLinks', err);
+    } finally {
+        store.splashLinksSaving.value = false;
+    }
+}

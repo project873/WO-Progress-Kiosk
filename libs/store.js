@@ -309,10 +309,15 @@ export const reminderEmailModalOpen = ref(false);
 export const reminderEmail          = ref('');
 export const reminderEmailSaving    = ref(false);
 
-// ── Header quick-links (dynamic list, persisted in app_settings) ──
+// ── Engineering quick-links (dynamic list, persisted in app_settings) ──
 export const headerLinks          = ref([{ label: '', url: '' }]);
 export const headerLinksModalOpen = ref(false);
 export const headerLinksSaving    = ref(false);
+
+// ── Splash quick-links (dynamic list, persisted in app_settings) ──
+export const splashLinks          = ref([{ label: '', url: '' }]);
+export const splashLinksModalOpen = ref(false);
+export const splashLinksSaving    = ref(false);
 
 // managerSubView is re-exported from store-manager.js but appTitle references it.
 // Since store.js does export * from store-manager.js, managerSubView is available
