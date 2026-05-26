@@ -80,9 +80,9 @@ try {
             const versionInterval = setInterval(checkVersion, 60_000);
             onUnmounted(() => clearInterval(versionInterval));
 
-            // Global unread-message poll — keeps the alert live on any view
+            // Global unread-message poll — manager only
             const unreadInterval = setInterval(() => {
-                if (store.sessionRole.value) refreshUnreadCount();
+                if (store.sessionRole.value === 'manager') refreshUnreadCount();
             }, 15_000);
             onUnmounted(() => clearInterval(unreadInterval));
 

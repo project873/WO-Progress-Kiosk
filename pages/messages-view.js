@@ -18,8 +18,9 @@ export const dmContacts = computed(() =>
     Object.keys(ROLE_DISPLAY_NAMES).filter(r => r !== store.sessionRole.value)
 );
 
-// openMessagesView — navigate to messages, load inbox, start poll.
+// openMessagesView — navigate to messages, load inbox, start poll. Manager only.
 export async function openMessagesView() {
+    if (store.sessionRole.value !== 'manager') return;
     store.currentView.value  = 'messages';
     store.messagesView.value = 'inbox';
     store.activeThread.value = null;
